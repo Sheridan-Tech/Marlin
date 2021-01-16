@@ -125,7 +125,7 @@
 #elif(ENABLED(MachineEnder5))
 #define MACHINE_NAME "TM3D Ender5"
 #elif(ENABLED(MachineEnder5Plus))
-#define MACHINE_NAME "TM3D E5 Plus"
+#define MACHINE_NAME "Ender 5++"
 #elif(ENABLED(MachineCR20))
 #define MACHINE_NAME "SuPeR CR-20"
 #elif(ENABLED(MachineCR10Orig))
@@ -167,7 +167,7 @@
  * The WEBSITE_URL is the location where users can get more information such as
  * documentation about a specific Marlin release.
  */
-#define WEBSITE_URL "tinymachines3d.com"
+#define WEBSITE_URL "sheridan-tech.com"
 
 /**
  * Set the vendor info the serial USB interface, if changable

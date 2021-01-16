@@ -6,7 +6,7 @@
 
 // Standard Atmega2560 machines (No bootloader required)
 
-//#define MachineEnder5Plus
+#define MachineEnder5Plus
 //#define MachineEnder4
 //#define MachineCR20 //Buzzer doesnt work
 //#define MachineCR20Pro
@@ -74,7 +74,7 @@
    ac bed, leave both disabled
 */
 //#define BedAC
-//#define BedDC
+#define BedDC
 
 //#define SolidBedMounts //Removed a few LCD options to save some memory since not needed with solid mounts
 
@@ -84,7 +84,7 @@
 */
 //#define ABL_EZABL // TH3D EZABL or Any NO Sensor
 //#define ABL_NCSW //Creality ABL or Any NC Sensor
-//#define ABL_BLTOUCH
+#define ABL_BLTOUCH
 //#define ABL_TOUCH_MI // Uncomment ABL_TOUCH_MI to use Touch-MI sensor by hotends.fr
 
 //#define CREALITY_ABL_MOUNT //Using creality ABL mount
@@ -124,7 +124,7 @@
    Melzi board users may only select ABL_BI for bilinear leveling
    If a probe is enabled and nothing selected here, defaults to Bilinear
 */
-//#define ABL_BI
+#define ABL_BI
 //#define ABL_UBL
 
 /*
@@ -133,7 +133,7 @@
    Even just a probe and leveling with standard options is filling te entire program space!
 */
 //#define OrigLA // Enable this for linear advance instead of mesh leveling on a melzi board
-//#define MelziHostOnly // Enable this to turn off local SD support and instead prioritize options for Octoprint or USB
+#define MelziHostOnly // Enable this to turn off local SD support and instead prioritize options for Octoprint or USB
 
 /**
  * Advanced motherboard replacement options
@@ -146,16 +146,16 @@
 
 //#define SKR13 // 32 bit board - assumes 2208 drivers
 //#define SKR14
-//#define SKR14Turbo
+#define SKR14Turbo
 //#define SKRPRO11
 
 //#define I2C_EEPROM  // use I2C EEPROM on SRK PRO v1.1 e.g AT24C256
 //#define SKR14_PowerLossKit // Bigtreetech power loss kit for SKR14
 
-//#define SKR_2209
-//#define SKR_UART // Configure SKR board with drivers in UART mode
+#define SKR_2209
+#define SKR_UART // Configure SKR board with drivers in UART mode
 //#define SKR13_ReverseSteppers // Some users reported directions backwards than others on SKR with various drivers.
-//#define DualZ // Uses 5th driver on CRX or SKR boards as Z2
+#define DualZ // Uses 5th driver on CRX or SKR boards as Z2
 
  /*
   *
@@ -180,7 +180,7 @@
    Standard is recommended in most other scenarios.
 */
 //#define MeshFast
-//#define MeshStd
+#define MeshStd
 //#define MeshFine
 //#define MeshExtreme
 
@@ -276,7 +276,7 @@
 // @section info
 
 // Author info of this build printed to the host during boot and M115
-#define STRING_CONFIG_H_AUTHOR "TinyMachines3D" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "Sheridan Tech" // Who made the changes.
 #define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
 
 /**
@@ -984,6 +984,11 @@
 
 #endif // PIDTEMP
 
+// Ender 5 Plus after autotune
+#define DEFAULT_Kp 22.00
+#define DEFAULT_Ki 1.63
+#define DEFAULT_Kd 74.27
+
 //===========================================================================
 //====================== PID > Bed Temperature Control ======================
 //===========================================================================
@@ -1164,7 +1169,7 @@
   #define Z_MIN_PROBE_ENDSTOP_INVERTING false // set to true to invert the logic of the probe.
 #else
   #define Z_MIN_ENDSTOP_INVERTING true  // set to true to invert the logic of the endstop.
-  #define Z_MIN_PROBE_ENDSTOP_INVERTING true // set to true to invert the logic of the probe.
+  #define Z_MIN_PROBE_ENDSTOP_INVERTING false // set to true to invert the logic of the probe.
 #endif
 /**
  * Stepper Drivers
@@ -1770,7 +1775,7 @@
 #elif ANY(MachineCR10Orig, SKR13, SKR14, SKR14Turbo) && DISABLED(SKR13_ReverseSteppers)
   #define INVERT_X_DIR true
   #define INVERT_Y_DIR true
-  #define INVERT_Z_DIR false
+  #define INVERT_Z_DIR true
   #if(ENABLED(E3DTitan))
     #define INVERT_E0_DIR false
     #define INVERT_E1_DIR true

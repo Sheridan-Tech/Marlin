@@ -1,3 +1,9 @@
+# Sheridan-Tech.com Fork
+
+The purpose of this fork is to allow you to utilize the stock Ender 5 Plus touchscreen display with Marlin Firmware and a 32-bit SKR control board.
+
+
+
 # Marlin 3D Printer Firmware
 
 ![GitHub](https://img.shields.io/github/license/marlinfirmware/marlin.svg)

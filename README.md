@@ -1,4 +1,4 @@
-# Sheridan-Tech.com Fork
+# Sheridan-Tech.com Marlin for Ender 5 Plus
 
 The purpose of this fork is to allow you to utilize the stock Ender 5 Plus touchscreen display with Marlin Firmware and a 32-bit SKR control board.
 

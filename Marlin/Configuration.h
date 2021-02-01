@@ -53,9 +53,7 @@
   #define HotendAllMetal
 #endif
 
-#ifndef BondtechExtruder
-  #define BondtechExtruder
-#endif
+
 
 // Enable this if you used a plug and play creality e3d or mosquito kit and kept the Creality thermistor
 //#define CrealityThermistor
@@ -65,7 +63,7 @@
  */
 
  //#define EZRstruder
- //#define Bondtech
+ #define Bondtech
  //#define E3DTitan
  //#define E3DHemera
  //#define CrealityTitan
@@ -1809,8 +1807,8 @@
 #endif
 // @section extruder
 
-#if(ENABLED(BondtechExtruder))
-    #define INVERT_E0_DIR true
+#if(ENABLED(Bondtech))
+    #define INVERT_E0_DIR false
   #endif
 
 

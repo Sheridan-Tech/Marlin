@@ -53,6 +53,10 @@
   #define HotendAllMetal
 #endif
 
+#ifndef BondtechExtruder
+  #define BondtechExtruder
+#endif
+
 // Enable this if you used a plug and play creality e3d or mosquito kit and kept the Creality thermistor
 //#define CrealityThermistor
 
@@ -1804,6 +1808,11 @@
   #endif
 #endif
 // @section extruder
+
+#if(ENABLED(BondtechExtruder))
+    #define INVERT_E0_DIR true
+  #endif
+
 
 // For direct drive extruder v9 set to true, for geared extruder set to false.
 

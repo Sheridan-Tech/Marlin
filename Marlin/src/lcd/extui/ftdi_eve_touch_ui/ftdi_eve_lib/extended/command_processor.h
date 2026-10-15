@@ -125,7 +125,7 @@ class CommandProcessor : public CLCD::CommandFifo {
     }
 
     inline CommandProcessor& set_button_style_callback(const btn_style_func_t *func) {
-      _btn_style_callback = func ?: default_button_style_func;
+      _btn_style_callback = func ? func : default_button_style_func;
       return *this;
     }
 
@@ -389,7 +389,7 @@ class CommandProcessor : public CLCD::CommandFifo {
       return *this;
     }
 
-    FORCEDINLINE CommandProcessor& icon(int16_t x, int16_t y, int16_t w, int16_t h, const FTDI::bitmap_info_t& info, const float scale=1) {
+    FORCEDINLINE CommandProcessor& icon(int16_t x, int16_t y, int16_t w, int16_t h, const FTDI::bitmap_info_t& info, const float scale = 1) {
       using namespace FTDI;
       cmd(BEGIN(BITMAPS));
       if (scale != 1) {

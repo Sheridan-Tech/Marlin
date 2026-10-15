@@ -32,9 +32,7 @@
 
 #include <stdint.h>
 
-#ifndef PACKED
-  #define PACKED __attribute__((__packed__))
-#endif
+#define PACKED __attribute__((__packed__))
 
 /**
  * mostly from Microsoft document fatgen103.doc
@@ -68,9 +66,9 @@ struct partitionTable {
    * Sector part of Cylinder-head-sector address of the first block in
    * the partition. Legal values are 1-63. Only used in old PC BIOS.
    */
-  uint8_t beginSector : 6;
+  unsigned beginSector : 6;
   /** High bits cylinder for first block in partition. */
-  uint8_t beginCylinderHigh : 2;
+  unsigned beginCylinderHigh : 2;
   /**
    * Combine beginCylinderLow with beginCylinderHigh. Legal values
    * are 0-1023.  Only used in old PC BIOS.
@@ -90,9 +88,9 @@ struct partitionTable {
    * Sector part of cylinder-head-sector address of the last sector in
    * the partition.  Legal values are 1-63. Only used in old PC BIOS.
    */
-  uint8_t endSector : 6;
+  unsigned endSector : 6;
   /** High bits of end cylinder */
-  uint8_t endCylinderHigh : 2;
+  unsigned endCylinderHigh : 2;
   /**
    * Combine endCylinderLow with endCylinderHigh. Legal values
    * are 0-1023.  Only used in old PC BIOS.

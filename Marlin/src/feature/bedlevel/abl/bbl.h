@@ -43,17 +43,17 @@ private:
     static xy_pos_t grid_spacing_virt;
     static xy_float_t grid_factor_virt;
 
-    static float virt_coord(const uint8_t x, const uint8_t y);
-    static float virt_cmr(const float p[4], const uint8_t i, const float t);
-    static float virt_2cmr(const uint8_t x, const uint8_t y, const float tx, const float ty);
-    static void subdivide_mesh();
+    static float bed_level_virt_coord(const uint8_t x, const uint8_t y);
+    static float bed_level_virt_cmr(const float p[4], const uint8_t i, const float t);
+    static float bed_level_virt_2cmr(const uint8_t x, const uint8_t y, const_float_t tx, const_float_t ty);
+    static void bed_level_virt_interpolate();
   #endif
 
 public:
   static void reset();
   static void set_grid(const xy_pos_t& _grid_spacing, const xy_pos_t& _grid_start);
   static void extrapolate_unprobed_bed_level();
-  static void print_leveling_grid(const bed_mesh_t *_z_values=nullptr);
+  static void print_leveling_grid(const bed_mesh_t* _z_values = NULL);
   static void refresh_bed_level();
   static bool has_mesh() { return !!grid_spacing.x; }
   static bool mesh_is_valid() { return has_mesh(); }
@@ -63,7 +63,7 @@ public:
   static constexpr float get_z_offset() { return 0.0f; }
 
   #if IS_CARTESIAN && DISABLED(SEGMENT_LEVELED_MOVES)
-    static void line_to_destination(const feedRate_t scaled_fr_mm_s, uint16_t x_splits=0xFFFF, uint16_t y_splits=0xFFFF);
+    static void line_to_destination(const_feedRate_t scaled_fr_mm_s, uint16_t x_splits=0xFFFF, uint16_t y_splits=0xFFFF);
   #endif
 };
 

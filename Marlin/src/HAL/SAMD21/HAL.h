@@ -36,25 +36,59 @@
 // ------------------------
 // Serial ports
 // ------------------------
-
 #include "../../core/serial_hook.h"
 typedef ForwardSerial1Class< decltype(SerialUSB) > DefaultSerial1;
 extern DefaultSerial1 MSerialUSB;
 
+// Serial ports
 typedef ForwardSerial1Class< decltype(Serial1) > DefaultSerial2;
 typedef ForwardSerial1Class< decltype(Serial2) > DefaultSerial3;
 
 extern DefaultSerial2 MSerial0;
 extern DefaultSerial3 MSerial1;
 
+
 #define __MSERIAL(X) MSerial##X
 #define _MSERIAL(X) __MSERIAL(X)
 #define MSERIAL(X) _MSERIAL(INCREMENT(X))
 
-#define SERIAL_INDEX_MIN 0
-#define SERIAL_INDEX_MAX 1
-#define USB_SERIAL_PORT(...) MSerialUSB
-#include "../shared/serial_ports.h"
+#if WITHIN(SERIAL_PORT, 0, 1)
+  #define MYSERIAL1 MSERIAL(SERIAL_PORT)
+#elif SERIAL_PORT == -1
+  #define MYSERIAL1 MSerialUSB
+#else
+  #error "SERIAL_PORT must be -1 (Native USB only)."
+#endif
+
+#ifdef SERIAL_PORT_2
+  #if WITHIN(SERIAL_PORT_2, 0, 1)
+    #define MYSERIAL2 MSERIAL(SERIAL_PORT)
+  #elif SERIAL_PORT_2 == -1
+    #define MYSERIAL2 MSerialUSB
+  #else
+    #error "SERIAL_PORT_2 must be -1 (Native USB only)."
+  #endif
+#endif
+
+#ifdef MMU2_SERIAL_PORT
+  #if WITHIN(MMU2_SERIAL_PORT, 0, 1)
+    #define MMU2_SERIAL MSERIAL(SERIAL_PORT)
+  #elif MMU2_SERIAL_PORT == -1
+    #define MMU2_SERIAL MSerialUSB
+  #else
+    #error "MMU2_SERIAL_PORT must be -1 (Native USB only)."
+  #endif
+#endif
+
+#ifdef LCD_SERIAL_PORT
+  #if WITHIN(LCD_SERIAL_PORT, 0, 1)
+    #define LCD_SERIAL MSERIAL(SERIAL_PORT)
+  #elif LCD_SERIAL_PORT == -1
+    #define LCD_SERIAL MSerialUSB
+  #else
+    #error "LCD_SERIAL_PORT must be -1 (Native USB only)."
+  #endif
+#endif
 
 typedef int8_t pin_t;
 
@@ -77,8 +111,8 @@ typedef Servo hal_servo_t;
 //
 
 #define HAL_ADC_FILTERED     1     // Disable Marlin's oversampling. The HAL filters ADC values.
-#define HAL_ADC_VREF_MV   3300
-#define HAL_ADC_RESOLUTION  12
+#define HAL_ADC_VREF         3.3
+#define HAL_ADC_RESOLUTION   12
 #define HAL_ADC_AIN_START ADC_INPUTCTRL_MUXPOS_PIN3
 #define HAL_ADC_AIN_NUM_SENSORS 3
 #define HAL_ADC_AIN_LEN HAL_ADC_AIN_NUM_SENSORS-1
@@ -144,7 +178,7 @@ public:
 
   static void delay_ms(const int ms) { delay(ms); }
 
-  // Tasks, called from marlin.idle()
+  // Tasks, called from idle()
   static void idletask() {}
 
   // Reset

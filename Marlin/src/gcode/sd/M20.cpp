@@ -22,15 +22,13 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if HAS_MEDIA
+#if ENABLED(SDSUPPORT)
 
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
 
 /**
- * M20: List Media Files
- *
- * By default output in [name] [size] format.
+ * M20: List SD card to serial output in [name] [size] format.
  *
  * With CUSTOM_FIRMWARE_UPLOAD:
  *   F<bool> - List BIN files only, for use with firmware upload
@@ -53,4 +51,4 @@ void GcodeSuite::M20() {
     SERIAL_ECHO_MSG(STR_NO_MEDIA);
 }
 
-#endif // HAS_MEDIA
+#endif // SDSUPPORT

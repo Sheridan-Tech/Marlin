@@ -23,7 +23,6 @@
 
 /**
  * Ortur 4 Arduino Mega based on RAMPS v1.4 pin assignments
- * ATmega2560
  */
 
 #define BOARD_INFO_NAME "Ortur 4.3"
@@ -79,15 +78,14 @@
 //
 // LCD / Controller
 //
-
 #if IS_RRD_FG_SC
   #define BEEPER_PIN                          35
 
   #define LCD_PINS_RS                         27
-  #define LCD_PINS_EN                         23
+  #define LCD_PINS_ENABLE                     23
   #define LCD_PINS_D4                         37
 
-  #define LCD_SDSS_PIN                        53
+  #define LCD_SDSS                            53
   #define SD_DETECT_PIN                       49
 
   #define BTN_EN1                             29

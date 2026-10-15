@@ -53,6 +53,7 @@
 extern "C" {
 #endif
 
+
 //! \ingroup usb_group
 //! \defgroup otg_group UOTGHS OTG Driver
 //! UOTGHS low-level driver for OTG features
@@ -72,6 +73,7 @@ bool otg_dual_enable(void);
  * This function is implemented in uotghs_host.c file.
  */
 void otg_dual_disable(void);
+
 
 //! @name UOTGHS OTG ID pin management
 //! The ID pin come from the USB OTG connector (A and B receptable) and
@@ -125,13 +127,13 @@ void otg_dual_disable(void);
 //! These macros allows to enable/disable pad and UOTGHS hardware
 //! @{
   //! Reset USB macro
-#define otg_reset()                      \
-  do {                                   \
-    UOTGHS->UOTGHS_CTRL = 0;             \
-    while( UOTGHS->UOTGHS_SR & 0x3FFF) { \
-      UOTGHS->UOTGHS_SCR = 0xFFFFFFFF;   \
-    }                                    \
-  } while (0)
+#define otg_reset()                         \
+	do {                                    \
+		UOTGHS->UOTGHS_CTRL = 0;            \
+		while( UOTGHS->UOTGHS_SR & 0x3FFF) {\
+			UOTGHS->UOTGHS_SCR = 0xFFFFFFFF;\
+		}                                   \
+	} while (0)
   //! Enable USB macro
 #define otg_enable()                        (Set_bits(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_USBE))
   //! Disable USB macro
@@ -155,14 +157,15 @@ void otg_dual_disable(void);
 
   //! Configure time-out of specified OTG timer
 #define otg_configure_timeout(timer, timeout) (Set_bits(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_UNLOCK),\
-    Wr_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMPAGE_Msk, timer),\
-    Wr_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMVALUE_Msk, timeout),\
-    Clr_bits(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_UNLOCK))
+		Wr_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMPAGE_Msk, timer),\
+		Wr_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMVALUE_Msk, timeout),\
+		Clr_bits(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_UNLOCK))
   //! Get configured time-out of specified OTG timer
 #define otg_get_timeout(timer)              (Set_bits(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_UNLOCK),\
-    Wr_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMPAGE_Msk, timer),\
-    Clr_bits(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_UNLOCK),\
-    Rd_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMVALUE_Msk))
+		Wr_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMPAGE_Msk, timer),\
+		Clr_bits(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_UNLOCK),\
+		Rd_bitfield(UOTGHS->UOTGHS_CTRL, UOTGHS_CTRL_TIMVALUE_Msk))
+
 
   //! Get the dual-role device state of the internal USB finite state machine of the UOTGHS controller
 #define otg_get_fsm_drd_state()             (Rd_bitfield(UOTGHS->UOTGHS_FSM, UOTGHS_FSM_DRDSTATE_Msk))

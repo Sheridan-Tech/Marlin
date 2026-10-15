@@ -56,6 +56,7 @@
  * Support and FAQ: visit <a href="https://www.atmel.com/design-support/">Atmel Support</a>
  */
 
+
 #ifndef _CTRL_ACCESS_H_
 #define _CTRL_ACCESS_H_
 
@@ -87,6 +88,7 @@ typedef enum
   CTRL_NO_PRESENT = FAIL + 1, //!< Memory unplugged.
   CTRL_BUSY       = FAIL + 2  //!< Memory not initialized or changed.
 } Ctrl_status;
+
 
 // FYI: Each Logical Unit Number (LUN) corresponds to a memory.
 
@@ -134,6 +136,7 @@ typedef enum
 #define LUN_ID_USB      (MAX_LUN)           //!< First dynamic LUN (USB host mass storage).
 //! @}
 
+
 // Include LUN header files.
 #if LUN_0 == ENABLE
   #include LUN_0_INCLUDE
@@ -163,10 +166,12 @@ typedef enum
   #include LUN_USB_INCLUDE
 #endif
 
+
 // Check the configuration of write protection in conf_access.h.
 #ifndef GLOBAL_WR_PROTECT
   #error GLOBAL_WR_PROTECT must be defined as true or false in conf_access.h
 #endif
+
 
 #if GLOBAL_WR_PROTECT == true
 
@@ -174,6 +179,7 @@ typedef enum
 extern bool g_wr_protect;
 
 #endif
+
 
 /*! \name Control Interface
  */
@@ -273,6 +279,7 @@ extern const char *mem_name(U8 lun);
 
 //! @}
 
+
 #if ACCESS_USB == true
 
 /*! \name MEM <-> USB Interface
@@ -303,6 +310,7 @@ extern Ctrl_status usb_2_memory(U8 lun, U32 addr, U16 nb_sector);
 
 #endif  // ACCESS_USB == true
 
+
 #if ACCESS_MEM_TO_RAM == true
 
 /*! \name MEM <-> RAM Interface
@@ -332,6 +340,7 @@ extern Ctrl_status ram_2_memory(U8 lun, U32 addr, const void *ram);
 //! @}
 
 #endif  // ACCESS_MEM_TO_RAM == true
+
 
 #if ACCESS_STREAM == true
 

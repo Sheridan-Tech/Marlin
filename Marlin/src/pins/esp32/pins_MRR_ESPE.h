@@ -51,9 +51,7 @@
 //
 // Enable I2S stepper stream
 //
-#ifndef I2S_STEPPER_STREAM
-  #define I2S_STEPPER_STREAM
-#endif
+#define I2S_STEPPER_STREAM
 #if ENABLED(I2S_STEPPER_STREAM)
   #define I2S_WS                              26
   #define I2S_BCK                             25
@@ -104,7 +102,7 @@
 // Heaters / Fans
 //
 #define HEATER_0_PIN                         145  // 2
-#define FAN0_PIN                             146  // 15
+#define FAN_PIN                              146  // 15
 #define HEATER_BED_PIN                       144  // 4
 
 #define CONTROLLER_FAN_PIN                   147
@@ -113,22 +111,22 @@
 #define FAN1_PIN                             149
 
 //
-// MicroSD card on VSPI (bus 3)
+// MicroSD card
 //
 #define SD_MOSI_PIN                           23
 #define SD_MISO_PIN                           19
 #define SD_SCK_PIN                            18
-#define SD_SS_PIN                              5
+#define SDSS                                   5
 #define USES_SHARED_SPI                           // SPI is shared by SD card with TMC SPI drivers
 
-//
-// LCD / Controller
-//
+//////////////////////////
+// LCDs and Controllers //
+//////////////////////////
 
 #if HAS_WIRED_LCD
 
   #define LCD_PINS_RS                         13
-  #define LCD_PINS_EN                         17
+  #define LCD_PINS_ENABLE                     17
   #define LCD_PINS_D4                         16
 
   #if ENABLED(CR10_STOCKDISPLAY)
@@ -153,7 +151,7 @@
   #define BTN_EN2                             12
   #define BTN_ENC                             14
 
-#endif // HAS_WIRED_LCD
+#endif // HAS_MARLINUI_U8GLIB
 
 // Hardware serial pins
 // Add the following to Configuration.h or Configuration_adv.h to assign

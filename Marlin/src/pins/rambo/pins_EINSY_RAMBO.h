@@ -23,7 +23,6 @@
 
 /**
  * Einsy-Rambo pin assignments
- * Schematic: https://github.com/ultimachine/Einsy-Rambo/blob/1.1a/board/Project%20Outputs/Schematic%20Prints_Einsy%20Rambo_1.1a.PDF
  */
 
 #include "env_validate.h"
@@ -36,13 +35,11 @@
 //
 // TMC2130 Configuration_adv defaults for EinsyRambo
 //
-#if (HAS_X_AXIS && !AXIS_DRIVER_TYPE_X(TMC2130)) || (HAS_Y_AXIS && !AXIS_DRIVER_TYPE_Y(TMC2130)) || (HAS_Z_AXIS && !AXIS_DRIVER_TYPE_Z(TMC2130)) || (HAS_EXTRUDERS && !AXIS_DRIVER_TYPE_E0(TMC2130))
-  #error "For EinsyRambo you must set all *_DRIVER_TYPE to TMC2130 in Configuration.h."
+#if !AXIS_DRIVER_TYPE_X(TMC2130) || !AXIS_DRIVER_TYPE_Y(TMC2130) || !AXIS_DRIVER_TYPE_Z(TMC2130) || !AXIS_DRIVER_TYPE_E0(TMC2130)
+  #error "You must set ([XYZ]|E0)_DRIVER_TYPE to TMC2130 in Configuration.h for EinsyRambo."
 #endif
 
-//
-// Trinamic TMC2130 distinct DIAG pins
-//
+// TMC2130 Diag Pins (currently just for reference)
 #define X_DIAG_PIN                            64
 #define Y_DIAG_PIN                            69
 #define Z_DIAG_PIN                            68
@@ -57,23 +54,23 @@
 // SERVO0_PIN and Z_MIN_PIN configuration for BLTOUCH sensor when combined with SENSORLESS_HOMING.
 //
 
-#if ENABLED(SENSORLESS_HOMING)
+#if DISABLED(SENSORLESS_HOMING)
+
+  #define X_STOP_PIN                          12
+  #define Y_STOP_PIN                          11
+  #define Z_STOP_PIN                          10
+
+#else
 
   #define X_STOP_PIN                  X_DIAG_PIN
   #define Y_STOP_PIN                  Y_DIAG_PIN
 
   #if ENABLED(BLTOUCH)
-    #define SERVO0_PIN                        10  // PROBE-S
     #define Z_STOP_PIN                        11  // Y-MIN
+    #define SERVO0_PIN                        10  // Z-MIN
   #else
-    #define Z_STOP_PIN                        10  // PROBE-S
+    #define Z_STOP_PIN                        10
   #endif
-
-#else
-
-  #define X_STOP_PIN                          12  // X-MIN
-  #define Y_STOP_PIN                          11  // Y-MIN
-  #define Z_STOP_PIN                          10  // PROBE-S
 
 #endif
 
@@ -81,7 +78,7 @@
 // Z Probe (when not Z_MIN_PIN)
 //
 #ifndef Z_MIN_PROBE_PIN
-  #define Z_MIN_PROBE_PIN                     10  // PROBE-S
+  #define Z_MIN_PROBE_PIN                     10
 #endif
 
 //
@@ -119,12 +116,9 @@
 //
 #define TEMP_0_PIN                             0  // Analog Input, Header J2
 #define TEMP_1_PIN                             1  // Analog Input, Header J3
+#define TEMP_BOARD_PIN                        91  // Onboard thermistor, 100k TDK NTCG104LH104JT1
 #define TEMP_BED_PIN                           2  // Analog Input, Header J6
 #define TEMP_PROBE_PIN                         3  // Analog Input, Header J15
-
-#ifndef TEMP_BOARD_PIN
-  #define TEMP_BOARD_PIN                      91  // Onboard thermistor, 100k TDK NTCG104LH104JT1
-#endif
 
 //
 // Heaters / Fans
@@ -132,11 +126,11 @@
 #define HEATER_0_PIN                           3
 #define HEATER_BED_PIN                         4
 
-#ifndef FAN0_PIN
+#ifndef FAN_PIN
   #ifdef MK3_FAN_PINS
-    #define FAN0_PIN                           6
+    #define FAN_PIN                            6
   #else
-    #define FAN0_PIN                           8
+    #define FAN_PIN                            8
   #endif
 #endif
 
@@ -180,7 +174,7 @@
 //
 // Misc. Functions
 //
-#define SD_SS_PIN                    EXP2_04_PIN
+#define SDSS                         EXP2_04_PIN
 #define LED_PIN                               13
 
 #ifndef CASE_LIGHT_PIN
@@ -190,12 +184,10 @@
 //
 // M3/M4/M5 - Spindle/Laser Control
 //
-#if HAS_CUTTER
-  // Use P1 connector for spindle pins
-  #define SPINDLE_LASER_PWM_PIN      EXP1_02_PIN  // Hardware PWM
-  #define SPINDLE_LASER_ENA_PIN               18  // Pullup!
-  #define SPINDLE_DIR_PIN                     19
-#endif
+// use P1 connector for spindle pins
+#define SPINDLE_LASER_PWM_PIN        EXP1_02_PIN  // Hardware PWM
+#define SPINDLE_LASER_ENA_PIN                 18  // Pullup!
+#define SPINDLE_DIR_PIN                       19
 
 //
 // Průša i3 MK2 Multiplexer Support
@@ -209,7 +201,6 @@
 //
 // LCD / Controller
 //
-
 #if HAS_WIRED_LCD || TOUCH_UI_ULTIPANEL
 
   #define KILL_PIN                            32
@@ -218,13 +209,13 @@
 
     #if ENABLED(CR10_STOCKDISPLAY)
       #define LCD_PINS_RS            EXP1_07_PIN
-      #define LCD_PINS_EN            EXP1_08_PIN
+      #define LCD_PINS_ENABLE        EXP1_08_PIN
       #define LCD_PINS_D4            EXP1_06_PIN
       #define BTN_EN1                EXP1_03_PIN
       #define BTN_EN2                EXP1_05_PIN
     #else
       #define LCD_PINS_RS            EXP1_04_PIN
-      #define LCD_PINS_EN            EXP1_03_PIN
+      #define LCD_PINS_ENABLE        EXP1_03_PIN
       #define LCD_PINS_D4            EXP1_05_PIN
       #define LCD_PINS_D5            EXP1_06_PIN
       #define LCD_PINS_D6            EXP1_07_PIN

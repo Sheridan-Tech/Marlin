@@ -23,7 +23,6 @@
 
 /**
  * AZSMZ MINI pin assignments
- * Source: https://raw.githubusercontent.com/Rose-Fish/AZSMZ-mini/master/AZSMZ.sch
  */
 
 #include "env_validate.h"
@@ -81,12 +80,12 @@
 // EFB
 #define HEATER_0_PIN                       P2_04
 #define HEATER_BED_PIN                     P2_05
-#ifndef FAN0_PIN
-  #define FAN0_PIN                         P2_07
+#ifndef FAN_PIN
+  #define FAN_PIN                          P2_07
 #endif
 #define FAN1_PIN                           P0_26
 
-#define LCD_SDSS_PIN                       P0_16  // LCD SD chip select
+#define LCD_SDSS                           P0_16  // LCD SD chip select
 
 #if ENABLED(AZSMZ_12864)
   #define BEEPER_PIN                       P1_30
@@ -95,7 +94,7 @@
   #define BTN_EN1                          P4_28
   #define BTN_EN2                          P1_27
   #define BTN_ENC                          P3_26
-  #if !defined(SDCARD_CONNECTION) && DISABLED(NO_LCD_SDCARD)
+  #ifndef SDCARD_CONNECTION
     #define SDCARD_CONNECTION                LCD
   #endif
 #endif
@@ -104,7 +103,7 @@
   #define SD_SCK_PIN                       P0_15
   #define SD_MISO_PIN                      P0_17
   #define SD_MOSI_PIN                      P0_18
-  #define SD_SS_PIN                 LCD_SDSS_PIN
+  #define SD_SS_PIN                     LCD_SDSS
   #define SD_DETECT_PIN                    P3_25
 #elif SD_CONNECTION_IS(ONBOARD)
   #define SD_SCK_PIN                       P0_07

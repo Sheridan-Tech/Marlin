@@ -39,6 +39,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#pragma once
 
 /**
  * Based on "servo.h - Interrupt driven Servo library for Arduino using 16 bit timers -
@@ -48,8 +49,6 @@
  */
 
 #include <Servo.h>
-
-#include "../../MarlinCore.h"
 
 class libServo: public Servo {
   public:

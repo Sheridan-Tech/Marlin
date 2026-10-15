@@ -23,8 +23,6 @@
 
 /**
  * BAM&DICE Due (Arduino Mega) pin assignments
- * Schematic: http://www.2printbeta.de/de/download/2PRINTBETA-BAM&DICE-DUE-V1.1-sch.pdf
- * ATmega2560, ATmega1280
  */
 
 #if HOTENDS > 2 || E_STEPPERS > 2
@@ -36,11 +34,9 @@
 //
 // M3/M4/M5 - Spindle/Laser Control
 //
-#if HAS_CUTTER
-  #define SPINDLE_LASER_PWM_PIN               44  // Hardware PWM
-  #define SPINDLE_LASER_ENA_PIN               66  // Pullup or pulldown!
-  #define SPINDLE_DIR_PIN                     67
-#endif
+#define SPINDLE_LASER_ENA_PIN                 66  // Pullup or pulldown!
+#define SPINDLE_DIR_PIN                       67
+#define SPINDLE_LASER_PWM_PIN                 44  // Hardware PWM
 
 //
 // Temperature Sensors

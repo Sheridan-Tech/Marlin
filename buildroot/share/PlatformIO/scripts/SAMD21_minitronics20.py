@@ -6,7 +6,8 @@ import pioutil
 if pioutil.is_pio_build():
     from os.path import join, isfile
     import shutil
-    env = pioutil.env
+
+    Import("env")
 
     mf = env["MARLIN_FEATURES"]
     rxBuf = mf["RX_BUFFER_SIZE"] if "RX_BUFFER_SIZE" in mf else "0"

@@ -76,23 +76,15 @@ public:
   /* These methods are deprecated and kept for compatibility.
    * Use SPISettings with SPI.beginTransaction() to configure SPI parameters.
    */
-  void setBitOrder(BitOrder order) {
-    if (_bitOrder == order) return;
-    _bitOrder = order;
-    _mustInit = true;
-  }
+  void setBitOrder(BitOrder _order) { _bitOrder = _order; }
 
-  void setDataMode(uint8_t mode) {
-    auto previous_mode = _dataMode;
-    switch (mode) {
+  void setDataMode(uint8_t _mode) {
+    switch (_mode) {
       case SPI_MODE0: _dataMode = SPI_MODE_0; break;
       case SPI_MODE1: _dataMode = SPI_MODE_1; break;
       case SPI_MODE2: _dataMode = SPI_MODE_2; break;
       case SPI_MODE3: _dataMode = SPI_MODE_3; break;
-      default: return;
     }
-    if (previous_mode != _dataMode)
-      _mustInit = true;
   }
 
   void setClockDivider(uint8_t _div);
@@ -112,5 +104,4 @@ private:
   pin_t _misoPin;
   pin_t _sckPin;
   pin_t _ssPin;
-  bool _mustInit = true;
 };

@@ -18,7 +18,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #----------------------------------------------------------------
 
-import os.path, argparse, DWIN_ICO
+import os.path
+import argparse
+import DWIN_ICO
 
 version = '2.0.7'
 
@@ -47,3 +49,4 @@ if __name__ == '__main__':
 
     except Exception as e:
         print('Error: ', e)
+

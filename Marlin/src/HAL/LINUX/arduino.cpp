@@ -31,8 +31,10 @@ void cli() { } // Disable
 void sei() { } // Enable
 
 // Time functions
-unsigned long millis() {
-  return (unsigned long)Clock::millis();
+void _delay_ms(const int ms) { delay(ms); }
+
+uint32_t millis() {
+  return (uint32_t)Clock::millis();
 }
 
 // This is required for some Arduino libraries we are using
@@ -47,28 +49,28 @@ extern "C" void delay(const int msec) {
 // IO functions
 // As defined by Arduino INPUT(0x0), OUTPUT(0x1), INPUT_PULLUP(0x2)
 void pinMode(const pin_t pin, const uint8_t mode) {
-  if (!isValidPin(pin)) return;
+  if (!VALID_PIN(pin)) return;
   Gpio::setMode(pin, mode);
 }
 
 void digitalWrite(pin_t pin, uint8_t pin_status) {
-  if (!isValidPin(pin)) return;
+  if (!VALID_PIN(pin)) return;
   Gpio::set(pin, pin_status);
 }
 
 bool digitalRead(pin_t pin) {
-  if (!isValidPin(pin)) return false;
+  if (!VALID_PIN(pin)) return false;
   return Gpio::get(pin);
 }
 
 void analogWrite(pin_t pin, int pwm_value) {  // 1 - 254: pwm_value, 0: LOW, 255: HIGH
-  if (!isValidPin(pin)) return;
+  if (!VALID_PIN(pin)) return;
   Gpio::set(pin, pwm_value);
 }
 
 uint16_t analogRead(pin_t adc_pin) {
-  if (!isValidPin(digitalPinToAnalogIndex(adc_pin))) return 0;
-  return Gpio::get(digitalPinToAnalogIndex(adc_pin));
+  if (!VALID_PIN(DIGITAL_PIN_TO_ANALOG_PIN(adc_pin))) return 0;
+  return Gpio::get(DIGITAL_PIN_TO_ANALOG_PIN(adc_pin));
 }
 
 char *dtostrf(double __val, signed char __width, unsigned char __prec, char *__s) {

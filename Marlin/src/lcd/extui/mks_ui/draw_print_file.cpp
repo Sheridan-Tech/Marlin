@@ -55,7 +55,7 @@ extern char public_buf_m[100];
 
 uint8_t sel_id = 0;
 
-#if HAS_MEDIA
+#if ENABLED(SDSUPPORT)
 
   static uint8_t search_file() {
     int valid_name_cnt = 0;
@@ -72,11 +72,11 @@ uint8_t sel_id = 0;
     else
       card.cdroot();
 
-    const int16_t fileCnt = card.get_num_items();
+    const uint16_t fileCnt = card.get_num_Files();
 
-    for (int16_t i = 0; i < fileCnt; i++) {
+    for (uint16_t i = 0; i < fileCnt; i++) {
       if (list_file.Sd_file_cnt == list_file.Sd_file_offset) {
-        card.selectFileByIndexSorted(i);
+        card.getfilename_sorted(SD_ORDER(i, fileCnt));
 
         list_file.IsFolder[valid_name_cnt] = card.flag.filenameIsDir;
         strcpy(list_file.file_name[valid_name_cnt], list_file.curDirPath);
@@ -100,10 +100,10 @@ uint8_t sel_id = 0;
     return valid_name_cnt;
   }
 
-#endif // HAS_MEDIA
+#endif // SDSUPPORT
 
 bool have_pre_pic(char *path) {
-  #if HAS_MEDIA
+  #if ENABLED(SDSUPPORT)
     char *ps1, *ps2, *cur_name = strrchr(path, '/');
     card.openFileRead(cur_name);
     card.read(public_buf, 512);
@@ -120,6 +120,8 @@ bool have_pre_pic(char *path) {
 static void event_handler(lv_obj_t *obj, lv_event_t event) {
   if (event != LV_EVENT_RELEASED) return;
   uint8_t i, file_count = 0;
+  //switch (obj->mks_obj_id)
+  //{
   if (obj->mks_obj_id == ID_P_UP) {
     if (dir_offset[curDirLever].curPage > 0) {
       // 2015.05.19
@@ -128,7 +130,9 @@ static void event_handler(lv_obj_t *obj, lv_event_t event) {
       if (dir_offset[curDirLever].cur_page_first_offset >= FILE_NUM)
         list_file.Sd_file_offset = dir_offset[curDirLever].cur_page_first_offset - FILE_NUM;
 
-      TERN_(HAS_MEDIA, file_count = search_file());
+      #if ENABLED(SDSUPPORT)
+        file_count = search_file();
+      #endif
       if (file_count != 0) {
         dir_offset[curDirLever].curPage--;
         lv_clear_print_file();
@@ -140,7 +144,9 @@ static void event_handler(lv_obj_t *obj, lv_event_t event) {
     if (dir_offset[curDirLever].cur_page_last_offset > 0) {
       list_file.Sd_file_cnt    = 0;
       list_file.Sd_file_offset = dir_offset[curDirLever].cur_page_last_offset + 1;
-      TERN_(HAS_MEDIA, file_count = search_file());
+      #if ENABLED(SDSUPPORT)
+        file_count = search_file();
+      #endif
       if (file_count != 0) {
         dir_offset[curDirLever].curPage++;
         lv_clear_print_file();
@@ -155,20 +161,24 @@ static void event_handler(lv_obj_t *obj, lv_event_t event) {
       int8_t *ch = (int8_t *)strrchr(list_file.curDirPath, '/');
       if (ch) {
         *ch = 0;
-        TERN_(HAS_MEDIA, card.cdup());
+        #if ENABLED(SDSUPPORT)
+          card.cdup();
+        #endif
         dir_offset[curDirLever].curPage               = 0;
         dir_offset[curDirLever].cur_page_first_offset = 0;
         dir_offset[curDirLever].cur_page_last_offset  = 0;
         curDirLever--;
         list_file.Sd_file_offset = dir_offset[curDirLever].cur_page_first_offset;
-        TERN_(HAS_MEDIA, file_count = search_file());
+        #if ENABLED(SDSUPPORT)
+          file_count = search_file();
+        #endif
         lv_clear_print_file();
         disp_gcode_icon(file_count);
       }
     }
     else {
       lv_clear_print_file();
-      TERN(HAS_MULTI_VOLUME, lv_draw_media_select(), lv_draw_ready_print());
+      TERN(MULTI_VOLUME, lv_draw_media_select(), lv_draw_ready_print());
     }
   }
   else {
@@ -179,7 +189,9 @@ static void event_handler(lv_obj_t *obj, lv_event_t event) {
             strcpy(list_file.curDirPath, list_file.file_name[i]);
             curDirLever++;
             list_file.Sd_file_offset = dir_offset[curDirLever].cur_page_first_offset;
-            TERN_(HAS_MEDIA, file_count = search_file());
+            #if ENABLED(SDSUPPORT)
+              file_count = search_file();
+            #endif
             lv_clear_print_file();
             disp_gcode_icon(file_count);
           }
@@ -210,7 +222,7 @@ void lv_draw_print_file() {
   ZERO(list_file.curDirPath);
 
   list_file.Sd_file_offset = dir_offset[curDirLever].cur_page_first_offset;
-  #if HAS_MEDIA
+  #if ENABLED(SDSUPPORT)
     card.mount();
     file_count = search_file();
   #endif
@@ -241,9 +253,9 @@ void disp_gcode_icon(uint8_t file_num) {
   scr = lv_screen_create(PRINT_FILE_UI, "");
 
   // Create image buttons
-  buttonPageUp   = lv_imgbtn_create(scr, "F:/bmp_pageUp.bin", OTHER_BTN_SIZE_X * 3 + INTERVAL_W * 4, titleHeight, event_handler, ID_P_UP);
-  buttonPageDown = lv_imgbtn_create(scr, "F:/bmp_pageDown.bin", OTHER_BTN_SIZE_X * 3 + INTERVAL_W * 4, titleHeight + OTHER_BTN_SIZE_Y + INTERVAL_H, event_handler, ID_P_DOWN);
-  buttonBack     = lv_imgbtn_create(scr, "F:/bmp_back.bin", OTHER_BTN_SIZE_X * 3 + INTERVAL_W * 4, titleHeight + OTHER_BTN_SIZE_Y * 2 + INTERVAL_H * 2, event_handler, ID_P_RETURN);
+  buttonPageUp   = lv_imgbtn_create(scr, "F:/bmp_pageUp.bin", OTHER_BTN_XPIEL * 3 + INTERVAL_V * 4, titleHeight, event_handler, ID_P_UP);
+  buttonPageDown = lv_imgbtn_create(scr, "F:/bmp_pageDown.bin", OTHER_BTN_XPIEL * 3 + INTERVAL_V * 4, titleHeight + OTHER_BTN_YPIEL + INTERVAL_H, event_handler, ID_P_DOWN);
+  buttonBack     = lv_imgbtn_create(scr, "F:/bmp_back.bin", OTHER_BTN_XPIEL * 3 + INTERVAL_V * 4, titleHeight + OTHER_BTN_YPIEL * 2 + INTERVAL_H * 2, event_handler, ID_P_RETURN);
 
   // Create labels on the image buttons
   for (i = 0; i < FILE_BTN_CNT; i++) {
@@ -273,9 +285,9 @@ void disp_gcode_icon(uint8_t file_num) {
         lv_obj_set_event_cb_mks(buttonGcode[i], event_handler, (i + 1), "", 0);
         lv_imgbtn_set_src_both(buttonGcode[i], "F:/bmp_dir.bin");
         if (i < 3)
-          lv_obj_set_pos(buttonGcode[i], BTN_SIZE_X * i + INTERVAL_W * (i + 1), titleHeight);
+          lv_obj_set_pos(buttonGcode[i], BTN_X_PIXEL * i + INTERVAL_V * (i + 1), titleHeight);
         else
-          lv_obj_set_pos(buttonGcode[i], BTN_SIZE_X * (i - 3) + INTERVAL_W * ((i - 3) + 1), BTN_SIZE_Y + INTERVAL_H + titleHeight);
+          lv_obj_set_pos(buttonGcode[i], BTN_X_PIXEL * (i - 3) + INTERVAL_V * ((i - 3) + 1), BTN_Y_PIXEL + INTERVAL_H + titleHeight);
 
         labelPageUp[i] = lv_label_create(buttonGcode[i], public_buf_m);
         lv_obj_align(labelPageUp[i], buttonGcode[i], LV_ALIGN_IN_BOTTOM_MID, 0, -5);
@@ -292,7 +304,7 @@ void disp_gcode_icon(uint8_t file_num) {
           lv_obj_set_event_cb_mks(buttonGcode[i], event_handler, (i + 1), test_public_buf_l, 0);
           lv_imgbtn_set_src_both(buttonGcode[i], buttonGcode[i]->mks_pic_name);
           if (i < 3) {
-            lv_obj_set_pos(buttonGcode[i], BTN_SIZE_X * i + INTERVAL_W * (i + 1) + FILE_PRE_PIC_X_OFFSET, titleHeight + FILE_PRE_PIC_Y_OFFSET);
+            lv_obj_set_pos(buttonGcode[i], BTN_X_PIXEL * i + INTERVAL_V * (i + 1) + FILE_PRE_PIC_X_OFFSET, titleHeight + FILE_PRE_PIC_Y_OFFSET);
             buttonText[i] = lv_btn_create(scr, nullptr);
             //lv_obj_set_event_cb(buttonText[i], event_handler);
 
@@ -300,11 +312,11 @@ void disp_gcode_icon(uint8_t file_num) {
             lv_obj_clear_protect(buttonText[i], LV_PROTECT_FOLLOW);
             lv_btn_set_layout(buttonText[i], LV_LAYOUT_OFF);
             //lv_obj_set_event_cb_mks(buttonText[i], event_handler,(i+10),"", 0);
-            lv_obj_set_pos(buttonText[i], BTN_SIZE_X * i + INTERVAL_W * (i + 1) + FILE_PRE_PIC_X_OFFSET, titleHeight + FILE_PRE_PIC_Y_OFFSET + 100);
+            lv_obj_set_pos(buttonText[i], BTN_X_PIXEL * i + INTERVAL_V * (i + 1) + FILE_PRE_PIC_X_OFFSET, titleHeight + FILE_PRE_PIC_Y_OFFSET + 100);
             lv_obj_set_size(buttonText[i], 100, 40);
           }
           else {
-            lv_obj_set_pos(buttonGcode[i], BTN_SIZE_X * (i - 3) + INTERVAL_W * ((i - 3) + 1) + FILE_PRE_PIC_X_OFFSET, BTN_SIZE_Y + INTERVAL_H + titleHeight + FILE_PRE_PIC_Y_OFFSET);
+            lv_obj_set_pos(buttonGcode[i], BTN_X_PIXEL * (i - 3) + INTERVAL_V * ((i - 3) + 1) + FILE_PRE_PIC_X_OFFSET, BTN_Y_PIXEL + INTERVAL_H + titleHeight + FILE_PRE_PIC_Y_OFFSET);
             buttonText[i] = lv_btn_create(scr, nullptr);
             //lv_obj_set_event_cb(buttonText[i], event_handler);
 
@@ -312,7 +324,7 @@ void disp_gcode_icon(uint8_t file_num) {
             lv_obj_clear_protect(buttonText[i], LV_PROTECT_FOLLOW);
             lv_btn_set_layout(buttonText[i], LV_LAYOUT_OFF);
             //lv_obj_set_event_cb_mks(buttonText[i], event_handler,(i+10),"", 0);
-            lv_obj_set_pos(buttonText[i], BTN_SIZE_X * (i - 3) + INTERVAL_W * ((i - 3) + 1) + FILE_PRE_PIC_X_OFFSET, BTN_SIZE_Y + INTERVAL_H + titleHeight + FILE_PRE_PIC_Y_OFFSET + 100);
+            lv_obj_set_pos(buttonText[i], BTN_X_PIXEL * (i - 3) + INTERVAL_V * ((i - 3) + 1) + FILE_PRE_PIC_X_OFFSET, BTN_Y_PIXEL + INTERVAL_H + titleHeight + FILE_PRE_PIC_Y_OFFSET + 100);
             lv_obj_set_size(buttonText[i], 100, 40);
           }
           labelPageUp[i] = lv_label_create(buttonText[i], public_buf_m);
@@ -322,9 +334,9 @@ void disp_gcode_icon(uint8_t file_num) {
           lv_obj_set_event_cb_mks(buttonGcode[i], event_handler, (i + 1), "", 0);
           lv_imgbtn_set_src_both(buttonGcode[i], "F:/bmp_file.bin");
           if (i < 3)
-            lv_obj_set_pos(buttonGcode[i], BTN_SIZE_X * i + INTERVAL_W * (i + 1), titleHeight);
+            lv_obj_set_pos(buttonGcode[i], BTN_X_PIXEL * i + INTERVAL_V * (i + 1), titleHeight);
           else
-            lv_obj_set_pos(buttonGcode[i], BTN_SIZE_X * (i - 3) + INTERVAL_W * ((i - 3) + 1), BTN_SIZE_Y + INTERVAL_H + titleHeight);
+            lv_obj_set_pos(buttonGcode[i], BTN_X_PIXEL * (i - 3) + INTERVAL_V * ((i - 3) + 1), BTN_Y_PIXEL + INTERVAL_H + titleHeight);
 
           labelPageUp[i] = lv_label_create(buttonGcode[i], public_buf_m);
           lv_obj_align(labelPageUp[i], buttonGcode[i], LV_ALIGN_IN_BOTTOM_MID, 0, -5);
@@ -347,7 +359,7 @@ void disp_gcode_icon(uint8_t file_num) {
 }
 
 uint32_t lv_open_gcode_file(char *path) {
-  #if HAS_MEDIA
+  #if ENABLED(SDSUPPORT)
     uint32_t *ps4;
     uintptr_t pre_sread_cnt = UINTPTR_MAX;
     char *cur_name;
@@ -363,7 +375,7 @@ uint32_t lv_open_gcode_file(char *path) {
       card.setIndex(pre_sread_cnt);
     }
     return pre_sread_cnt;
-  #endif // HAS_MEDIA
+  #endif // SDSUPPORT
 }
 
 int ascii2dec_test(char *ascii) {
@@ -383,8 +395,9 @@ int ascii2dec_test(char *ascii) {
 }
 
 void lv_gcode_file_read(uint8_t *data_buf) {
-  #if HAS_MEDIA
-    uint16_t i = 0, j = 0, k = 0, row_1 = 0;
+  #if ENABLED(SDSUPPORT)
+    uint16_t i = 0, j = 0, k = 0;
+    uint16_t row_1    = 0;
     bool ignore_start = true;
     char temp_test[200];
     volatile uint16_t *p_index;
@@ -422,18 +435,29 @@ void lv_gcode_file_read(uint8_t *data_buf) {
         break;
       }
     }
-    for (i = 0; i < 200;) {
-      p_index = (uint16_t *)(&public_buf[i]);
-      //Color = (*p_index >> 8);
-      //*p_index = Color | ((*p_index & 0xFF) << 8);
-      i += 2;
-      if (*p_index == 0x0000) *p_index = LV_COLOR_BACKGROUND.full;
-    }
+    #if HAS_TFT_LVGL_UI_SPI
+      for (i = 0; i < 200;) {
+        p_index = (uint16_t *)(&public_buf[i]);
+
+        //Color = (*p_index >> 8);
+        //*p_index = Color | ((*p_index & 0xFF) << 8);
+        i += 2;
+        if (*p_index == 0x0000) *p_index = LV_COLOR_BACKGROUND.full;
+      }
+    #else // !HAS_TFT_LVGL_UI_SPI
+      for (i = 0; i < 200;) {
+        p_index = (uint16_t *)(&public_buf[i]);
+        //Color = (*p_index >> 8);
+        //*p_index = Color | ((*p_index & 0xFF) << 8);
+        i += 2;
+        if (*p_index == 0x0000) *p_index = LV_COLOR_BACKGROUND.full; // 0x18C3;
+      }
+    #endif // !HAS_TFT_LVGL_UI_SPI
     memcpy(data_buf, public_buf, 200);
-  #endif // HAS_MEDIA
+  #endif // SDSUPPORT
 }
 
-void lv_close_gcode_file() {TERN_(HAS_MEDIA, card.closefile());}
+void lv_close_gcode_file() {TERN_(SDSUPPORT, card.closefile());}
 
 void lv_gcode_file_seek(uint32_t pos) {
   card.setIndex(pos);
@@ -474,7 +498,7 @@ void cutFileName(char *path, int len, int bytePerLine, char *outStr) {
         wcscpy(outStr, beginIndex);
     #else
       if ((int)strlen(beginIndex) > len)
-        strlcpy(outStr, beginIndex, len + 1);
+        strncpy(outStr, beginIndex, len);
       else
         strcpy(outStr, beginIndex);
     #endif
@@ -485,17 +509,17 @@ void cutFileName(char *path, int len, int bytePerLine, char *outStr) {
         wcsncpy(outStr, (const WCHAR *)beginIndex, len - 3);
         wcscat(outStr, (const WCHAR *)gFileTail);
       #else
-        strlcpy(outStr, beginIndex, len - 3);
+        //strncpy(outStr, beginIndex, len - 3);
+        strncpy(outStr, beginIndex, len - 4);
         strcat_P(outStr, PSTR("~.g"));
       #endif
     }
     else {
-      const size_t strsize = strIndex2 - beginIndex + 1;
       #if _LFN_UNICODE
-        wcsncpy(outStr, (const WCHAR *)beginIndex, strsize);
+        wcsncpy(outStr, (const WCHAR *)beginIndex, strIndex2 - beginIndex + 1);
         wcscat(outStr, (const WCHAR *)&gFileTail[3]);
       #else
-        strlcpy(outStr, beginIndex, strsize + 1);
+        strncpy(outStr, beginIndex, strIndex2 - beginIndex + 1);
         strcat_P(outStr, PSTR("g"));
       #endif
     }

@@ -23,7 +23,7 @@
 
 /**
  * STM32F407VET6 on Opulo Lumen PnP Rev3
- * Website - https://www.opulo.io/
+ * Website - https://opulo.io/
  */
 
 #define ALLOW_STM32DUINO
@@ -40,10 +40,13 @@
  */
 
 #define SRAM_EEPROM_EMULATION
-#define MARLIN_EEPROM_SIZE               0x2000U  // 8K
+#define MARLIN_EEPROM_SIZE                0x2000  // 8K
 
 // I2C MCP3426 (16-Bit, 240SPS, dual-channel ADC)
 #define HAS_MCP3426_ADC
+#ifdef STM32F4
+  #define HAS_STM32_UID
+#endif
 
 //
 // Servos
@@ -123,23 +126,32 @@
 #elif HAS_TMC_UART
 
   #define X_SERIAL_TX_PIN                   PD8
+  #define X_SERIAL_RX_PIN        X_SERIAL_TX_PIN
+
   #define Y_SERIAL_TX_PIN                   PB12
+  #define Y_SERIAL_RX_PIN        Y_SERIAL_TX_PIN
+
   #define Z_SERIAL_TX_PIN                   PE8
+  #define Z_SERIAL_RX_PIN        Z_SERIAL_TX_PIN
+
   #define I_SERIAL_TX_PIN                   PC5
+  #define I_SERIAL_RX_PIN        I_SERIAL_TX_PIN
+
   #define J_SERIAL_TX_PIN                   PE12
+  #define J_SERIAL_RX_PIN        J_SERIAL_TX_PIN
+
   #define K_SERIAL_TX_PIN                   PA2
+  #define K_SERIAL_RX_PIN        K_SERIAL_TX_PIN
 
   // Reduce baud rate to improve software serial reliability
-  #ifndef TMC_BAUD_RATE
-    #define TMC_BAUD_RATE                  19200
-  #endif
+  #define TMC_BAUD_RATE                    19200
 
-#endif // HAS_TMC_UART
+#endif
 
 //
 // Heaters / Fans
 //
-#define FAN0_PIN                            PE2
+#define FAN_PIN                             PE2
 #define FAN1_PIN                            PE3
 #define FAN2_PIN                            PE4
 #define FAN3_PIN                            PE5
@@ -147,17 +159,21 @@
 #define FAN_SOFT_PWM_REQUIRED
 
 //
-// NeoPixel
+// Neopixel
 //
-#define BOARD_NEOPIXEL_PIN                  PC7
+#define NEOPIXEL_PIN                        PC7
 #define NEOPIXEL2_PIN                       PC8
 
 //
 // SPI
 //
-#define TMC_SPI_MISO                PIN_SPI_MISO
-#define TMC_SPI_MOSI                PIN_SPI_MOSI
-#define TMC_SPI_SCK                  PIN_SPI_SCK
+#define MISO_PIN                            PB4
+#define MOSI_PIN                            PB5
+#define SCK_PIN                             PB3
+
+#define TMC_SW_MISO                     MISO_PIN
+#define TMC_SW_MOSI                     MOSI_PIN
+#define TMC_SW_SCK                       SCK_PIN
 
 //
 // I2C
@@ -191,6 +207,3 @@
 #define INDEX_AUX3_PWM2                     PB9
 #define INDEX_AUX3_A1                       PA0
 #define INDEX_AUX3_A2                       PA1
-
-#define RS485_TX_ENABLE_PIN                 PD11
-#define RS485_RX_ENABLE_PIN                 PD12

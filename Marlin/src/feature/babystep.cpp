@@ -25,7 +25,8 @@
 #if ENABLED(BABYSTEPPING)
 
 #include "babystep.h"
-#include "../module/motion.h"   // for axis_should_home(), BABYSTEP_ALLOWED
+#include "../MarlinCore.h"
+#include "../module/motion.h"   // for axes_should_home()
 #include "../module/planner.h"  // for axis_steps_per_mm[]
 #include "../module/stepper.h"
 
@@ -41,52 +42,38 @@ volatile int16_t Babystep::steps[BS_AXIS_IND(Z_AXIS) + 1];
 #endif
 int16_t Babystep::accum;
 
-#if ALL(EP_BABYSTEPPING, EMERGENCY_PARSER)
-  int16_t Babystep::ep_babysteps;
-#endif
-
 void Babystep::step_axis(const AxisEnum axis) {
   const int16_t curTodo = steps[BS_AXIS_IND(axis)]; // get rid of volatile for performance
   if (curTodo) {
-    stepper.do_babystep(axis, curTodo > 0);
+    stepper.do_babystep((AxisEnum)axis, curTodo > 0);
     if (curTodo > 0) steps[BS_AXIS_IND(axis)]--; else steps[BS_AXIS_IND(axis)]++;
   }
 }
 
-void Babystep::add_mm(const AxisEnum axis, const float mm) {
+void Babystep::add_mm(const AxisEnum axis, const_float_t mm) {
   add_steps(axis, mm * planner.settings.axis_steps_per_mm[axis]);
 }
 
 #if ENABLED(BD_SENSOR)
-  void Babystep::set_mm(const AxisEnum axis, const float mm) {
-    //if (DISABLED(BABYSTEP_WITHOUT_HOMING) && motion.axis_should_home(axis)) return;
+  void Babystep::set_mm(const AxisEnum axis, const_float_t mm) {
+    //if (DISABLED(BABYSTEP_WITHOUT_HOMING) && axes_should_home(_BV(axis))) return;
     const int16_t distance = mm * planner.settings.axis_steps_per_mm[axis];
     accum = distance; // Count up babysteps for the UI
     steps[BS_AXIS_IND(axis)] = distance;
     TERN_(BABYSTEP_DISPLAY_TOTAL, axis_total[BS_TOTAL_IND(axis)] = distance);
     TERN_(BABYSTEP_ALWAYS_AVAILABLE, gcode.reset_stepper_timeout());
-    TERN_(BABYSTEPPING, if (has_steps()) stepper.initiateBabystepping());
+    TERN_(INTEGRATED_BABYSTEPPING, if (has_steps()) stepper.initiateBabystepping());
   }
 #endif
 
-bool Babystep::can_babystep(const AxisEnum axis) {
-  return (ENABLED(BABYSTEP_WITHOUT_HOMING) || !motion.axis_should_home(axis));
-}
-
 void Babystep::add_steps(const AxisEnum axis, const int16_t distance) {
-  if (!can_babystep(axis)) return;
+  if (DISABLED(BABYSTEP_WITHOUT_HOMING) && axes_should_home(_BV(axis))) return;
 
   accum += distance; // Count up babysteps for the UI
   steps[BS_AXIS_IND(axis)] += distance;
   TERN_(BABYSTEP_DISPLAY_TOTAL, axis_total[BS_TOTAL_IND(axis)] += distance);
   TERN_(BABYSTEP_ALWAYS_AVAILABLE, gcode.reset_stepper_timeout());
-  TERN_(BABYSTEPPING, if (has_steps()) stepper.initiateBabystepping());
+  TERN_(INTEGRATED_BABYSTEPPING, if (has_steps()) stepper.initiateBabystepping());
 }
-
-#if ENABLED(EP_BABYSTEPPING)
-  // Step Z for M293 / M294
-  void Babystep::z_up()   { if (BABYSTEP_ALLOWED()) add_steps(Z_AXIS, +BABYSTEP_SIZE_Z); }
-  void Babystep::z_down() { if (BABYSTEP_ALLOWED()) add_steps(Z_AXIS, -BABYSTEP_SIZE_Z); }
-#endif
 
 #endif // BABYSTEPPING

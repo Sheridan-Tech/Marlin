@@ -2,9 +2,6 @@
  * Marlin 3D Printer Firmware
  * Copyright (c) 2021 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
- * Based on Sprinter and grbl.
- * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -65,12 +62,12 @@ private:
   static uint16_t getRawData(const XPTCoordinate coordinate);
   static bool isTouched();
 
-  static void dataTransferBegin();
-  static void dataTransferEnd();
+  static void DataTransferBegin();
+  static void DataTransferEnd();
   #if ENABLED(TOUCH_BUTTONS_HW_SPI)
-    static uint16_t hardwareIO(uint16_t data);
+    static uint16_t HardwareIO(uint16_t data);
   #endif
-  static uint16_t softwareIO(uint16_t data);
+  static uint16_t SoftwareIO(uint16_t data);
   static uint16_t IO(uint16_t data = 0);
 
 public:
@@ -78,6 +75,6 @@ public:
     static SPIClass SPIx;
   #endif
 
-  static void init();
-  static bool getRawPoint(int16_t * const x, int16_t * const y);
+  static void Init();
+  static bool getRawPoint(int16_t *x, int16_t *y);
 };

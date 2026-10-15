@@ -33,23 +33,25 @@
 
 #if DGUS_LCD_UI_IA_CREALITY
 
-#include "ia_creality_rts.h"
 #include "FileNavigator.h"
 
-#include <WString.h>
+using namespace ExtUI;
 
-ExtUI::FileList FileNavigator::filelist;                // ExtUI file API
-char      FileNavigator::currentDirPath[MAX_PATH_LEN + 1];  // Current folder path
+#define DEBUG_OUT ENABLED(DEBUG_DWIN)
+#include "../../../core/debug_out.h"
+
+FileList  FileNavigator::filelist;                          // Instance of the Marlin file API
+char      FileNavigator::currentfoldername[MAX_PATH_LEN];   // Current folder path
 uint16_t  FileNavigator::lastindex;
 uint8_t   FileNavigator::folderdepth;
-uint16_t  FileNavigator::currentindex;                  // override the panel request
+uint16_t  FileNavigator::currentindex;                      // override the panel request
 
 FileNavigator filenavigator;
 
 FileNavigator::FileNavigator() { reset(); }
 
 void FileNavigator::reset() {
-  currentDirPath[0] = '\0';
+  currentfoldername[0] = '\0';
   folderdepth  = 0;
   currentindex = 0;
   lastindex    = 0;
@@ -60,12 +62,12 @@ void FileNavigator::reset() {
 
 void FileNavigator::refresh() { filelist.refresh(); }
 
-bool FileNavigator::getIndexisDir(uint16_t index) {
+bool FileNavigator::getIndexisDir(uint16_t index){
   filelist.seek(index);
   return filelist.isDir();
 }
 
-const char *FileNavigator::getIndexName(uint16_t index) {
+const char *FileNavigator::getIndexName(uint16_t index){
   filelist.seek(index);
   return filelist.shortFilename();
 }
@@ -91,26 +93,29 @@ void FileNavigator::getFiles(uint16_t index) {
   }
   lastindex = index;
 
+
   // Clear currently drawn screen
   for (int i = 0; i < DISPLAY_FILES; i++) {
     for (int j = 0; j < 20; j++)
-      rts.sendData(0, SDFILE_ADDR + (i * 20) + j);
+      rtscheck.RTS_SndData(0, SDFILE_ADDR + (i * 20) + j);
   }
 
   for (int j = 0; j < 10; j++) {
-    rts.sendData(0, Printfilename + j);  // clear screen.
-    rts.sendData(0, Choosefilename + j); // clear filename
+    rtscheck.RTS_SndData(0, Printfilename + j);  // clear screen.
+    rtscheck.RTS_SndData(0, Choosefilename + j); // clear filename
   }
   for (int j = 0; j < 8; j++)
-    rts.sendData(0, FilenameCount + j);
+    rtscheck.RTS_SndData(0, FilenameCount + j);
   for (int j = 1; j <= DISPLAY_FILES; j++) {
-    rts.sendData(10, FilenameIcon + j);
-    rts.sendData(10, FilenameIcon1 + j);
+    rtscheck.RTS_SndData(10, FilenameIcon + j);
+    rtscheck.RTS_SndData(10, FilenameIcon1 + j);
   }
+
+  DEBUG_ECHOLNPGM("index=", index, " currentindex=", currentindex, "folderdepth=", folderdepth);
 
   if (currentindex == 0 && folderdepth > 0) { // Add a link to go up a folder
     files--;
-    rts.sendData("Up Directory", SDFILE_ADDR);
+    rtscheck.RTS_SndData("Up Directory", SDFILE_ADDR);
     fcnt++;
   }
   else if (currentindex == DISPLAY_FILES && folderdepth > 0)
@@ -121,30 +126,33 @@ void FileNavigator::getFiles(uint16_t index) {
       const int filelen = strlen(filelist.filename());
       if (filelen > 20) {
         char *buf = (char *)filelist.filename();
+        //char buf[filelen];
+        //strcpy(&buf[filelen], filelist.filename());
         buf[18] = '\0'; // cutoff at screen edge
-        rts.sendData(buf, (SDFILE_ADDR + (fcnt * 20)));
+        rtscheck.RTS_SndData(buf, (SDFILE_ADDR + (fcnt * 20)));
       }
       else
-        rts.sendData(filelist.filename(), (SDFILE_ADDR + (fcnt * 20)));
+        rtscheck.RTS_SndData(filelist.filename(), (SDFILE_ADDR + (fcnt * 20)));
 
       if (filelist.isDir()) {
-        rts.sendData((uint8_t)4, FilenameIcon + (fcnt+1));
-        rts.sendData((unsigned long)0x041F, (FilenameNature + ((1+fcnt) * 16))); // Change BG of selected line to Blue
+        rtscheck.RTS_SndData((uint8_t)4, FilenameIcon + (fcnt+1));
+        rtscheck.RTS_SndData((unsigned long)0x041F, (FilenameNature + ((1+fcnt) * 16))); // Change BG of selected line to Blue
       }
       else {
-        rts.sendData((uint8_t)0, FilenameIcon + (fcnt+1));
-        rts.sendData((unsigned long)0xFFFF, (FilenameNature + ((1+fcnt) * 16))); // white
+        rtscheck.RTS_SndData((uint8_t)0, FilenameIcon + (fcnt+1));
+        rtscheck.RTS_SndData((unsigned long)0xFFFF, (FilenameNature + ((1+fcnt) * 16))); // white
       }
-      SERIAL_ECHOLNPGM("-", seek, " '", filelist.filename(), "' '", currentDirPath, "", filelist.shortFilename(), "'\n");
+      SERIAL_ECHOLNPGM("-", seek, " '", filelist.filename(), "' '", currentfoldername, "", filelist.shortFilename(), "'\n");
       fcnt++;
     }
   }
 }
 
 void FileNavigator::changeDIR(char *folder) {
+  DEBUG_ECHOLNPGM("currentfolder: ", currentfoldername, "  New: ", folder);
   if (folderdepth >= MAX_FOLDER_DEPTH) return; // limit the folder depth
-  strcat(currentDirPath, folder);
-  strcat(currentDirPath, "/");
+  strcat(currentfoldername, folder);
+  strcat(currentfoldername, "/");
   filelist.changeDir(folder);
   refresh();
   folderdepth++;
@@ -158,17 +166,18 @@ void FileNavigator::upDIR() {
   currentindex = 0;
   // Remove the last child folder from the stored path
   if (folderdepth == 0) {
-    currentDirPath[0] = '\0';
+    currentfoldername[0] = '\0';
     reset();
   }
   else {
     char *pos = nullptr;
     for (uint8_t f = 0; f < folderdepth; f++)
-      pos = strchr(currentDirPath, '/');
+      pos = strchr(currentfoldername, '/');
     pos[1] = '\0';
   }
+  DEBUG_ECHOLNPGM("depth: ", folderdepth, " currentfoldername: ", currentfoldername);
 }
 
-char* FileNavigator::getCurrentDirPath() { return currentDirPath; }
+char* FileNavigator::getCurrentFolderName() { return currentfoldername; }
 
 #endif // DGUS_LCD_UI_IA_CREALITY

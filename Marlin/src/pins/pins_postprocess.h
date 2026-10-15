@@ -264,6 +264,24 @@
 #ifndef Z_CS_PIN
   #define Z_CS_PIN -1
 #endif
+#ifndef I_CS_PIN
+  #define I_CS_PIN -1
+#endif
+#ifndef J_CS_PIN
+  #define J_CS_PIN -1
+#endif
+#ifndef K_CS_PIN
+  #define K_CS_PIN -1
+#endif
+#ifndef U_CS_PIN
+  #define U_CS_PIN -1
+#endif
+#ifndef V_CS_PIN
+  #define V_CS_PIN -1
+#endif
+#ifndef W_CS_PIN
+  #define W_CS_PIN -1
+#endif
 #ifndef E0_CS_PIN
   #define E0_CS_PIN -1
 #endif
@@ -289,244 +307,86 @@
   #define E7_CS_PIN -1
 #endif
 
-// If only TX is defined, use the same pin for RX
-#if HAS_TMC_UART
-  #if !defined(X_SERIAL_RX_PIN) && PIN_EXISTS(X_SERIAL_TX)
-    #define X_SERIAL_RX_PIN      X_SERIAL_TX_PIN
-  #endif
-  #if !defined(X2_SERIAL_RX_PIN) && PIN_EXISTS(X2_SERIAL_TX)
-    #define X2_SERIAL_RX_PIN    X2_SERIAL_TX_PIN
-  #endif
-  #if !defined(Y_SERIAL_RX_PIN) && PIN_EXISTS(Y_SERIAL_TX)
-    #define Y_SERIAL_RX_PIN      Y_SERIAL_TX_PIN
-  #endif
-  #if !defined(Y2_SERIAL_RX_PIN) && PIN_EXISTS(Y2_SERIAL_TX)
-    #define Y2_SERIAL_RX_PIN    Y2_SERIAL_TX_PIN
-  #endif
-  #if !defined(Z_SERIAL_RX_PIN) && PIN_EXISTS(Z_SERIAL_TX)
-    #define Z_SERIAL_RX_PIN      Z_SERIAL_TX_PIN
-  #endif
-  #if !defined(Z2_SERIAL_RX_PIN) && PIN_EXISTS(Z2_SERIAL_TX)
-    #define Z2_SERIAL_RX_PIN    Z2_SERIAL_TX_PIN
-  #endif
-  #if !defined(Z3_SERIAL_RX_PIN) && PIN_EXISTS(Z3_SERIAL_TX)
-    #define Z3_SERIAL_RX_PIN    Z3_SERIAL_TX_PIN
-  #endif
-  #if !defined(Z4_SERIAL_RX_PIN) && PIN_EXISTS(Z4_SERIAL_TX)
-    #define Z4_SERIAL_RX_PIN    Z4_SERIAL_TX_PIN
-  #endif
-  #if !defined(I_SERIAL_RX_PIN) && PIN_EXISTS(I_SERIAL_TX)
-    #define I_SERIAL_RX_PIN      I_SERIAL_TX_PIN
-  #endif
-  #if !defined(J_SERIAL_RX_PIN) && PIN_EXISTS(J_SERIAL_TX)
-    #define J_SERIAL_RX_PIN      J_SERIAL_TX_PIN
-  #endif
-  #if !defined(K_SERIAL_RX_PIN) && PIN_EXISTS(K_SERIAL_TX)
-    #define K_SERIAL_RX_PIN      K_SERIAL_TX_PIN
-  #endif
-  #if !defined(U_SERIAL_RX_PIN) && PIN_EXISTS(U_SERIAL_TX)
-    #define U_SERIAL_RX_PIN      U_SERIAL_TX_PIN
-  #endif
-  #if !defined(V_SERIAL_RX_PIN) && PIN_EXISTS(V_SERIAL_TX)
-    #define V_SERIAL_RX_PIN      V_SERIAL_TX_PIN
-  #endif
-  #if !defined(W_SERIAL_RX_PIN) && PIN_EXISTS(W_SERIAL_TX)
-    #define W_SERIAL_RX_PIN      W_SERIAL_TX_PIN
-  #endif
-  #if !defined(EX_SERIAL_RX_PIN) && PIN_EXISTS(EX_SERIAL_TX)
-    #define EX_SERIAL_RX_PIN    EX_SERIAL_TX_PIN
-  #endif
-  #if !defined(E0_SERIAL_RX_PIN) && PIN_EXISTS(E0_SERIAL_TX)
-    #define E0_SERIAL_RX_PIN    E0_SERIAL_TX_PIN
-  #endif
-  #if !defined(E1_SERIAL_RX_PIN) && PIN_EXISTS(E1_SERIAL_TX)
-    #define E1_SERIAL_RX_PIN    E1_SERIAL_TX_PIN
-  #endif
-  #if !defined(E2_SERIAL_RX_PIN) && PIN_EXISTS(E2_SERIAL_TX)
-    #define E2_SERIAL_RX_PIN    E2_SERIAL_TX_PIN
-  #endif
-  #if !defined(E3_SERIAL_RX_PIN) && PIN_EXISTS(E3_SERIAL_TX)
-    #define E3_SERIAL_RX_PIN    E3_SERIAL_TX_PIN
-  #endif
-  #if !defined(E4_SERIAL_RX_PIN) && PIN_EXISTS(E4_SERIAL_TX)
-    #define E4_SERIAL_RX_PIN    E4_SERIAL_TX_PIN
-  #endif
-  #if !defined(E5_SERIAL_RX_PIN) && PIN_EXISTS(E5_SERIAL_TX)
-    #define E5_SERIAL_RX_PIN    E5_SERIAL_TX_PIN
-  #endif
-  #if !defined(E6_SERIAL_RX_PIN) && PIN_EXISTS(E6_SERIAL_TX)
-    #define E6_SERIAL_RX_PIN    E6_SERIAL_TX_PIN
-  #endif
-  #if !defined(E7_SERIAL_RX_PIN) && PIN_EXISTS(E7_SERIAL_TX)
-    #define E7_SERIAL_RX_PIN    E7_SERIAL_TX_PIN
-  #endif
-#endif
-
 //
 // Destroy stepper driver RX and TX pins when set to -1
-// Some RX depend on TX, so RX needs to be un-defined before TX
-// or it breaks "PIN_EXISTS(NAME_OF_UNDEF)".
 //
-#if !PIN_EXISTS(W_SERIAL_RX)
-  #undef W_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(W_SERIAL_TX)
-  #undef W_SERIAL_TX_PIN
-#endif
-#if !PIN_EXISTS(V_SERIAL_RX)
-  #undef V_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(V_SERIAL_TX)
-  #undef V_SERIAL_TX_PIN
-#endif
-#if !PIN_EXISTS(U_SERIAL_RX)
-  #undef U_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(U_SERIAL_TX)
-  #undef U_SERIAL_TX_PIN
-#endif
-#if !PIN_EXISTS(K_SERIAL_RX)
-  #undef K_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(K_SERIAL_TX)
-  #undef K_SERIAL_TX_PIN
-#endif
-#if !PIN_EXISTS(J_SERIAL_RX)
-  #undef J_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(J_SERIAL_TX)
-  #undef J_SERIAL_TX_PIN
-#endif
-#if !PIN_EXISTS(I_SERIAL_RX)
-  #undef I_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(I_SERIAL_TX)
-  #undef I_SERIAL_TX_PIN
-#endif
-#if !PIN_EXISTS(Z4_SERIAL_RX)
-  #undef Z4_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(Z4_SERIAL_TX)
-  #undef Z4_SERIAL_TX_PIN
-#endif
-#if !PIN_EXISTS(Z3_SERIAL_RX)
-  #undef Z3_SERIAL_RX_PIN
-#endif
-#if !PIN_EXISTS(Z3_SERIAL_TX)
-  #undef Z3_SERIAL_TX_PIN
+#if !PIN_EXISTS(Z2_SERIAL_TX)
+  #undef Z2_SERIAL_TX_PIN
 #endif
 #if !PIN_EXISTS(Z2_SERIAL_RX)
   #undef Z2_SERIAL_RX_PIN
 #endif
-#if !PIN_EXISTS(Z2_SERIAL_TX)
-  #undef Z2_SERIAL_TX_PIN
+#if !PIN_EXISTS(Z3_SERIAL_TX)
+  #undef Z3_SERIAL_TX_PIN
 #endif
-#if !PIN_EXISTS(Y2_SERIAL_RX)
-  #undef Y2_SERIAL_RX_PIN
+#if !PIN_EXISTS(Z3_SERIAL_RX)
+  #undef Z3_SERIAL_RX_PIN
 #endif
-#if !PIN_EXISTS(Y2_SERIAL_TX)
-  #undef Y2_SERIAL_TX_PIN
+#if !PIN_EXISTS(Z4_SERIAL_TX)
+  #undef Z4_SERIAL_TX_PIN
 #endif
-#if !PIN_EXISTS(X2_SERIAL_RX)
-  #undef X2_SERIAL_RX_PIN
+#if !PIN_EXISTS(Z4_SERIAL_RX)
+  #undef Z4_SERIAL_RX_PIN
 #endif
 #if !PIN_EXISTS(X2_SERIAL_TX)
   #undef X2_SERIAL_TX_PIN
 #endif
-#if !PIN_EXISTS(Z_SERIAL_RX)
-  #undef Z_SERIAL_RX_PIN
+#if !PIN_EXISTS(X2_SERIAL_RX)
+  #undef X2_SERIAL_RX_PIN
 #endif
-#if !PIN_EXISTS(Z_SERIAL_TX)
-  #undef Z_SERIAL_TX_PIN
+#if !PIN_EXISTS(Y2_SERIAL_TX)
+  #undef Y2_SERIAL_TX_PIN
 #endif
-#if !PIN_EXISTS(Y_SERIAL_RX)
-  #undef Y_SERIAL_RX_PIN
+#if !PIN_EXISTS(Y2_SERIAL_RX)
+  #undef Y2_SERIAL_RX_PIN
 #endif
-#if !PIN_EXISTS(Y_SERIAL_TX)
-  #undef Y_SERIAL_TX_PIN
+#if !PIN_EXISTS(I_SERIAL_TX)
+  #undef I_SERIAL_TX_PIN
 #endif
-#if !PIN_EXISTS(X_SERIAL_RX)
-  #undef X_SERIAL_RX_PIN
+#if !PIN_EXISTS(I_SERIAL_RX)
+  #undef I_SERIAL_RX_PIN
 #endif
-#if !PIN_EXISTS(X_SERIAL_TX)
-  #undef X_SERIAL_TX_PIN
+#if !PIN_EXISTS(J_SERIAL_TX)
+  #undef J_SERIAL_TX_PIN
+#endif
+#if !PIN_EXISTS(J_SERIAL_RX)
+  #undef J_SERIAL_RX_PIN
+#endif
+#if !PIN_EXISTS(K_SERIAL_TX)
+  #undef K_SERIAL_TX_PIN
+#endif
+#if !PIN_EXISTS(K_SERIAL_RX)
+  #undef K_SERIAL_RX_PIN
+#endif
+#if !PIN_EXISTS(U_SERIAL_TX)
+  #undef U_SERIAL_TX_PIN
+#endif
+#if !PIN_EXISTS(U_SERIAL_RX)
+  #undef U_SERIAL_RX_PIN
+#endif
+#if !PIN_EXISTS(V_SERIAL_TX)
+  #undef V_SERIAL_TX_PIN
+#endif
+#if !PIN_EXISTS(V_SERIAL_RX)
+  #undef V_SERIAL_RX_PIN
+#endif
+#if !PIN_EXISTS(W_SERIAL_TX)
+  #undef W_SERIAL_TX_PIN
+#endif
+#if !PIN_EXISTS(W_SERIAL_RX)
+  #undef W_SERIAL_RX_PIN
 #endif
 
-#ifndef FAN0_PIN
-  #define FAN0_PIN -1
+#ifndef FAN_PIN
+  #define FAN_PIN -1
 #endif
+#define FAN0_PIN FAN_PIN
 #ifndef FAN1_PIN
   #define FAN1_PIN -1
 #endif
 #ifndef FAN2_PIN
   #define FAN2_PIN -1
 #endif
-#ifndef FAN3_PIN
-  #define FAN3_PIN -1
-#endif
-#ifndef FAN4_PIN
-  #define FAN4_PIN -1
-#endif
-#ifndef FAN5_PIN
-  #define FAN5_PIN -1
-#endif
-#ifndef FAN6_PIN
-  #define FAN6_PIN -1
-#endif
-#ifndef FAN7_PIN
-  #define FAN7_PIN -1
-#endif
-#ifndef FAN8_PIN
-  #define FAN8_PIN -1
-#endif
-#ifndef FAN9_PIN
-  #define FAN9_PIN -1
-#endif
-#ifndef FAN10_PIN
-  #define FAN10_PIN -1
-#endif
-#ifndef FAN11_PIN
-  #define FAN11_PIN -1
-#endif
-
-// Part cooling fan pin defaults - allows remapping fans to different pins
-#ifndef PART_COOLING_FAN0_PIN
-  #define PART_COOLING_FAN0_PIN FAN0_PIN
-#endif
-#ifndef PART_COOLING_FAN1_PIN
-  #define PART_COOLING_FAN1_PIN FAN1_PIN
-#endif
-#ifndef PART_COOLING_FAN2_PIN
-  #define PART_COOLING_FAN2_PIN FAN2_PIN
-#endif
-#ifndef PART_COOLING_FAN3_PIN
-  #define PART_COOLING_FAN3_PIN FAN3_PIN
-#endif
-#ifndef PART_COOLING_FAN4_PIN
-  #define PART_COOLING_FAN4_PIN FAN4_PIN
-#endif
-#ifndef PART_COOLING_FAN5_PIN
-  #define PART_COOLING_FAN5_PIN FAN5_PIN
-#endif
-#ifndef PART_COOLING_FAN6_PIN
-  #define PART_COOLING_FAN6_PIN FAN6_PIN
-#endif
-#ifndef PART_COOLING_FAN7_PIN
-  #define PART_COOLING_FAN7_PIN FAN7_PIN
-#endif
-#ifndef PART_COOLING_FAN8_PIN
-  #define PART_COOLING_FAN8_PIN FAN8_PIN
-#endif
-#ifndef PART_COOLING_FAN9_PIN
-  #define PART_COOLING_FAN9_PIN FAN9_PIN
-#endif
-#ifndef PART_COOLING_FAN10_PIN
-  #define PART_COOLING_FAN10_PIN FAN10_PIN
-#endif
-#ifndef PART_COOLING_FAN11_PIN
-  #define PART_COOLING_FAN11_PIN FAN11_PIN
-#endif
-
 #ifndef CONTROLLER_FAN_PIN
   #define CONTROLLER_FAN_PIN  -1
 #endif
@@ -597,23 +457,14 @@
   #define TEMP_BED_PIN -1
 #endif
 
-// Get TEMP_SOC_PIN from the platform, if not defined
-#ifndef TEMP_SOC_PIN
-  #ifdef ATEMP
-    #define TEMP_SOC_PIN ATEMP
-  #elif defined(HAL_ADC_MCU_TEMP_DUMMY_PIN)
-    #define TEMP_SOC_PIN HAL_ADC_MCU_TEMP_DUMMY_PIN
-  #endif
-#endif
-
 #ifndef SD_DETECT_PIN
   #define SD_DETECT_PIN -1
 #endif
 #ifndef SDPOWER_PIN
   #define SDPOWER_PIN -1
 #endif
-#ifndef SD_SS_PIN
-  #define SD_SS_PIN -1
+#ifndef SDSS
+  #define SDSS -1
 #endif
 #ifndef LED_PIN
   #define LED_PIN -1
@@ -621,10 +472,6 @@
 #if DISABLED(PSU_CONTROL) || !defined(PS_ON_PIN)
   #undef PS_ON_PIN
   #define PS_ON_PIN -1
-#endif
-#if DISABLED(PSU_OFF_REDUNDANT) || !defined(PS_ON1_PIN)
-  #undef PS_ON1_PIN
-  #define PS_ON1_PIN -1
 #endif
 #ifndef KILL_PIN
   #define KILL_PIN -1
@@ -636,215 +483,224 @@
   #define SUICIDE_PIN_STATE LOW
 #endif
 
-#if PIN_EXISTS(SERVO5)
-  #define NUM_SERVO_PLUGS 6
-#elif PIN_EXISTS(SERVO4)
-  #define NUM_SERVO_PLUGS 5
-#elif PIN_EXISTS(SERVO3)
+#ifndef NUM_SERVO_PLUGS
   #define NUM_SERVO_PLUGS 4
-#elif PIN_EXISTS(SERVO2)
-  #define NUM_SERVO_PLUGS 3
-#elif PIN_EXISTS(SERVO1)
-  #define NUM_SERVO_PLUGS 2
-#elif PIN_EXISTS(SERVO0)
-  #define NUM_SERVO_PLUGS 1
-#else
-  #define NUM_SERVO_PLUGS 0
 #endif
 
-/**
- * Endstop Pins
- *
- * The general idea is to provide STOP and MIN|MAX pins as needed...
- *
- *  - Standard Homing   : X_STOP_PIN with alias X_(MIN|MAX)_PIN. Same for Y, Z, etc.
- *  - DUAL_X_CARRIAGE   : Asserts both X_MIN_PIN and X_MAX_PIN must be defined.
- *  - X_DUAL_ENDSTOPS   : Also define X2_STOP_PIN with alias X2_(MIN|MAX)_PIN.
- *  - Y_DUAL_ENDSTOPS   : Also define Y2_STOP_PIN with alias Y2_(MIN|MAX)_PIN.
- *  - Z_MULTI_ENDSTOPS  : Also define Z2_STOP_PIN with alias Z2_(MIN|MAX)_PIN. Same for Z3, Z4.
- *
- *  Pins files should define pins according to usability:
- *    - Define X_STOP_PIN for boards with a preferred endstop plug, including Sensorless.
- *    - Define X_OTHR_PIN for the "other" endstop pin on the axis.
- *    - Define X_MIN_PIN and/or X_MAX_PIN as preferred connectors.
- *    - Allow user override of these pins for easier swapping.
- *
- * See also Conditionals-5-post.h >> "Endstop and probe flags"
- */
-
 //
-// Assign endstop pins, with handling for boards that have only 3 connectors
+// Assign endstop pins for boards with only 3 connectors
 //
-
-#if HAS_X_AXIS
-  #if PIN_EXISTS(X_STOP)
-    #if X_HOME_TO_MIN
-      #define X_MIN_PIN X_STOP_PIN
-    #elif X_HOME_TO_MAX
-      #define X_MAX_PIN X_STOP_PIN
+#ifdef X_STOP_PIN
+  #if X_HOME_TO_MIN
+    #define X_MIN_PIN X_STOP_PIN
+    #ifndef X_MAX_PIN
+      #define X_MAX_PIN -1
     #endif
-  #elif X_HOME_TO_MIN
-    #define X_STOP_PIN X_MIN_PIN
-  #elif X_HOME_TO_MAX
-    #define X_STOP_PIN X_MAX_PIN
-  #endif
-  #if ENABLED(X_DUAL_ENDSTOPS) && PIN_EXISTS(X_STOP)
+  #else
+    #define X_MAX_PIN X_STOP_PIN
     #ifndef X_MIN_PIN
-      #define X_MIN_PIN X_STOP_PIN
-    #endif
-    #ifndef X2_STOP_PIN
-      #define X2_STOP_PIN X_STOP_PIN
+      #define X_MIN_PIN -1
     #endif
   #endif
-  #if !defined(X_MIN_PIN) && X_HOME_TO_MAX && defined(X_OTHR_PIN)
-    #define X_MIN_PIN X_OTHR_PIN
-  #endif
-  #if !defined(X_MAX_PIN) && X_HOME_TO_MIN && defined(X_OTHR_PIN)
-    #define X_MAX_PIN X_OTHR_PIN
-  #endif
+#elif X_HOME_TO_MIN
+  #define X_STOP_PIN X_MIN_PIN
+#else
+  #define X_STOP_PIN X_MAX_PIN
+#endif
+#if !defined(X2_USE_ENDSTOP) && ENABLED(X_DUAL_ENDSTOPS) && PIN_EXISTS(X_STOP)
+  #define X2_USE_ENDSTOP _XSTOP_
 #endif
 
 #if HAS_Y_AXIS
-  #if PIN_EXISTS(Y_STOP)
+  #ifdef Y_STOP_PIN
     #if Y_HOME_TO_MIN
       #define Y_MIN_PIN Y_STOP_PIN
-    #elif Y_HOME_TO_MAX
+      #ifndef Y_MAX_PIN
+        #define Y_MAX_PIN -1
+      #endif
+    #else
       #define Y_MAX_PIN Y_STOP_PIN
+      #ifndef Y_MIN_PIN
+        #define Y_MIN_PIN -1
+      #endif
     #endif
   #elif Y_HOME_TO_MIN
     #define Y_STOP_PIN Y_MIN_PIN
-  #elif Y_HOME_TO_MAX
+  #else
     #define Y_STOP_PIN Y_MAX_PIN
   #endif
-  #if ENABLED(Y_DUAL_ENDSTOPS) && PIN_EXISTS(Y_STOP)
-    #ifndef Y_MIN_PIN
-      #define Y_MIN_PIN Y_STOP_PIN
-    #endif
-    #ifndef Y2_STOP_PIN
-      #define Y2_STOP_PIN Y_STOP_PIN
-    #endif
-  #endif
-  #if !defined(Y_MIN_PIN) && Y_HOME_TO_MAX && defined(Y_OTHR_PIN)
-    #define Y_MIN_PIN Y_OTHR_PIN
-  #endif
-  #if !defined(Y_MAX_PIN) && Y_HOME_TO_MIN && defined(Y_OTHR_PIN)
-    #define Y_MAX_PIN Y_OTHR_PIN
+  #if !defined(Y2_USE_ENDSTOP) && ENABLED(Y_DUAL_ENDSTOPS) && PIN_EXISTS(Y_STOP)
+    #define Y2_USE_ENDSTOP _YSTOP_
   #endif
 #endif
 
 #if HAS_Z_AXIS
-  #if PIN_EXISTS(Z_STOP)
+  #ifdef Z_STOP_PIN
     #if Z_HOME_TO_MIN
       #define Z_MIN_PIN Z_STOP_PIN
-    #elif Z_HOME_TO_MAX
+      #ifndef Z_MAX_PIN
+        #define Z_MAX_PIN -1
+      #endif
+    #else
       #define Z_MAX_PIN Z_STOP_PIN
-    #endif
-  #endif
-  #if !defined(Z_MIN_PIN) && Z_HOME_TO_MAX && defined(Z_OTHR_PIN)
-    #define Z_MIN_PIN Z_OTHR_PIN
-  #endif
-  #if !defined(Z_MAX_PIN) && Z_HOME_TO_MIN && defined(Z_OTHR_PIN)
-    #define Z_MAX_PIN Z_OTHR_PIN
-  #endif
-  #if ENABLED(Z_MULTI_ENDSTOPS)
-    #if ((Z_HOME_TO_MIN && !defined(Z2_MIN_PIN)) || (Z_HOME_TO_MAX && !defined(Z2_MAX_PIN))) && !defined(Z2_STOP_PIN)
-      #error "Z2_STOP_PIN is required for Z_MULTI_ENDSTOPS. Define Z2_STOP_PIN in Configuration_adv.h."
-    #endif
-    #if NUM_Z_STEPPERS >= 3
-      #if ((Z_HOME_TO_MIN && !defined(Z3_MIN_PIN)) || (Z_HOME_TO_MAX && !defined(Z3_MAX_PIN))) && !defined(Z3_STOP_PIN)
-        #error "Z3_STOP_PIN is required for Z_MULTI_ENDSTOPS with NUM_Z_STEPPERS >= 3. Define Z3_STOP_PIN in Configuration_adv.h."
+      #ifndef Z_MIN_PIN
+        #define Z_MIN_PIN -1
       #endif
     #endif
-    #if NUM_Z_STEPPERS >= 4
-      #if ((Z_HOME_TO_MIN && !defined(Z4_MIN_PIN)) || (Z_HOME_TO_MAX && !defined(Z4_MAX_PIN))) && !defined(Z4_STOP_PIN)
-        #error "Z4_STOP_PIN is required for Z_MULTI_ENDSTOPS with NUM_Z_STEPPERS == 4. Define Z4_STOP_PIN in Configuration_adv.h."
-      #endif
+  #elif Z_HOME_TO_MIN
+    #define Z_STOP_PIN Z_MIN_PIN
+  #else
+    #define Z_STOP_PIN Z_MAX_PIN
+  #endif
+  #if ENABLED(Z_MULTI_ENDSTOPS) && PIN_EXISTS(Z_STOP)
+    #ifndef Z2_USE_ENDSTOP
+      #define Z2_USE_ENDSTOP _ZSTOP_
+    #endif
+    #if NUM_Z_STEPPERS >= 3 && !defined(Z3_USE_ENDSTOP)
+      #define Z3_USE_ENDSTOP _ZSTOP_
+    #endif
+    #if NUM_Z_STEPPERS >= 4 && !defined(Z4_USE_ENDSTOP)
+      #define Z4_USE_ENDSTOP _ZSTOP_
     #endif
   #endif
 #endif
 
 #if HAS_I_AXIS
-  #if PIN_EXISTS(I_STOP)
+  #ifdef I_STOP_PIN
     #if I_HOME_TO_MIN
       #define I_MIN_PIN I_STOP_PIN
-    #elif I_HOME_TO_MAX
+      #ifndef I_MAX_PIN
+        #define I_MAX_PIN -1
+      #endif
+    #else
       #define I_MAX_PIN I_STOP_PIN
+      #ifndef I_MIN_PIN
+        #define I_MIN_PIN -1
+      #endif
     #endif
   #elif I_HOME_TO_MIN
     #define I_STOP_PIN I_MIN_PIN
-  #elif I_HOME_TO_MAX
+  #else
     #define I_STOP_PIN I_MAX_PIN
   #endif
+#else
+  #undef I_MIN_PIN
+  #undef I_MAX_PIN
 #endif
 
 #if HAS_J_AXIS
-  #if PIN_EXISTS(J_STOP)
+  #ifdef J_STOP_PIN
     #if J_HOME_TO_MIN
       #define J_MIN_PIN J_STOP_PIN
-    #elif J_HOME_TO_MAX
+      #ifndef J_MAX_PIN
+        #define J_MAX_PIN -1
+      #endif
+    #else
       #define J_MAX_PIN J_STOP_PIN
+      #ifndef J_MIN_PIN
+        #define J_MIN_PIN -1
+      #endif
     #endif
   #elif J_HOME_TO_MIN
     #define J_STOP_PIN J_MIN_PIN
-  #elif J_HOME_TO_MAX
+  #else
     #define J_STOP_PIN J_MAX_PIN
   #endif
+#else
+  #undef J_MIN_PIN
+  #undef J_MAX_PIN
 #endif
 
 #if HAS_K_AXIS
-  #if PIN_EXISTS(K_STOP)
+  #ifdef K_STOP_PIN
     #if K_HOME_TO_MIN
       #define K_MIN_PIN K_STOP_PIN
-    #elif K_HOME_TO_MAX
+      #ifndef K_MAX_PIN
+        #define K_MAX_PIN -1
+      #endif
+    #else
       #define K_MAX_PIN K_STOP_PIN
+      #ifndef K_MIN_PIN
+        #define K_MIN_PIN -1
+      #endif
     #endif
   #elif K_HOME_TO_MIN
     #define K_STOP_PIN K_MIN_PIN
-  #elif K_HOME_TO_MAX
+  #else
     #define K_STOP_PIN K_MAX_PIN
   #endif
+#else
+  #undef K_MIN_PIN
+  #undef K_MAX_PIN
 #endif
 
 #if HAS_U_AXIS
-  #if PIN_EXISTS(U_STOP)
+  #ifdef U_STOP_PIN
     #if U_HOME_TO_MIN
       #define U_MIN_PIN U_STOP_PIN
-    #elif U_HOME_TO_MAX
+      #ifndef U_MAX_PIN
+        #define U_MAX_PIN -1
+      #endif
+    #else
       #define U_MAX_PIN U_STOP_PIN
+      #ifndef U_MIN_PIN
+        #define U_MIN_PIN -1
+      #endif
     #endif
   #elif U_HOME_TO_MIN
     #define U_STOP_PIN U_MIN_PIN
-  #elif U_HOME_TO_MAX
+  #else
     #define U_STOP_PIN U_MAX_PIN
   #endif
+#else
+  #undef U_MIN_PIN
+  #undef U_MAX_PIN
 #endif
 
 #if HAS_V_AXIS
-  #if PIN_EXISTS(V_STOP)
+  #ifdef V_STOP_PIN
     #if V_HOME_TO_MIN
       #define V_MIN_PIN V_STOP_PIN
-    #elif V_HOME_TO_MAX
+      #ifndef V_MAX_PIN
+        #define V_MAX_PIN -1
+      #endif
+    #else
       #define V_MAX_PIN V_STOP_PIN
+      #ifndef V_MIN_PIN
+        #define V_MIN_PIN -1
+      #endif
     #endif
   #elif V_HOME_TO_MIN
     #define V_STOP_PIN V_MIN_PIN
-  #elif V_HOME_TO_MAX
+  #else
     #define V_STOP_PIN V_MAX_PIN
   #endif
+#else
+  #undef V_MIN_PIN
+  #undef V_MAX_PIN
 #endif
 
 #if HAS_W_AXIS
-  #if PIN_EXISTS(W_STOP)
+  #ifdef W_STOP_PIN
     #if W_HOME_TO_MIN
       #define W_MIN_PIN W_STOP_PIN
-    #elif W_HOME_TO_MAX
+      #ifndef W_MAX_PIN
+        #define W_MAX_PIN -1
+      #endif
+    #else
       #define W_MAX_PIN W_STOP_PIN
+      #ifndef W_MIN_PIN
+        #define W_MIN_PIN -1
+      #endif
     #endif
   #elif W_HOME_TO_MIN
     #define W_STOP_PIN W_MIN_PIN
-  #elif W_HOME_TO_MAX
+  #else
     #define W_STOP_PIN W_MAX_PIN
   #endif
+#else
+  #undef W_MIN_PIN
+  #undef W_MAX_PIN
 #endif
 
 // Filament Sensor first pin alias
@@ -877,10 +733,6 @@
   #endif
 #endif
 
-// Utility macros to define extra axis pins in terms of E pins
-#define __EPIN(p,q) E##p##_##q##_PIN
-#define _EPIN(p,q) __EPIN(p,q)
-
 /**
  * Auto-Assignment for Dual X, Dual Y, Multi-Z Steppers
  *
@@ -889,16 +741,12 @@
  * overridden in Configuration.h or Configuration_adv.h.
  */
 
-#define _E_DIAG_EXISTS(p) PIN_EXISTS(E##p##_DIAG)
-#define E_DIAG_EXISTS(p) _E_DIAG_EXISTS(p)
-
-/**
- * For endstop auto-assignment some pins files pre-assign MIN/MAX endstops
- * to DIAG pins so those should be preferred over just using En_DIAG_PIN.
- * DIAG_REMAPPED(X2, X_MIN) ... PIN_EXISTS(X_MIN) && E(X2_E_INDEX)_DIAG_PIN == X_MIN_PIN
- */
+#define __PEXI(p,q) PIN_EXISTS(E##p##_##q)
+#define _PEXI(p,q) __PEXI(p,q)
+#define __EPIN(p,q) E##p##_##q##_PIN
+#define _EPIN(p,q) __EPIN(p,q)
 #define DIAG_REMAPPED(p,q) (PIN_EXISTS(q) && _EPIN(p##_E_INDEX, DIAG) == q##_PIN)
-#define _En_DIAG_PIN(p) E##p##_DIAG_PIN
+#define _En_DIAG_(p) _E##p##_DIAG_
 
 // The E0/E1 steppers are always used for Dual E
 #if ENABLED(E_DUAL_STEPPER_DRIVERS)
@@ -910,8 +758,7 @@
   #define X2_E_INDEX E_STEPPERS
 #endif
 
-// X2 auto-assignment will use up an E stepper, but not if it's chained
-#if HAS_X2_STEPPER && !defined(X2_STEP_PIN) && !PIN_EXISTS(X2_CS)
+#if HAS_X2_STEPPER && !defined(X2_DIAG_PIN) && !defined(X2_STEP_PIN) && !PIN_EXISTS(X2_CS_PIN)
   #define Y2_E_INDEX INCREMENT(X2_E_INDEX)
 #else
   #define Y2_E_INDEX X2_E_INDEX
@@ -965,25 +812,27 @@
   //
   // Auto-assign pins for stallGuard sensorless homing
   //
-  #if !defined(X2_STOP_PIN) && defined(X2_STALL_SENSITIVITY) && ENABLED(X_DUAL_ENDSTOPS) && E_DIAG_EXISTS(X2_E_INDEX)
+  #if !defined(X2_DIAG_PIN) && !defined(X2_USE_ENDSTOP) && defined(X2_STALL_SENSITIVITY) && ENABLED(X_DUAL_ENDSTOPS) && _PEXI(X2_E_INDEX, DIAG)
+    #define X2_DIAG_PIN _EPIN(X2_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(X2, X_MIN)      // If already remapped in the pins file...
-      #define X2_STOP_PIN X_MIN_PIN
+      #define X2_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(X2, Y_MIN)
-      #define X2_STOP_PIN Y_MIN_PIN
+      #define X2_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(X2, Z_MIN)
-      #define X2_STOP_PIN Z_MIN_PIN
+      #define X2_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(X2, X_MAX)
-      #define X2_STOP_PIN X_MAX_PIN
+      #define X2_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(X2, Y_MAX)
-      #define X2_STOP_PIN Y_MAX_PIN
+      #define X2_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(X2, Z_MAX)
-      #define X2_STOP_PIN Z_MAX_PIN
+      #define X2_USE_ENDSTOP _ZMAX_
     #else                               // Otherwise pick the next free En_DIAG_PIN directly
-      #define X2_STOP_PIN _En_DIAG_PIN(X2_E_INDEX)
+      #define X2_USE_ENDSTOP _En_DIAG_(X2_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_X2_DIAG 1
+    #undef X2_DIAG_PIN // Defined in Conditionals_post.h based on X2_USE_ENDSTOP
   #endif
-#endif // HAS_X2_STEPPER
+#endif
 
 #ifndef X2_CS_PIN
   #define X2_CS_PIN  -1
@@ -998,15 +847,14 @@
   #define X2_MS3_PIN -1
 #endif
 
-// Y2 auto-assignment will use up an E stepper, but not if it's chained
-#if HAS_Y2_STEPPER && !defined(Y2_STEP_PIN) && !PIN_EXISTS(Y2_CS)
+#if HAS_DUAL_Y_STEPPERS && !defined(Y2_DIAG_PIN) && !defined(Y2_STEP_PIN) && !PIN_EXISTS(Y2_CS_PIN)
   #define Z2_E_INDEX INCREMENT(Y2_E_INDEX)
 #else
   #define Z2_E_INDEX Y2_E_INDEX
 #endif
 
 // The Y2 axis, if any, should be the next open extruder port
-#if HAS_Y2_STEPPER
+#if HAS_DUAL_Y_STEPPERS
   #ifndef Y2_STEP_PIN
     #define Y2_STEP_PIN   _EPIN(Y2_E_INDEX, STEP)
     #define Y2_DIR_PIN    _EPIN(Y2_E_INDEX, DIR)
@@ -1050,25 +898,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(Y2_STOP_PIN) && defined(Y2_STALL_SENSITIVITY) && ENABLED(Y_DUAL_ENDSTOPS) && E_DIAG_EXISTS(Y2_E_INDEX)
+  #if !defined(Y2_DIAG_PIN) && !defined(Y2_USE_ENDSTOP) && defined(Y2_STALL_SENSITIVITY) && ENABLED(Y_DUAL_ENDSTOPS) && _PEXI(Y2_E_INDEX, DIAG)
+    #define Y2_DIAG_PIN _EPIN(Y2_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(Y2, X_MIN)
-      #define Y2_STOP_PIN X_MIN_PIN
+      #define Y2_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(Y2, Y_MIN)
-      #define Y2_STOP_PIN Y_MIN_PIN
+      #define Y2_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(Y2, Z_MIN)
-      #define Y2_STOP_PIN Z_MIN_PIN
+      #define Y2_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(Y2, X_MAX)
-      #define Y2_STOP_PIN X_MAX_PIN
+      #define Y2_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(Y2, Y_MAX)
-      #define Y2_STOP_PIN Y_MAX_PIN
+      #define Y2_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(Y2, Z_MAX)
-      #define Y2_STOP_PIN Z_MAX_PIN
+      #define Y2_USE_ENDSTOP _ZMAX_
     #else
-      #define Y2_STOP_PIN _En_DIAG_PIN(Y2_E_INDEX)
+      #define Y2_USE_ENDSTOP _En_DIAG_(Y2_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_Y2_DIAG 1
+    #undef Y2_DIAG_PIN // Defined in Conditionals_post.h based on Y2_USE_ENDSTOP
   #endif
-#endif // HAS_Y2_STEPPER
+#endif
 
 #ifndef Y2_CS_PIN
   #define Y2_CS_PIN  -1
@@ -1083,8 +933,7 @@
   #define Y2_MS3_PIN -1
 #endif
 
-// Z2 auto-assignment will use up an E stepper, but not if it's chained
-#if NUM_Z_STEPPERS >= 2 && !defined(Z2_STEP_PIN) && !PIN_EXISTS(Z2_CS)
+#if NUM_Z_STEPPERS >= 2 && !defined(Z2_DIAG_PIN) && !defined(Z2_STEP_PIN) && !PIN_EXISTS(Z2_CS_PIN)
   #define Z3_E_INDEX INCREMENT(Z2_E_INDEX)
 #else
   #define Z3_E_INDEX Z2_E_INDEX
@@ -1135,25 +984,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(Z2_STOP_PIN) && defined(Z2_STALL_SENSITIVITY) && ENABLED(Z_MULTI_ENDSTOPS) && E_DIAG_EXISTS(Z2_E_INDEX)
+  #if !defined(Z2_DIAG_PIN) && !defined(Z2_USE_ENDSTOP) && defined(Z2_STALL_SENSITIVITY) && ENABLED(Z_MULTI_ENDSTOPS) && _PEXI(Z2_E_INDEX, DIAG)
+    #define Z2_DIAG_PIN _EPIN(Z2_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(Z2, X_MIN)
-      #define Z2_STOP_PIN X_MIN_PIN
+      #define Z2_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(Z2, Y_MIN)
-      #define Z2_STOP_PIN Y_MIN_PIN
+      #define Z2_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(Z2, Z_MIN)
-      #define Z2_STOP_PIN Z_MIN_PIN
+      #define Z2_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(Z2, X_MAX)
-      #define Z2_STOP_PIN X_MAX_PIN
+      #define Z2_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(Z2, Y_MAX)
-      #define Z2_STOP_PIN Y_MAX_PIN
+      #define Z2_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(Z2, Z_MAX)
-      #define Z2_STOP_PIN Z_MAX_PIN
+      #define Z2_USE_ENDSTOP _ZMAX_
     #else
-      #define Z2_STOP_PIN _En_DIAG_PIN(Z2_E_INDEX)
+      #define Z2_USE_ENDSTOP _En_DIAG_(Z2_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_Z2_DIAG 1
+    #undef Z2_DIAG_PIN // Defined in Conditionals_post.h based on Z2_USE_ENDSTOP
   #endif
-#endif // NUM_Z_STEPPERS >= 2
+#endif
 
 #ifndef Z2_CS_PIN
   #define Z2_CS_PIN  -1
@@ -1168,8 +1019,7 @@
   #define Z2_MS3_PIN -1
 #endif
 
-// Z3 auto-assignment will use up an E stepper, but not if it's chained
-#if NUM_Z_STEPPERS >= 3 && !defined(Z3_STEP_PIN) && !PIN_EXISTS(Z3_CS)
+#if NUM_Z_STEPPERS >= 3 && !defined(Z3_DIAG_PIN) && !defined(Z3_STEP_PIN) && !PIN_EXISTS(Z3_CS_PIN)
   #define Z4_E_INDEX INCREMENT(Z3_E_INDEX)
 #else
   #define Z4_E_INDEX Z3_E_INDEX
@@ -1220,25 +1070,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(Z3_STOP_PIN) && defined(Z3_STALL_SENSITIVITY) && ENABLED(Z_MULTI_ENDSTOPS) && E_DIAG_EXISTS(Z3_E_INDEX)
+  #if !defined(Z3_DIAG_PIN) && !defined(Z3_USE_ENDSTOP) && defined(Z3_STALL_SENSITIVITY) && ENABLED(Z_MULTI_ENDSTOPS) && _PEXI(Z3_E_INDEX, DIAG)
+    #define Z3_DIAG_PIN _EPIN(Z3_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(Z3, X_MIN)
-      #define Z3_STOP_PIN X_MIN_PIN
+      #define Z3_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(Z3, Y_MIN)
-      #define Z3_STOP_PIN Y_MIN_PIN
+      #define Z3_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(Z3, Z_MIN)
-      #define Z3_STOP_PIN Z_MIN_PIN
+      #define Z3_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(Z3, X_MAX)
-      #define Z3_STOP_PIN X_MAX_PIN
+      #define Z3_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(Z3, Y_MAX)
-      #define Z3_STOP_PIN Y_MAX_PIN
+      #define Z3_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(Z3, Z_MAX)
-      #define Z3_STOP_PIN Z_MAX_PIN
+      #define Z3_USE_ENDSTOP _ZMAX_
     #else
-      #define Z3_STOP_PIN _En_DIAG_PIN(Z3_E_INDEX)
+      #define Z3_USE_ENDSTOP _En_DIAG_(Z3_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_Z3_DIAG 1
+    #undef Z3_DIAG_PIN // Defined in Conditionals_post.h based on Z3_USE_ENDSTOP
   #endif
-#endif // NUM_Z_STEPPERS >= 3
+#endif
 
 #ifndef Z3_CS_PIN
   #define Z3_CS_PIN  -1
@@ -1253,8 +1105,7 @@
   #define Z3_MS3_PIN -1
 #endif
 
-// Z4 auto-assignment will use up an E stepper, but not if it's chained
-#if NUM_Z_STEPPERS >= 4 && !defined(Z4_STEP_PIN) && !PIN_EXISTS(Z4_CS)
+#if NUM_Z_STEPPERS >= 4 && !defined(Z4_DIAG_PIN) && !defined(Z4_STEP_PIN) && !PIN_EXISTS(Z4_CS_PIN)
   #define I_E_INDEX INCREMENT(Z4_E_INDEX)
 #else
   #define I_E_INDEX Z4_E_INDEX
@@ -1305,25 +1156,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(Z4_STOP_PIN) && defined(Z4_STALL_SENSITIVITY) && ENABLED(Z_MULTI_ENDSTOPS) && E_DIAG_EXISTS(Z4_E_INDEX)
+  #if !defined(Z4_DIAG_PIN) && !defined(Z4_USE_ENDSTOP) && defined(Z4_STALL_SENSITIVITY) && ENABLED(Z_MULTI_ENDSTOPS) && _PEXI(Z4_E_INDEX, DIAG)
+    #define Z4_DIAG_PIN _EPIN(Z4_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(Z4, X_MIN)
-      #define Z4_STOP_PIN X_MIN_PIN
+      #define Z4_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(Z4, Y_MIN)
-      #define Z4_STOP_PIN Y_MIN_PIN
+      #define Z4_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(Z4, Z_MIN)
-      #define Z4_STOP_PIN Z_MIN_PIN
+      #define Z4_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(Z4, X_MAX)
-      #define Z4_STOP_PIN X_MAX_PIN
+      #define Z4_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(Z4, Y_MAX)
-      #define Z4_STOP_PIN Y_MAX_PIN
+      #define Z4_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(Z4, Z_MAX)
-      #define Z4_STOP_PIN Z_MAX_PIN
+      #define Z4_USE_ENDSTOP _ZMAX_
     #else
-      #define Z4_STOP_PIN _En_DIAG_PIN(Z4_E_INDEX)
+      #define Z4_USE_ENDSTOP _En_DIAG_(Z4_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_Z4_DIAG 1
+    #undef Z4_DIAG_PIN // Defined in Conditionals_post.h based on Z4_USE_ENDSTOP
   #endif
-#endif // NUM_Z_STEPPERS >= 4
+#endif
 
 #ifndef Z4_CS_PIN
   #define Z4_CS_PIN  -1
@@ -1338,8 +1191,7 @@
   #define Z4_MS3_PIN -1
 #endif
 
-// I auto-assignment will use up an E stepper, but not if it's chained
-#if HAS_I_AXIS && !defined(I_STEP_PIN) && !PIN_EXISTS(I_CS)
+#if HAS_I_AXIS && !defined(I_DIAG_PIN) && !defined(I_STEP_PIN) && !PIN_EXISTS(I_CS_PIN)
   #define J_E_INDEX INCREMENT(I_E_INDEX)
 #else
   #define J_E_INDEX I_E_INDEX
@@ -1390,25 +1242,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(I_STOP_PIN) && defined(I_STALL_SENSITIVITY) && E_DIAG_EXISTS(I_E_INDEX)
+  #if !defined(I_DIAG_PIN) && !defined(I_USE_ENDSTOP) && defined(I_STALL_SENSITIVITY) && _PEXI(I_E_INDEX, DIAG)
+    #define I_DIAG_PIN _EPIN(I_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(I, X_MIN)
-      #define I_STOP_PIN X_MIN_PIN
+      #define I_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(I, Y_MIN)
-      #define I_STOP_PIN Y_MIN_PIN
+      #define I_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(I, Z_MIN)
-      #define I_STOP_PIN Z_MIN_PIN
+      #define I_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(I, X_MAX)
-      #define I_STOP_PIN X_MAX_PIN
+      #define I_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(I, Y_MAX)
-      #define I_STOP_PIN Y_MAX_PIN
+      #define I_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(I, Z_MAX)
-      #define I_STOP_PIN Z_MAX_PIN
+      #define I_USE_ENDSTOP _ZMAX_
     #else
-      #define I_STOP_PIN _En_DIAG_PIN(I_E_INDEX)
+      #define I_USE_ENDSTOP _En_DIAG_(I_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_I_DIAG 1
+    #undef I_DIAG_PIN // Defined in Conditionals_post.h based on I_USE_ENDSTOP
   #endif
-#endif // HAS_I_AXIS
+#endif
 
 #ifndef I_CS_PIN
   #define I_CS_PIN  -1
@@ -1423,8 +1277,7 @@
   #define I_MS3_PIN -1
 #endif
 
-// J auto-assignment will use up an E stepper, but not if it's chained
-#if HAS_J_AXIS && !defined(J_STEP_PIN) && !PIN_EXISTS(J_CS)
+#if HAS_J_AXIS && !defined(J_DIAG_PIN) && !defined(J_STEP_PIN) && !PIN_EXISTS(J_CS_PIN)
   #define K_E_INDEX INCREMENT(J_E_INDEX)
 #else
   #define K_E_INDEX J_E_INDEX
@@ -1436,7 +1289,7 @@
     #define J_STEP_PIN   _EPIN(J_E_INDEX, STEP)
     #define J_DIR_PIN    _EPIN(J_E_INDEX, DIR)
     #define J_ENABLE_PIN _EPIN(J_E_INDEX, ENABLE)
-    #if J_E_INDEX >= MAX_E_STEPPERS || !PIN_EXISTS(J_STEP)
+    #if I_E_INDEX >= MAX_E_STEPPERS || !PIN_EXISTS(J_STEP)
       #error "No E stepper plug left for J!"
     #else
       #define AUTO_ASSIGNED_J_STEPPER 1
@@ -1475,25 +1328,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(J_STOP_PIN) && defined(J_STALL_SENSITIVITY) && E_DIAG_EXISTS(J_E_INDEX)
+  #if !defined(J_DIAG_PIN) && !defined(J_USE_ENDSTOP) && defined(J_STALL_SENSITIVITY) && _PEXI(J_E_INDEX, DIAG)
+    #define J_DIAG_PIN _EPIN(J_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(J, X_MIN)
-      #define J_STOP_PIN X_MIN_PIN
+      #define J_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(J, Y_MIN)
-      #define J_STOP_PIN Y_MIN_PIN
+      #define J_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(J, Z_MIN)
-      #define J_STOP_PIN Z_MIN_PIN
+      #define J_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(J, X_MAX)
-      #define J_STOP_PIN X_MAX_PIN
+      #define J_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(J, Y_MAX)
-      #define J_STOP_PIN Y_MAX_PIN
+      #define J_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(I, Z_MAX)
-      #define J_STOP_PIN Z_MAX_PIN
+      #define J_USE_ENDSTOP _ZMAX_
     #else
-      #define J_STOP_PIN _En_DIAG_PIN(J_E_INDEX)
+      #define J_USE_ENDSTOP _En_DIAG_(J_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_J_DIAG 1
+    #undef J_DIAG_PIN // Defined in Conditionals_post.h based on J_USE_ENDSTOP
   #endif
-#endif // HAS_J_AXIS
+#endif
 
 #ifndef J_CS_PIN
   #define J_CS_PIN  -1
@@ -1508,8 +1363,7 @@
   #define J_MS3_PIN -1
 #endif
 
-// K auto-assignment will use up an E stepper, but not if it's chained
-#if HAS_K_AXIS && !defined(K_STEP_PIN) && !PIN_EXISTS(K_CS)
+#if HAS_K_AXIS && !defined(K_DIAG_PIN) && !defined(K_STEP_PIN) && !PIN_EXISTS(K_CS_PIN)
   #define U_E_INDEX INCREMENT(K_E_INDEX)
 #else
   #define U_E_INDEX K_E_INDEX
@@ -1560,25 +1414,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(K_STOP_PIN) && defined(K_STALL_SENSITIVITY) && E_DIAG_EXISTS(K_E_INDEX)
+  #if !defined(K_DIAG_PIN) && !defined(K_USE_ENDSTOP) && defined(K_STALL_SENSITIVITY) && _PEXI(K_E_INDEX, DIAG)
+    #define K_DIAG_PIN _EPIN(K_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(K, X_MIN)
-      #define K_STOP_PIN X_MIN_PIN
+      #define K_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(K, Y_MIN)
-      #define K_STOP_PIN Y_MIN_PIN
+      #define K_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(K, Z_MIN)
-      #define K_STOP_PIN Z_MIN_PIN
+      #define K_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(K, X_MAX)
-      #define K_STOP_PIN X_MAX_PIN
+      #define K_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(K, Y_MAX)
-      #define K_STOP_PIN Y_MAX_PIN
+      #define K_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(K, Z_MAX)
-      #define K_STOP_PIN Z_MAX_PIN
+      #define K_USE_ENDSTOP _ZMAX_
     #else
-      #define K_STOP_PIN _En_DIAG_PIN(K_E_INDEX)
+      #define K_USE_ENDSTOP _En_DIAG_(K_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_K_DIAG 1
+    #undef K_DIAG_PIN // Defined in Conditionals_post.h based on K_USE_ENDSTOP
   #endif
-#endif // HAS_K_AXIS
+#endif
 
 #ifndef K_CS_PIN
   #define K_CS_PIN  -1
@@ -1593,8 +1449,7 @@
   #define K_MS3_PIN -1
 #endif
 
-// U auto-assignment will use up an E stepper, but not if it's chained
-#if HAS_U_AXIS && !defined(U_STEP_PIN) && !PIN_EXISTS(U_CS)
+#if HAS_U_AXIS && !defined(U_DIAG_PIN) && !defined(U_STEP_PIN) && !PIN_EXISTS(U_CS_PIN)
   #define V_E_INDEX INCREMENT(U_E_INDEX)
 #else
   #define V_E_INDEX U_E_INDEX
@@ -1606,7 +1461,7 @@
     #define U_STEP_PIN   _EPIN(U_E_INDEX, STEP)
     #define U_DIR_PIN    _EPIN(U_E_INDEX, DIR)
     #define U_ENABLE_PIN _EPIN(U_E_INDEX, ENABLE)
-    #if U_E_INDEX >= MAX_E_STEPPERS || !PIN_EXISTS(U_STEP)
+    #if M_E_INDEX >= MAX_E_STEPPERS || !PIN_EXISTS(U_STEP)
       #error "No E stepper plug left for U!"
     #else
       #define AUTO_ASSIGNED_U_STEPPER 1
@@ -1645,25 +1500,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(U_STOP_PIN) && defined(U_STALL_SENSITIVITY) && E_DIAG_EXISTS(U_E_INDEX)
+  #if !defined(U_DIAG_PIN) && !defined(U_USE_ENDSTOP) && defined(U_STALL_SENSITIVITY) && _PEXI(U_E_INDEX, DIAG)
+    #define U_DIAG_PIN _EPIN(U_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(U, X_MIN)
-      #define U_STOP_PIN X_MIN_PIN
+      #define U_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(U, Y_MIN)
-      #define U_STOP_PIN Y_MIN_PIN
+      #define U_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(U, Z_MIN)
-      #define U_STOP_PIN Z_MIN_PIN
+      #define U_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(U, X_MAX)
-      #define U_STOP_PIN X_MAX_PIN
+      #define U_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(U, Y_MAX)
-      #define U_STOP_PIN Y_MAX_PIN
+      #define U_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(U, Z_MAX)
-      #define U_STOP_PIN Z_MAX_PIN
+      #define U_USE_ENDSTOP _ZMAX_
     #else
-      #define U_STOP_PIN _En_DIAG_PIN(U_E_INDEX)
+      #define U_USE_ENDSTOP _En_DIAG_(U_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_U_DIAG 1
+    #undef U_DIAG_PIN // Defined in Conditionals_post.h based on U_USE_ENDSTOP
   #endif
-#endif // HAS_U_AXIS
+#endif
 
 #ifndef U_CS_PIN
   #define U_CS_PIN  -1
@@ -1678,8 +1535,7 @@
   #define U_MS3_PIN -1
 #endif
 
-// V auto-assignment will use up an E stepper, but not if it's chained
-#if HAS_V_AXIS && !defined(V_STEP_PIN) && !PIN_EXISTS(V_CS)
+#if HAS_V_AXIS && !defined(V_DIAG_PIN) && !defined(V_STEP_PIN) && !PIN_EXISTS(V_CS_PIN)
   #define W_E_INDEX INCREMENT(V_E_INDEX)
 #else
   #define W_E_INDEX V_E_INDEX
@@ -1730,25 +1586,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(V_STOP_PIN) && defined(V_STALL_SENSITIVITY) && E_DIAG_EXISTS(V_E_INDEX)
+  #if !defined(V_DIAG_PIN) && !defined(V_USE_ENDSTOP) && defined(V_STALL_SENSITIVITY) && _PEXI(V_E_INDEX, DIAG)
+    #define V_DIAG_PIN _EPIN(V_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(V, X_MIN)
-      #define V_STOP_PIN X_MIN_PIN
+      #define V_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(V, Y_MIN)
-      #define V_STOP_PIN Y_MIN_PIN
+      #define V_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(V, Z_MIN)
-      #define V_STOP_PIN Z_MIN_PIN
+      #define V_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(V, X_MAX)
-      #define V_STOP_PIN X_MAX_PIN
+      #define V_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(V, Y_MAX)
-      #define V_STOP_PIN Y_MAX_PIN
+      #define V_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(V, Z_MAX)
-      #define V_STOP_PIN Z_MAX_PIN
+      #define V_USE_ENDSTOP _ZMAX_
     #else
-      #define V_STOP_PIN _En_DIAG_PIN(V_E_INDEX)
+      #define V_USE_ENDSTOP _En_DIAG_(V_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_V_DIAG 1
+    #undef V_DIAG_PIN // Defined in Conditionals_post.h based on O_USE_ENDSTOP
   #endif
-#endif // HAS_V_AXIS
+#endif
 
 #ifndef V_CS_PIN
   #define V_CS_PIN  -1
@@ -1808,25 +1666,27 @@
     #endif
   #endif
   // Auto-assign pins for stallGuard sensorless homing
-  #if !defined(W_STOP_PIN) && defined(W_STALL_SENSITIVITY) && E_DIAG_EXISTS(W_E_INDEX)
+  #if !defined(W_DIAG_PIN) && !defined(W_USE_ENDSTOP) && defined(W_STALL_SENSITIVITY) && _PEXI(W_E_INDEX, DIAG)
+    #define W_DIAG_PIN _EPIN(W_E_INDEX, DIAG)
     #if   DIAG_REMAPPED(W, X_MIN)
-      #define W_STOP_PIN X_MIN_PIN
+      #define W_USE_ENDSTOP _XMIN_
     #elif DIAG_REMAPPED(W, Y_MIN)
-      #define W_STOP_PIN Y_MIN_PIN
+      #define W_USE_ENDSTOP _YMIN_
     #elif DIAG_REMAPPED(W, Z_MIN)
-      #define W_STOP_PIN Z_MIN_PIN
+      #define W_USE_ENDSTOP _ZMIN_
     #elif DIAG_REMAPPED(W, X_MAX)
-      #define W_STOP_PIN X_MAX_PIN
+      #define W_USE_ENDSTOP _XMAX_
     #elif DIAG_REMAPPED(W, Y_MAX)
-      #define W_STOP_PIN Y_MAX_PIN
+      #define W_USE_ENDSTOP _YMAX_
     #elif DIAG_REMAPPED(W, Z_MAX)
-      #define W_STOP_PIN Z_MAX_PIN
+      #define W_USE_ENDSTOP _ZMAX_
     #else
-      #define W_STOP_PIN _En_DIAG_PIN(W_E_INDEX)
+      #define W_USE_ENDSTOP _En_DIAG_(W_E_INDEX)
     #endif
     #define AUTO_ASSIGNED_W_DIAG 1
+    #undef W_DIAG_PIN // Defined in Conditionals_post.h based on Q_USE_ENDSTOP
   #endif
-#endif // HAS_W_AXIS
+#endif
 
 #ifndef W_CS_PIN
   #define W_CS_PIN  -1
@@ -1841,25 +1701,359 @@
   #define W_MS3_PIN -1
 #endif
 
+//
+// Disable unused endstop / probe pins
+//
+#define _STOP_IN_USE(N) (X2_USE_ENDSTOP == N || Y2_USE_ENDSTOP == N || Z2_USE_ENDSTOP == N || Z3_USE_ENDSTOP == N || Z4_USE_ENDSTOP == N)
+#if !defined(USE_XMAX_PLUG) && _STOP_IN_USE(_XMAX_)
+  #define USE_XMAX_PLUG
+#endif
+#if !defined(USE_YMAX_PLUG) && _STOP_IN_USE(_YMAX_)
+  #define USE_YMAX_PLUG
+#endif
+#if !defined(USE_ZMAX_PLUG) && _STOP_IN_USE(_ZMAX_)
+  #define USE_ZMAX_PLUG
+#endif
+#if !defined(USE_XMIN_PLUG) && _STOP_IN_USE(_XMIN_)
+  #define USE_XMIN_PLUG
+#endif
+#if !defined(USE_YMIN_PLUG) && _STOP_IN_USE(_YMIN_)
+  #define USE_YMIN_PLUG
+#endif
+#if !defined(USE_ZMIN_PLUG) && _STOP_IN_USE(_ZMIN_)
+  #define USE_ZMIN_PLUG
+#endif
+#undef _STOP_IN_USE
+#if !USES_Z_MIN_PROBE_PIN
+  #undef Z_MIN_PROBE_PIN
+  #define Z_MIN_PROBE_PIN    -1
+#endif
+#if DISABLED(USE_XMIN_PLUG)
+  #undef X_MIN_PIN
+  #define X_MIN_PIN          -1
+#endif
+#if DISABLED(USE_XMAX_PLUG)
+  #undef X_MAX_PIN
+  #define X_MAX_PIN          -1
+#endif
+#if NONE(USE_XMIN_PLUG, USE_XMAX_PLUG)
+  #undef X_STOP_PIN
+#endif
+#if DISABLED(USE_YMIN_PLUG)
+  #undef Y_MIN_PIN
+  #define Y_MIN_PIN          -1
+#endif
+#if DISABLED(USE_YMAX_PLUG)
+  #undef Y_MAX_PIN
+  #define Y_MAX_PIN          -1
+#endif
+#if NONE(USE_YMIN_PLUG, USE_YMAX_PLUG)
+  #undef Y_STOP_PIN
+#endif
+#if DISABLED(USE_ZMIN_PLUG)
+  #undef Z_MIN_PIN
+  #define Z_MIN_PIN          -1
+#endif
+#if DISABLED(USE_ZMAX_PLUG)
+  #undef Z_MAX_PIN
+  #define Z_MAX_PIN          -1
+#endif
+#if NONE(USE_ZMIN_PLUG, USE_ZMAX_PLUG)
+  #undef Z_STOP_PIN
+#endif
+#if DISABLED(USE_IMIN_PLUG)
+  #undef I_MIN_PIN
+  #define I_MIN_PIN          -1
+#endif
+#if DISABLED(USE_IMAX_PLUG)
+  #undef I_MAX_PIN
+  #define I_MAX_PIN          -1
+#endif
+#if NONE(USE_IMIN_PLUG, USE_IMAX_PLUG)
+  #undef I_STOP_PIN
+#endif
+#if DISABLED(USE_JMIN_PLUG)
+  #undef J_MIN_PIN
+  #define J_MIN_PIN          -1
+#endif
+#if DISABLED(USE_JMAX_PLUG)
+  #undef J_MAX_PIN
+  #define J_MAX_PIN          -1
+#endif
+#if NONE(USE_JMIN_PLUG, USE_JMAX_PLUG)
+  #undef J_STOP_PIN
+#endif
+#if DISABLED(USE_KMIN_PLUG)
+  #undef K_MIN_PIN
+  #define K_MIN_PIN          -1
+#endif
+#if DISABLED(USE_KMAX_PLUG)
+  #undef K_MAX_PIN
+  #define K_MAX_PIN          -1
+#endif
+#if NONE(USE_KMIN_PLUG, USE_KMAX_PLUG)
+  #undef K_STOP_PIN
+#endif
+#if DISABLED(USE_UMIN_PLUG)
+  #undef U_MIN_PIN
+  #define U_MIN_PIN          -1
+#endif
+#if DISABLED(USE_UMAX_PLUG)
+  #undef U_MAX_PIN
+  #define U_MAX_PIN          -1
+#endif
+#if NONE(USE_UMIN_PLUG, USE_UMAX_PLUG)
+  #undef U_STOP_PIN
+#endif
+#if DISABLED(USE_VMIN_PLUG)
+  #undef V_MIN_PIN
+  #define V_MIN_PIN          -1
+#endif
+#if DISABLED(USE_VMAX_PLUG)
+  #undef V_MAX_PIN
+  #define V_MAX_PIN          -1
+#endif
+#if NONE(USE_VMIN_PLUG, USE_VMAX_PLUG)
+  #undef V_STOP_PIN
+#endif
+#if DISABLED(USE_WMIN_PLUG)
+  #undef W_MIN_PIN
+  #define W_MIN_PIN          -1
+#endif
+#if DISABLED(USE_WMAX_PLUG)
+  #undef W_MAX_PIN
+  #define W_MAX_PIN          -1
+#endif
+#if NONE(USE_WMIN_PLUG, USE_WMAX_PLUG)
+  #undef W_STOP_PIN
+#endif
+
+#if DISABLED(X_DUAL_ENDSTOPS) || X_HOME_TO_MAX
+  #undef X2_MIN_PIN
+#endif
+#if DISABLED(X_DUAL_ENDSTOPS) || X_HOME_TO_MIN
+  #undef X2_MAX_PIN
+#endif
+#if DISABLED(Y_DUAL_ENDSTOPS) || Y_HOME_TO_MAX
+  #undef Y2_MIN_PIN
+#endif
+#if DISABLED(Y_DUAL_ENDSTOPS) || Y_HOME_TO_MIN
+  #undef Y2_MAX_PIN
+#endif
+#if DISABLED(Z_MULTI_ENDSTOPS) || Z_HOME_TO_MAX
+  #undef Z2_MIN_PIN
+#endif
+#if DISABLED(Z_MULTI_ENDSTOPS) || Z_HOME_TO_MIN
+  #undef Z2_MAX_PIN
+#endif
+#if DISABLED(Z_MULTI_ENDSTOPS) || NUM_Z_STEPPERS < 3 || Z_HOME_TO_MAX
+  #undef Z3_MIN_PIN
+#endif
+#if DISABLED(Z_MULTI_ENDSTOPS) || NUM_Z_STEPPERS < 3 || Z_HOME_TO_MIN
+  #undef Z3_MAX_PIN
+#endif
+#if DISABLED(Z_MULTI_ENDSTOPS) || NUM_Z_STEPPERS < 4 || Z_HOME_TO_MAX
+  #undef Z4_MIN_PIN
+#endif
+#if DISABLED(Z_MULTI_ENDSTOPS) || NUM_Z_STEPPERS < 4 || Z_HOME_TO_MIN
+  #undef Z4_MAX_PIN
+#endif
+
 /**
  * X_DUAL_ENDSTOPS endstop reassignment
  */
-#if ENABLED(X_DUAL_ENDSTOPS) && PIN_EXISTS(X2_STOP)
-  #if X_HOME_TO_MAX && !defined(X2_MAX_PIN)
-    #define X2_MAX_PIN X2_STOP_PIN
-  #elif X_HOME_TO_MIN && !defined(X2_MIN_PIN)
-    #define X2_MIN_PIN X2_STOP_PIN
+#if ENABLED(X_DUAL_ENDSTOPS)
+  #if X_HOME_TO_MAX
+    #ifndef X2_MAX_PIN
+      #if PIN_EXISTS(X2_STOP)
+        #define X2_MAX_PIN X2_STOP_PIN
+      #elif X2_USE_ENDSTOP == _XMIN_
+        #define X2_MAX_PIN X_MIN_PIN
+      #elif X2_USE_ENDSTOP == _XMAX_
+        #define X2_MAX_PIN X_MAX_PIN
+      #elif X2_USE_ENDSTOP == _XSTOP_
+        #define X2_MAX_PIN X_STOP_PIN
+      #elif X2_USE_ENDSTOP == _YMIN_
+        #define X2_MAX_PIN Y_MIN_PIN
+      #elif X2_USE_ENDSTOP == _YMAX_
+        #define X2_MAX_PIN Y_MAX_PIN
+      #elif X2_USE_ENDSTOP == _YSTOP_
+        #define X2_MAX_PIN Y_STOP_PIN
+      #elif X2_USE_ENDSTOP == _ZMIN_
+        #define X2_MAX_PIN Z_MIN_PIN
+      #elif X2_USE_ENDSTOP == _ZMAX_
+        #define X2_MAX_PIN Z_MAX_PIN
+      #elif X2_USE_ENDSTOP == _ZSTOP_
+        #define X2_MAX_PIN Z_STOP_PIN
+      #elif X2_USE_ENDSTOP == _XDIAG_
+        #define X2_MAX_PIN X_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _YDIAG_
+        #define X2_MAX_PIN Y_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _ZDIAG_
+        #define X2_MAX_PIN Z_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E0DIAG_
+        #define X2_MAX_PIN E0_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E1DIAG_
+        #define X2_MAX_PIN E1_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E2DIAG_
+        #define X2_MAX_PIN E2_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E3DIAG_
+        #define X2_MAX_PIN E3_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E4DIAG_
+        #define X2_MAX_PIN E4_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E5DIAG_
+        #define X2_MAX_PIN E5_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E6DIAG_
+        #define X2_MAX_PIN E6_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E7DIAG_
+        #define X2_MAX_PIN E7_DIAG_PIN
+      #endif
+    #endif
+  #else
+    #ifndef X2_MIN_PIN
+      #if PIN_EXISTS(X2_STOP)
+        #define X2_MIN_PIN X2_STOP_PIN
+      #elif X2_USE_ENDSTOP == _XMIN_
+        #define X2_MIN_PIN X_MIN_PIN
+      #elif X2_USE_ENDSTOP == _XMAX_
+        #define X2_MIN_PIN X_MAX_PIN
+      #elif X2_USE_ENDSTOP == _XSTOP_
+        #define X2_MIN_PIN X_STOP_PIN
+      #elif X2_USE_ENDSTOP == _YMIN_
+        #define X2_MIN_PIN Y_MIN_PIN
+      #elif X2_USE_ENDSTOP == _YMAX_
+        #define X2_MIN_PIN Y_MAX_PIN
+      #elif X2_USE_ENDSTOP == _YSTOP_
+        #define X2_MIN_PIN Y_STOP_PIN
+      #elif X2_USE_ENDSTOP == _ZMIN_
+        #define X2_MIN_PIN Z_MIN_PIN
+      #elif X2_USE_ENDSTOP == _ZMAX_
+        #define X2_MIN_PIN Z_MAX_PIN
+      #elif X2_USE_ENDSTOP == _ZSTOP_
+        #define X2_MIN_PIN Z_STOP_PIN
+      #elif X2_USE_ENDSTOP == _XDIAG_
+        #define X2_MIN_PIN X_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _YDIAG_
+        #define X2_MIN_PIN Y_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _ZDIAG_
+        #define X2_MIN_PIN Z_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E0DIAG_
+        #define X2_MIN_PIN E0_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E1DIAG_
+        #define X2_MIN_PIN E1_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E2DIAG_
+        #define X2_MIN_PIN E2_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E3DIAG_
+        #define X2_MIN_PIN E3_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E4DIAG_
+        #define X2_MIN_PIN E4_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E5DIAG_
+        #define X2_MIN_PIN E5_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E6DIAG_
+        #define X2_MIN_PIN E6_DIAG_PIN
+      #elif X2_USE_ENDSTOP == _E7DIAG_
+        #define X2_MIN_PIN E7_DIAG_PIN
+      #endif
+    #endif
   #endif
 #endif
 
 /**
  * Y_DUAL_ENDSTOPS endstop reassignment
  */
-#if ENABLED(Y_DUAL_ENDSTOPS) && PIN_EXISTS(Y2_STOP)
-  #if Y_HOME_TO_MAX && !defined(Y2_MAX_PIN)
-    #define Y2_MAX_PIN Y2_STOP_PIN
-  #elif Y_HOME_TO_MIN && !defined(Y2_MIN_PIN)
-    #define Y2_MIN_PIN Y2_STOP_PIN
+#if ENABLED(Y_DUAL_ENDSTOPS)
+  #if Y_HOME_TO_MAX
+    #ifndef Y2_MAX_PIN
+      #if PIN_EXISTS(Y2_STOP)
+        #define Y2_MAX_PIN Y2_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _XMIN_
+        #define Y2_MAX_PIN X_MIN_PIN
+      #elif Y2_USE_ENDSTOP == _XMAX_
+        #define Y2_MAX_PIN X_MAX_PIN
+      #elif Y2_USE_ENDSTOP == _XSTOP_
+        #define Y2_MAX_PIN X_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _YMIN_
+        #define Y2_MAX_PIN Y_MIN_PIN
+      #elif Y2_USE_ENDSTOP == _YMAX_
+        #define Y2_MAX_PIN Y_MAX_PIN
+      #elif Y2_USE_ENDSTOP == _YSTOP_
+        #define Y2_MAX_PIN Y_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _ZMIN_
+        #define Y2_MAX_PIN Z_MIN_PIN
+      #elif Y2_USE_ENDSTOP == _ZMAX_
+        #define Y2_MAX_PIN Z_MAX_PIN
+      #elif Y2_USE_ENDSTOP == _ZSTOP_
+        #define Y2_MAX_PIN Z_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _XDIAG_
+        #define Y2_MAX_PIN X_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _YDIAG_
+        #define Y2_MAX_PIN Y_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _ZDIAG_
+        #define Y2_MAX_PIN Z_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E0DIAG_
+        #define Y2_MAX_PIN E0_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E1DIAG_
+        #define Y2_MAX_PIN E1_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E2DIAG_
+        #define Y2_MAX_PIN E2_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E3DIAG_
+        #define Y2_MAX_PIN E3_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E4DIAG_
+        #define Y2_MAX_PIN E4_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E5DIAG_
+        #define Y2_MAX_PIN E5_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E6DIAG_
+        #define Y2_MAX_PIN E6_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E7DIAG_
+        #define Y2_MAX_PIN E7_DIAG_PIN
+      #endif
+    #endif
+  #else
+    #ifndef Y2_MIN_PIN
+      #if PIN_EXISTS(Y2_STOP)
+        #define Y2_MIN_PIN Y2_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _XMIN_
+        #define Y2_MIN_PIN X_MIN_PIN
+      #elif Y2_USE_ENDSTOP == _XMAX_
+        #define Y2_MIN_PIN X_MAX_PIN
+      #elif Y2_USE_ENDSTOP == _XSTOP_
+        #define Y2_MIN_PIN X_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _YMIN_
+        #define Y2_MIN_PIN Y_MIN_PIN
+      #elif Y2_USE_ENDSTOP == _YMAX_
+        #define Y2_MIN_PIN Y_MAX_PIN
+      #elif Y2_USE_ENDSTOP == _YSTOP_
+        #define Y2_MIN_PIN Y_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _ZMIN_
+        #define Y2_MIN_PIN Z_MIN_PIN
+      #elif Y2_USE_ENDSTOP == _ZMAX_
+        #define Y2_MIN_PIN Z_MAX_PIN
+      #elif Y2_USE_ENDSTOP == _ZSTOP_
+        #define Y2_MIN_PIN Z_STOP_PIN
+      #elif Y2_USE_ENDSTOP == _XDIAG_
+        #define Y2_MIN_PIN X_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _YDIAG_
+        #define Y2_MIN_PIN Y_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _ZDIAG_
+        #define Y2_MIN_PIN Z_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E0DIAG_
+        #define Y2_MIN_PIN E0_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E1DIAG_
+        #define Y2_MIN_PIN E1_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E2DIAG_
+        #define Y2_MIN_PIN E2_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E3DIAG_
+        #define Y2_MIN_PIN E3_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E4DIAG_
+        #define Y2_MIN_PIN E4_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E5DIAG_
+        #define Y2_MIN_PIN E5_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E6DIAG_
+        #define Y2_MIN_PIN E6_DIAG_PIN
+      #elif Y2_USE_ENDSTOP == _E7DIAG_
+        #define Y2_MIN_PIN E7_DIAG_PIN
+      #endif
+    #endif
   #endif
 #endif
 
@@ -1867,28 +2061,294 @@
  * Z_MULTI_ENDSTOPS endstop reassignment
  */
 #if ENABLED(Z_MULTI_ENDSTOPS)
-  #if PIN_EXISTS(Z2_STOP)
-    #if Z_HOME_TO_MAX && !defined(Z2_MAX_PIN)
-      #define Z2_MAX_PIN Z2_STOP_PIN
-    #elif Z_HOME_TO_MIN && !defined(Z2_MIN_PIN)
-      #define Z2_MIN_PIN Z2_STOP_PIN
+
+  #if Z_HOME_TO_MAX
+    #ifndef Z2_MAX_PIN
+      #if PIN_EXISTS(Z2_STOP)
+        #define Z2_MAX_PIN Z2_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _XMIN_
+        #define Z2_MAX_PIN X_MIN_PIN
+      #elif Z2_USE_ENDSTOP == _XMAX_
+        #define Z2_MAX_PIN X_MAX_PIN
+      #elif Z2_USE_ENDSTOP == _XSTOP_
+        #define Z2_MAX_PIN X_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _YMIN_
+        #define Z2_MAX_PIN Y_MIN_PIN
+      #elif Z2_USE_ENDSTOP == _YMAX_
+        #define Z2_MAX_PIN Y_MAX_PIN
+      #elif Z2_USE_ENDSTOP == _YSTOP_
+        #define Z2_MAX_PIN Y_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _ZMIN_
+        #define Z2_MAX_PIN Z_MIN_PIN
+      #elif Z2_USE_ENDSTOP == _ZMAX_
+        #define Z2_MAX_PIN Z_MAX_PIN
+      #elif Z2_USE_ENDSTOP == _ZSTOP_
+        #define Z2_MAX_PIN Z_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _XDIAG_
+        #define Z2_MAX_PIN X_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _YDIAG_
+        #define Z2_MAX_PIN Y_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _ZDIAG_
+        #define Z2_MAX_PIN Z_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E0DIAG_
+        #define Z2_MAX_PIN E0_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E1DIAG_
+        #define Z2_MAX_PIN E1_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E2DIAG_
+        #define Z2_MAX_PIN E2_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E3DIAG_
+        #define Z2_MAX_PIN E3_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E4DIAG_
+        #define Z2_MAX_PIN E4_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E5DIAG_
+        #define Z2_MAX_PIN E5_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E6DIAG_
+        #define Z2_MAX_PIN E6_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E7DIAG_
+        #define Z2_MAX_PIN E7_DIAG_PIN
+      #endif
+    #endif
+  #else
+    #ifndef Z2_MIN_PIN
+      #if PIN_EXISTS(Z2_STOP)
+        #define Z2_MIN_PIN Z2_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _XMIN_
+        #define Z2_MIN_PIN X_MIN_PIN
+      #elif Z2_USE_ENDSTOP == _XMAX_
+        #define Z2_MIN_PIN X_MAX_PIN
+      #elif Z2_USE_ENDSTOP == _XSTOP_
+        #define Z2_MIN_PIN X_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _YMIN_
+        #define Z2_MIN_PIN Y_MIN_PIN
+      #elif Z2_USE_ENDSTOP == _YMAX_
+        #define Z2_MIN_PIN Y_MAX_PIN
+      #elif Z2_USE_ENDSTOP == _YSTOP_
+        #define Z2_MIN_PIN Y_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _ZMIN_
+        #define Z2_MIN_PIN Z_MIN_PIN
+      #elif Z2_USE_ENDSTOP == _ZMAX_
+        #define Z2_MIN_PIN Z_MAX_PIN
+      #elif Z2_USE_ENDSTOP == _ZSTOP_
+        #define Z2_MIN_PIN Z_STOP_PIN
+      #elif Z2_USE_ENDSTOP == _XDIAG_
+        #define Z2_MIN_PIN X_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _YDIAG_
+        #define Z2_MIN_PIN Y_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _ZDIAG_
+        #define Z2_MIN_PIN Z_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E0DIAG_
+        #define Z2_MIN_PIN E0_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E1DIAG_
+        #define Z2_MIN_PIN E1_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E2DIAG_
+        #define Z2_MIN_PIN E2_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E3DIAG_
+        #define Z2_MIN_PIN E3_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E4DIAG_
+        #define Z2_MIN_PIN E4_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E5DIAG_
+        #define Z2_MIN_PIN E5_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E6DIAG_
+        #define Z2_MIN_PIN E6_DIAG_PIN
+      #elif Z2_USE_ENDSTOP == _E7DIAG_
+        #define Z2_MIN_PIN E7_DIAG_PIN
+      #endif
     #endif
   #endif
-  #if NUM_Z_STEPPERS >= 3 && PIN_EXISTS(Z3_STOP)
-    #if Z_HOME_TO_MAX && !defined(Z3_MAX_PIN)
-      #define Z3_MAX_PIN Z3_STOP_PIN
-    #elif Z_HOME_TO_MIN && !defined(Z3_MIN_PIN)
-      #define Z3_MIN_PIN Z3_STOP_PIN
+
+  #if NUM_Z_STEPPERS >= 3
+    #if Z_HOME_TO_MAX
+      #ifndef Z3_MAX_PIN
+        #if PIN_EXISTS(Z3_STOP)
+          #define Z3_MAX_PIN Z3_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _XMIN_
+          #define Z3_MAX_PIN X_MIN_PIN
+        #elif Z3_USE_ENDSTOP == _XMAX_
+          #define Z3_MAX_PIN X_MAX_PIN
+        #elif Z3_USE_ENDSTOP == _XSTOP_
+          #define Z3_MAX_PIN X_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _YMIN_
+          #define Z3_MAX_PIN Y_MIN_PIN
+        #elif Z3_USE_ENDSTOP == _YMAX_
+          #define Z3_MAX_PIN Y_MAX_PIN
+        #elif Z3_USE_ENDSTOP == _YSTOP_
+          #define Z3_MAX_PIN Y_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _ZMIN_
+          #define Z3_MAX_PIN Z_MIN_PIN
+        #elif Z3_USE_ENDSTOP == _ZMAX_
+          #define Z3_MAX_PIN Z_MAX_PIN
+        #elif Z3_USE_ENDSTOP == _ZSTOP_
+          #define Z3_MAX_PIN Z_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _XDIAG_
+          #define Z3_MAX_PIN X_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _YDIAG_
+          #define Z3_MAX_PIN Y_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _ZDIAG_
+          #define Z3_MAX_PIN Z_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E0DIAG_
+          #define Z3_MAX_PIN E0_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E1DIAG_
+          #define Z3_MAX_PIN E1_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E2DIAG_
+          #define Z3_MAX_PIN E2_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E3DIAG_
+          #define Z3_MAX_PIN E3_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E4DIAG_
+          #define Z3_MAX_PIN E4_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E5DIAG_
+          #define Z3_MAX_PIN E5_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E6DIAG_
+          #define Z3_MAX_PIN E6_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E7DIAG_
+          #define Z3_MAX_PIN E7_DIAG_PIN
+        #endif
+      #endif
+    #else
+      #ifndef Z3_MIN_PIN
+        #if PIN_EXISTS(Z3_STOP)
+          #define Z3_MIN_PIN Z3_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _XMIN_
+          #define Z3_MIN_PIN X_MIN_PIN
+        #elif Z3_USE_ENDSTOP == _XMAX_
+          #define Z3_MIN_PIN X_MAX_PIN
+        #elif Z3_USE_ENDSTOP == _XSTOP_
+          #define Z3_MIN_PIN X_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _YMIN_
+          #define Z3_MIN_PIN Y_MIN_PIN
+        #elif Z3_USE_ENDSTOP == _YMAX_
+          #define Z3_MIN_PIN Y_MAX_PIN
+        #elif Z3_USE_ENDSTOP == _YSTOP_
+          #define Z3_MIN_PIN Y_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _ZMIN_
+          #define Z3_MIN_PIN Z_MIN_PIN
+        #elif Z3_USE_ENDSTOP == _ZMAX_
+          #define Z3_MIN_PIN Z_MAX_PIN
+        #elif Z3_USE_ENDSTOP == _ZSTOP_
+          #define Z3_MIN_PIN Z_STOP_PIN
+        #elif Z3_USE_ENDSTOP == _XDIAG_
+          #define Z3_MIN_PIN X_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _YDIAG_
+          #define Z3_MIN_PIN Y_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _ZDIAG_
+          #define Z3_MIN_PIN Z_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E0DIAG_
+          #define Z3_MIN_PIN E0_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E1DIAG_
+          #define Z3_MIN_PIN E1_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E2DIAG_
+          #define Z3_MIN_PIN E2_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E3DIAG_
+          #define Z3_MIN_PIN E3_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E4DIAG_
+          #define Z3_MIN_PIN E4_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E5DIAG_
+          #define Z3_MIN_PIN E5_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E6DIAG_
+          #define Z3_MIN_PIN E6_DIAG_PIN
+        #elif Z3_USE_ENDSTOP == _E7DIAG_
+          #define Z3_MIN_PIN E7_DIAG_PIN
+        #endif
+      #endif
     #endif
   #endif
-  #if NUM_Z_STEPPERS >= 4 && PIN_EXISTS(Z4_STOP)
-    #if Z_HOME_TO_MAX && !defined(Z4_MAX_PIN)
-      #define Z4_MAX_PIN Z4_STOP_PIN
-    #elif Z_HOME_TO_MIN && !defined(Z4_MIN_PIN)
-      #define Z4_MIN_PIN Z4_STOP_PIN
+
+  #if NUM_Z_STEPPERS >= 4
+    #if Z_HOME_TO_MAX
+      #ifndef Z4_MAX_PIN
+        #if PIN_EXISTS(Z4_STOP)
+          #define Z4_MAX_PIN Z4_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _XMIN_
+          #define Z4_MAX_PIN X_MIN_PIN
+        #elif Z4_USE_ENDSTOP == _XMAX_
+          #define Z4_MAX_PIN X_MAX_PIN
+        #elif Z4_USE_ENDSTOP == _XSTOP_
+          #define Z4_MAX_PIN X_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _YMIN_
+          #define Z4_MAX_PIN Y_MIN_PIN
+        #elif Z4_USE_ENDSTOP == _YMAX_
+          #define Z4_MAX_PIN Y_MAX_PIN
+        #elif Z4_USE_ENDSTOP == _YSTOP_
+          #define Z4_MAX_PIN Y_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _ZMIN_
+          #define Z4_MAX_PIN Z_MIN_PIN
+        #elif Z4_USE_ENDSTOP == _ZMAX_
+          #define Z4_MAX_PIN Z_MAX_PIN
+        #elif Z4_USE_ENDSTOP == _ZSTOP_
+          #define Z4_MAX_PIN Z_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _XDIAG_
+          #define Z4_MAX_PIN X_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _YDIAG_
+          #define Z4_MAX_PIN Y_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _ZDIAG_
+          #define Z4_MAX_PIN Z_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E0DIAG_
+          #define Z4_MAX_PIN E0_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E1DIAG_
+          #define Z4_MAX_PIN E1_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E2DIAG_
+          #define Z4_MAX_PIN E2_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E3DIAG_
+          #define Z4_MAX_PIN E3_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E4DIAG_
+          #define Z4_MAX_PIN E4_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E5DIAG_
+          #define Z4_MAX_PIN E5_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E6DIAG_
+          #define Z4_MAX_PIN E6_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E7DIAG_
+          #define Z4_MAX_PIN E7_DIAG_PIN
+        #endif
+      #endif
+    #else
+      #ifndef Z4_MIN_PIN
+        #if PIN_EXISTS(Z4_STOP)
+          #define Z4_MIN_PIN Z4_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _XMIN_
+          #define Z4_MIN_PIN X_MIN_PIN
+        #elif Z4_USE_ENDSTOP == _XMAX_
+          #define Z4_MIN_PIN X_MAX_PIN
+        #elif Z4_USE_ENDSTOP == _XSTOP_
+          #define Z4_MIN_PIN X_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _YMIN_
+          #define Z4_MIN_PIN Y_MIN_PIN
+        #elif Z4_USE_ENDSTOP == _YMAX_
+          #define Z4_MIN_PIN Y_MAX_PIN
+        #elif Z4_USE_ENDSTOP == _YSTOP_
+          #define Z4_MIN_PIN Y_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _ZMIN_
+          #define Z4_MIN_PIN Z_MIN_PIN
+        #elif Z4_USE_ENDSTOP == _ZMAX_
+          #define Z4_MIN_PIN Z_MAX_PIN
+        #elif Z4_USE_ENDSTOP == _ZSTOP_
+          #define Z4_MIN_PIN Z_STOP_PIN
+        #elif Z4_USE_ENDSTOP == _XDIAG_
+          #define Z4_MIN_PIN X_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _YDIAG_
+          #define Z4_MIN_PIN Y_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _ZDIAG_
+          #define Z4_MIN_PIN Z_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E0DIAG_
+          #define Z4_MIN_PIN E0_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E1DIAG_
+          #define Z4_MIN_PIN E1_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E2DIAG_
+          #define Z4_MIN_PIN E2_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E3DIAG_
+          #define Z4_MIN_PIN E3_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E4DIAG_
+          #define Z4_MIN_PIN E4_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E5DIAG_
+          #define Z4_MIN_PIN E5_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E6DIAG_
+          #define Z4_MIN_PIN E6_DIAG_PIN
+        #elif Z4_USE_ENDSTOP == _E7DIAG_
+          #define Z4_MIN_PIN E7_DIAG_PIN
+        #endif
+      #endif
     #endif
   #endif
-#endif
+
+#endif // Z_MULTI_ENDSTOPS
 
 //
 // Default DOGLCD SPI delays
@@ -1914,54 +2374,3 @@
 
 #undef HAS_FREE_AUX2_PINS
 #undef DIAG_REMAPPED
-#undef _E_DIAG_EXISTS
-#undef E_DIAG_EXISTS
-
-// Get a NeoPixel pin from the LCD or board, if provided
-#ifndef NEOPIXEL_PIN
-  #if PIN_EXISTS(LCD_NEOPIXEL)
-    #define NEOPIXEL_PIN LCD_NEOPIXEL_PIN
-  #elif PIN_EXISTS(BOARD_NEOPIXEL)
-    #define NEOPIXEL_PIN BOARD_NEOPIXEL_PIN
-  #endif
-#endif
-
-// Undefine motor PWM pins for nonexistent axes since the existence of a MOTOR_CURRENT_PWM_*_PIN implies its standard use.
-// TODO: Allow remapping (e.g., E => Z2). Spec G-codes to use logical axis with index (e.g., to set Z2: Mxxx Z P1 Snnn).
-#if !HAS_X_AXIS
-  #undef MOTOR_CURRENT_PWM_X_PIN
-#endif
-#if !HAS_Y_AXIS
-  #undef MOTOR_CURRENT_PWM_Y_PIN
-#endif
-#if !HAS_X_AXIS && !HAS_Y_AXIS
-  #undef MOTOR_CURRENT_PWM_XY_PIN
-#endif
-#if !HAS_Z_AXIS
-  #undef MOTOR_CURRENT_PWM_Z_PIN
-#endif
-#if !HAS_I_AXIS
-  #undef MOTOR_CURRENT_PWM_I_PIN
-#endif
-#if !HAS_J_AXIS
-  #undef MOTOR_CURRENT_PWM_J_PIN
-#endif
-#if !HAS_K_AXIS
-  #undef MOTOR_CURRENT_PWM_K_PIN
-#endif
-#if !HAS_U_AXIS
-  #undef MOTOR_CURRENT_PWM_U_PIN
-#endif
-#if !HAS_V_AXIS
-  #undef MOTOR_CURRENT_PWM_V_PIN
-#endif
-#if !HAS_W_AXIS
-  #undef MOTOR_CURRENT_PWM_W_PIN
-#endif
-#if !HAS_EXTRUDERS
-  #undef MOTOR_CURRENT_PWM_E_PIN
-  #undef MOTOR_CURRENT_PWM_E0_PIN   // Archim 1.0
-  #undef MOTOR_CURRENT_PWM_E1_PIN   // Kept in sync with E0
-#elif !HAS_MULTI_EXTRUDER
-  #undef MOTOR_CURRENT_PWM_E1_PIN
-#endif

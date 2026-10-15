@@ -1,9 +1,9 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
- * Based on Sprinter and grbl.
- * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2016 Bob Cousins bobcousins42@googlemail.com
+ * Copyright (c) 2015-2016 Nico Tonnhofer wurstnase.reprap@gmail.com
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,10 +70,17 @@
 typedef ForwardSerial1Class<decltype(SerialUSB)> USBSerialType;
 extern USBSerialType USBSerial;
 
-#define SERIAL_INDEX_MIN 0
-#define SERIAL_INDEX_MAX 3
-#define USB_SERIAL_PORT(...) USBSerial
-#include "../shared/serial_ports.h"
+#define _MSERIAL(X) MSerial##X
+#define MSERIAL(X) _MSERIAL(X)
+
+#if SERIAL_PORT == -1
+  #define MYSERIAL1 USBSerial
+#elif WITHIN(SERIAL_PORT, 0, 3)
+  #define MYSERIAL1 MSERIAL(SERIAL_PORT)
+  DECLARE_SERIAL(SERIAL_PORT);
+#else
+  #error "SERIAL_PORT must be from 0 to 3, or -1 for Native USB."
+#endif
 
 // ------------------------
 // Types
@@ -96,10 +103,10 @@ typedef int8_t pin_t;
 // ------------------------
 
 #ifndef analogInputToDigitalPin
-  #define analogInputToDigitalPin(p) pin_t((p < 12U) ? (p) + 54U : -1)
+  #define analogInputToDigitalPin(p) ((p < 12U) ? (p) + 54U : -1)
 #endif
 
-#define HAL_ADC_VREF_MV   3300
+#define HAL_ADC_VREF         3.3
 #define HAL_ADC_RESOLUTION  10
 
 //
@@ -147,7 +154,7 @@ public:
 
   static void delay_ms(const int ms) { delay(ms); }
 
-  // Tasks, called from marlin.idle()
+  // Tasks, called from idle()
   static void idletask() {}
 
   // Reset

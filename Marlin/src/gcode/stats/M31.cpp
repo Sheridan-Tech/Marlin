@@ -21,6 +21,7 @@
  */
 
 #include "../gcode.h"
+#include "../../core/serial.h"
 #include "../../module/printcounter.h"
 #include "../../libs/duration_t.h"
 #include "../../lcd/marlinui.h"
@@ -32,7 +33,7 @@ void GcodeSuite::M31() {
   char buffer[22];
   duration_t(print_job_timer.duration()).toString(buffer);
 
-  ui.set_status_no_expire(buffer);
+  ui.set_status(buffer, ENABLED(DWIN_LCD_PROUI));
 
   SERIAL_ECHO_MSG("Print time: ", buffer);
 }

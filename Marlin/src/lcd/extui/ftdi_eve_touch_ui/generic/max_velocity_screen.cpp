@@ -34,7 +34,7 @@ void MaxVelocityScreen::onRedraw(draw_mode_t what) {
   widgets_t w(what);
   w.precision(0);
   w.units(GET_TEXT_F(MSG_UNITS_MM_S));
-  w.heading(                        GET_TEXT_F(MSG_MAX_SPEED_NO_UNITS));
+  w.heading(                        GET_TEXT_F(MSG_MAX_SPEED));
   w.color(x_axis)    .adjuster(  2, GET_TEXT_F(MSG_VMAX_X), getAxisMaxFeedrate_mm_s(X) );
   w.color(y_axis)    .adjuster(  4, GET_TEXT_F(MSG_VMAX_Y), getAxisMaxFeedrate_mm_s(Y) );
   w.color(z_axis)    .adjuster(  6, GET_TEXT_F(MSG_VMAX_Z), getAxisMaxFeedrate_mm_s(Z) );
@@ -66,7 +66,7 @@ bool MaxVelocityScreen::onTouchHeld(uint8_t tag) {
     #if DISTINCT_E
       case  8: UI_DECREMENT(AxisMaxFeedrate_mm_s, E0); break;
       case  9: UI_INCREMENT(AxisMaxFeedrate_mm_s, E0); break;
-      #if ENABLED(DISTINCT_E_FACTORS)
+      #if DISTINCT_E > 1
         case 10: UI_DECREMENT(AxisMaxFeedrate_mm_s, E1); break;
         case 11: UI_INCREMENT(AxisMaxFeedrate_mm_s, E1); break;
         #if DISTINCT_E > 2

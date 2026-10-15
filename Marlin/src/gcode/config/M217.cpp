@@ -25,14 +25,13 @@
 #if HAS_MULTI_EXTRUDER
 
 #include "../gcode.h"
-
-#if HAS_TOOLCHANGE
-  #include "../../module/tool_change.h"
-#endif
+#include "../../module/tool_change.h"
 
 #if ENABLED(TOOLCHANGE_MIGRATION_FEATURE)
-  #include "../../module/motion.h" // for motion.extruder
+  #include "../../module/motion.h"
 #endif
+
+#include "../../MarlinCore.h" // for SP_X_STR, etc.
 
 /**
  * M217 - Set toolchange parameters
@@ -96,9 +95,7 @@ void GcodeSuite::M217() {
 
   #if ENABLED(TOOLCHANGE_PARK)
     if (parser.seenval('W')) { toolchange_settings.enable_park = parser.value_linear_units(); }
-    #if HAS_X_AXIS
-      if (parser.seenval('X')) { const int16_t v = parser.value_linear_units(); toolchange_settings.change_point.x = constrain(v, X_MIN_POS, X_MAX_POS); }
-    #endif
+    if (parser.seenval('X')) { const int16_t v = parser.value_linear_units(); toolchange_settings.change_point.x = constrain(v, X_MIN_POS, X_MAX_POS); }
     #if HAS_Y_AXIS
       if (parser.seenval('Y')) { const int16_t v = parser.value_linear_units(); toolchange_settings.change_point.y = constrain(v, Y_MIN_POS, Y_MAX_POS); }
     #endif
@@ -122,7 +119,7 @@ void GcodeSuite::M217() {
     #endif
   #endif
 
-  #if HAS_Z_AXIS && HAS_TOOLCHANGE
+  #if HAS_Z_AXIS
     if (parser.seenval('Z')) { toolchange_settings.z_raise = parser.value_linear_units(); }
   #endif
 
@@ -133,7 +130,7 @@ void GcodeSuite::M217() {
       const int16_t lval = parser.value_int();
       if (WITHIN(lval, 0, EXTRUDERS - 1)) {
         migration.last = lval;
-        migration.automode = (motion.extruder < migration.last);
+        migration.automode = (active_extruder < migration.last);
       }
     }
 
@@ -143,7 +140,7 @@ void GcodeSuite::M217() {
     if (parser.seen('T')) {     // Migrate now
       if (parser.has_value()) {
         const int16_t tval = parser.value_int();
-        if (WITHIN(tval, 0, EXTRUDERS - 1) && tval != motion.extruder) {
+        if (WITHIN(tval, 0, EXTRUDERS - 1) && tval != active_extruder) {
           migration.target = tval + 1;
           extruder_migration();
           migration.target = 0; // disable
@@ -164,8 +161,6 @@ void GcodeSuite::M217() {
 }
 
 void GcodeSuite::M217_report(const bool forReplay/*=true*/) {
-  TERN_(MARLIN_SMALL_BUILD, return);
-
   report_heading_etc(forReplay, F(STR_TOOL_CHANGING));
 
   SERIAL_ECHOPGM("  M217");
@@ -188,27 +183,25 @@ void GcodeSuite::M217_report(const bool forReplay/*=true*/) {
     #endif
 
     #if ENABLED(TOOLCHANGE_PARK)
+    {
       SERIAL_ECHOPGM(" W", LINEAR_UNIT(toolchange_settings.enable_park));
-      #if NUM_AXES
-      {
-        SERIAL_ECHOPGM_P(
-          SP_X_STR, LINEAR_UNIT(toolchange_settings.change_point.x)
-          #if HAS_Y_AXIS
-            , SP_Y_STR, LINEAR_UNIT(toolchange_settings.change_point.y)
-          #endif
-          #if SECONDARY_AXES >= 1
-            , LIST_N(DOUBLE(SECONDARY_AXES)
-                , SP_I_STR,   I_AXIS_UNIT(toolchange_settings.change_point.i)
-                , SP_J_STR,   J_AXIS_UNIT(toolchange_settings.change_point.j)
-                , SP_K_STR,   K_AXIS_UNIT(toolchange_settings.change_point.k)
-                , SP_C_STR,   U_AXIS_UNIT(toolchange_settings.change_point.u)
-                , PSTR(" H"), V_AXIS_UNIT(toolchange_settings.change_point.v)
-                , PSTR(" O"), W_AXIS_UNIT(toolchange_settings.change_point.w)
-              )
-          #endif
-        );
-      }
-      #endif
+      SERIAL_ECHOPGM_P(
+            SP_X_STR, LINEAR_UNIT(toolchange_settings.change_point.x)
+        #if HAS_Y_AXIS
+          , SP_Y_STR, LINEAR_UNIT(toolchange_settings.change_point.y)
+        #endif
+        #if SECONDARY_AXES >= 1
+          , LIST_N(DOUBLE(SECONDARY_AXES)
+              , SP_I_STR,   I_AXIS_UNIT(toolchange_settings.change_point.i)
+              , SP_J_STR,   J_AXIS_UNIT(toolchange_settings.change_point.j)
+              , SP_K_STR,   K_AXIS_UNIT(toolchange_settings.change_point.k)
+              , SP_C_STR,   U_AXIS_UNIT(toolchange_settings.change_point.u)
+              , PSTR(" H"), V_AXIS_UNIT(toolchange_settings.change_point.v)
+              , PSTR(" O"), W_AXIS_UNIT(toolchange_settings.change_point.w)
+            )
+        #endif
+      );
+    }
     #endif
 
     #if ENABLED(TOOLCHANGE_FS_PRIME_FIRST_USED)

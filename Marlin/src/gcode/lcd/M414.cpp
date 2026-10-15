@@ -25,6 +25,7 @@
 #if HAS_MULTI_LANGUAGE
 
 #include "../gcode.h"
+#include "../../MarlinCore.h"
 #include "../../lcd/marlinui.h"
 
 /**
@@ -43,7 +44,6 @@ void GcodeSuite::M414() {
 }
 
 void GcodeSuite::M414_report(const bool forReplay/*=true*/) {
-  TERN_(MARLIN_SMALL_BUILD, return);
   report_heading_etc(forReplay, F(STR_UI_LANGUAGE));
   SERIAL_ECHOLNPGM("  M414 S", ui.language);
 }

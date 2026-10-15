@@ -26,9 +26,10 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if HAS_MENU_MULTI_LANGUAGE
+#if HAS_MULTI_LANGUAGE
 
 #include "menu_item.h"
+#include "../../MarlinCore.h"
 #include "../../module/settings.h"
 
 static void set_lcd_language(const uint8_t inlang) {
@@ -38,7 +39,7 @@ static void set_lcd_language(const uint8_t inlang) {
 
 void menu_language() {
   START_MENU();
-  BACK_ITEM(MSG_MAIN_MENU);
+  BACK_ITEM(MSG_MAIN);
 
   MENU_ITEM_F(function, FPSTR(GET_LANGUAGE_NAME(1)), []{ set_lcd_language(0); });
   MENU_ITEM_F(function, FPSTR(GET_LANGUAGE_NAME(2)), []{ set_lcd_language(1); });
@@ -55,4 +56,4 @@ void menu_language() {
   END_MENU();
 }
 
-#endif // HAS_MENU_MULTI_LANGUAGE
+#endif // HAS_MULTI_LANGUAGE

@@ -30,7 +30,7 @@ XATC xatc;
 
 bool XATC::enabled;
 float XATC::spacing, XATC::start;
-xatc_array_t XATC::z_offset; // Initialized by settings.load
+xatc_array_t XATC::z_offset; // Initialized by settings.load()
 
 void XATC::reset() {
   constexpr float xzo[] = XATC_Z_OFFSETS;
@@ -43,17 +43,17 @@ void XATC::reset() {
 
 void XATC::print_points() {
   SERIAL_ECHOLNPGM(" X-Twist Correction:");
-  for (uint8_t x = 0; x < XATC_MAX_POINTS; ++x) {
+  LOOP_L_N(x, XATC_MAX_POINTS) {
     SERIAL_CHAR(' ');
     if (!isnan(z_offset[x]))
       serial_offset(z_offset[x]);
     else
-      for (uint8_t i = 0; i < 6; ++i) SERIAL_CHAR(i ? '=' : ' ');
+      LOOP_L_N(i, 6) SERIAL_CHAR(i ? '=' : ' ');
   }
   SERIAL_EOL();
 }
 
-float lerp(const float t, const float a, const float b) { return a + t * (b - a); }
+float lerp(const_float_t t, const_float_t a, const_float_t b) { return a + t * (b - a); }
 
 float XATC::compensation(const xy_pos_t &raw) {
   if (!enabled) return 0;

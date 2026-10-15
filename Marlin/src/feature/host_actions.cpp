@@ -41,7 +41,8 @@ HostUI hostui;
 
 void HostUI::action(FSTR_P const fstr, const bool eol) {
   PORT_REDIRECT(SerialMask::All);
-  SERIAL_ECHOPGM("//action:", fstr);
+  SERIAL_ECHOPGM("//action:");
+  SERIAL_ECHOF(fstr);
   if (eol) SERIAL_EOL();
 }
 
@@ -87,6 +88,10 @@ void HostUI::action(FSTR_P const fstr, const bool eol) {
   PGMSTR(CONTINUE_STR, "Continue");
   PGMSTR(DISMISS_STR, "Dismiss");
 
+  #if HAS_RESUME_CONTINUE
+    extern bool wait_for_user;
+  #endif
+
   void HostUI::notify(const char * const cstr) {
     PORT_REDIRECT(SerialMask::All);
     action(F("notification "), false);
@@ -102,7 +107,7 @@ void HostUI::action(FSTR_P const fstr, const bool eol) {
   void HostUI::prompt(FSTR_P const ptype, const bool eol/*=true*/) {
     PORT_REDIRECT(SerialMask::All);
     action(F("prompt_"), false);
-    SERIAL_ECHO(ptype);
+    SERIAL_ECHOF(ptype);
     if (eol) SERIAL_EOL();
   }
 
@@ -182,18 +187,18 @@ void HostUI::action(FSTR_P const fstr, const bool eol) {
         switch (response) {
 
           case 0: // "Purge More" button
-            #if ENABLED(M600_PURGE_MORE_RESUMABLE)
+            #if BOTH(M600_PURGE_MORE_RESUMABLE, ADVANCED_PAUSE_FEATURE)
               pause_menu_response = PAUSE_RESPONSE_EXTRUDE_MORE;  // Simulate menu selection (menu exits, doesn't extrude more)
             #endif
             break;
 
           case 1: // "Continue" / "Disable Runout" button
-            #if ENABLED(M600_PURGE_MORE_RESUMABLE)
+            #if BOTH(M600_PURGE_MORE_RESUMABLE, ADVANCED_PAUSE_FEATURE)
               pause_menu_response = PAUSE_RESPONSE_RESUME_PRINT;  // Simulate menu selection
             #endif
             #if HAS_FILAMENT_SENSOR
               if (runout.filament_ran_out) {                      // Disable a triggered sensor
-                runout.enabled = false;
+                runout.enabled[active_extruder] = false;
                 runout.reset();
               }
             #endif
@@ -201,10 +206,10 @@ void HostUI::action(FSTR_P const fstr, const bool eol) {
         }
         break;
       case PROMPT_USER_CONTINUE:
-        TERN_(HAS_RESUME_CONTINUE, marlin.user_resume());
+        TERN_(HAS_RESUME_CONTINUE, wait_for_user = false);
         break;
       case PROMPT_PAUSE_RESUME:
-        #if ALL(ADVANCED_PAUSE_FEATURE, HAS_MEDIA)
+        #if BOTH(ADVANCED_PAUSE_FEATURE, SDSUPPORT)
           extern const char M24_STR[];
           queue.inject_P(M24_STR);
         #endif

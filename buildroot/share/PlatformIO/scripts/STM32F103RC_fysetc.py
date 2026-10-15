@@ -3,8 +3,9 @@
 #
 import pioutil
 if pioutil.is_pio_build():
-    from os.path import join, expandvars
-    env = pioutil.env
+    from os.path import join
+    from os.path import expandvars
+    Import("env")
 
     # Custom HEX from ELF
     env.AddPostAction(

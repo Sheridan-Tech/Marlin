@@ -27,8 +27,11 @@
 #include "../gcode.h"
 #include "../../module/stepper.h"
 
-#if NUM_AXES == 3 && EXTRUDERS >= 1
+#if NUM_AXES == XYZ && EXTRUDERS >= 1
   #define HAS_M350_B_PARAM 1  // "5th axis" (after E0) for an original XYZEB setup.
+  #if AXIS_COLLISION('B')
+    #error "M350 parameter 'B' collision with axis name."
+  #endif
 #endif
 
 /**

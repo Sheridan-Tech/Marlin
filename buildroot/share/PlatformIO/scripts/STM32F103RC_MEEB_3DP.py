@@ -3,7 +3,8 @@
 #
 import pioutil
 if pioutil.is_pio_build():
-    env = pioutil.env
+
+    Import("env", "projenv")
 
     flash_size = 0
     vect_tab_addr = 0

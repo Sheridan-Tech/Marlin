@@ -35,12 +35,9 @@
 // Inline laser power
 #include "../module/planner.h"
 
-#define RPM_TO_PWM(X) ((X) * 255 / (SPEED_POWER_MAX))
-#define PWM_TO_RPM(X) ((X) * (SPEED_POWER_MAX) / 255)
 #define PCT_TO_PWM(X) ((X) * 255 / 100)
-#define PWM_TO_PCT(X) ((X) * 100 / 255)
 #define PCT_TO_SERVO(X) ((X) * 180 / 100)
-#define CUTTER_PWM_TO_SPWR(X) (CUTTER_UNIT_IS(PERCENT) ? PWM_TO_PCT(X) : (CUTTER_UNIT_IS(RPM) ? PWM_TO_RPM(X) : X))
+
 
 // Laser/Cutter operation mode
 enum CutterMode : int8_t {
@@ -54,13 +51,13 @@ class SpindleLaser {
 public:
   static CutterMode cutter_mode;
 
-  static constexpr uint8_t pct_to_ocr(const float pct) { return uint8_t(PCT_TO_PWM(pct)); }
+  static constexpr uint8_t pct_to_ocr(const_float_t pct) { return uint8_t(PCT_TO_PWM(pct)); }
 
   // cpower = configured values (e.g., SPEED_POWER_MAX)
   // Convert configured power range to a percentage
   static constexpr cutter_cpower_t power_floor = TERN(CUTTER_POWER_RELATIVE, SPEED_POWER_MIN, 0);
   static constexpr uint8_t cpwr_to_pct(const cutter_cpower_t cpwr) {
-    return cpwr ? LROUND(100.0f * (cpwr - power_floor) / (SPEED_POWER_MAX - power_floor)) : 0;
+    return cpwr ? round(100.0f * (cpwr - power_floor) / (SPEED_POWER_MAX - power_floor)) : 0;
   }
 
   // Convert config defines from RPM to %, angle or PWM when in Spindle mode
@@ -109,14 +106,11 @@ public:
   static uint8_t power,
                  last_power_applied;      // Basic power state tracking
 
-  static cutter_frequency_t frequency;    // (Hz) Laser/Spindle PWM frequency (2000..50000)
+  static cutter_frequency_t frequency;  // Set PWM frequency; range: 2K-50K
 
-  static cutter_power_t menuPower,        // Power as set via LCD menu in PWM, Percentage, or RPM
-                        unitPower;        // Power as displayed status in PWM, Percentage, or RPM
+  static cutter_power_t menuPower,        // Power as set via LCD menu in PWM, Percentage or RPM
+                        unitPower;        // Power as displayed status in PWM, Percentage or RPM
 
-  #if HAS_SPINDLE_ACCELERATION
-    static uint32_t acceleration_spindle_deg_per_s2;  // (°/s/s) Spindle acceleration
-  #endif
   static void init();
 
   #if ENABLED(HAL_CAN_SET_PWM_FREQ) && SPINDLE_LASER_FREQUENCY
@@ -164,7 +158,7 @@ public:
    */
   static cutter_power_t power_to_range(const cutter_power_t pwr, const uint8_t pwrUnit=_CUTTER_POWER(CUTTER_POWER_UNIT)) {
     static constexpr float
-      min_pct = TERN(CUTTER_POWER_RELATIVE, 0, TERN(SPINDLE_FEATURE, roundf(100.0f * (SPEED_POWER_MIN) / (SPEED_POWER_MAX)), SPEED_POWER_MIN)),
+      min_pct = TERN(CUTTER_POWER_RELATIVE, 0, TERN(SPINDLE_FEATURE, round(100.0f * (SPEED_POWER_MIN) / (SPEED_POWER_MAX)), SPEED_POWER_MIN)),
       max_pct = TERN(SPINDLE_FEATURE, 100, SPEED_POWER_MAX);
     if (pwr <= 0) return 0;
     cutter_power_t upwr;
@@ -207,6 +201,8 @@ public:
         apply_power(enable ? TERN(SPINDLE_LASER_USE_PWM, (power ?: (unitPower ? upower_to_ocr(cpwr_to_upwr(SPEED_POWER_STARTUP)) : 0)), 255) : 0);
         break;
       case CUTTER_MODE_CONTINUOUS:
+        TERN_(LASER_FEATURE, set_inline_enabled(enable));
+        break;
       case CUTTER_MODE_DYNAMIC:
         TERN_(LASER_FEATURE, set_inline_enabled(enable));
         break;
@@ -214,7 +210,7 @@ public:
         enable = false;
         apply_power(0);
     }
-    #if PIN_EXISTS(SPINDLE_LASER_ENA)
+    #if SPINDLE_LASER_ENA_PIN
       WRITE(SPINDLE_LASER_ENA_PIN, enable ? SPINDLE_LASER_ACTIVE_STATE : !SPINDLE_LASER_ACTIVE_STATE);
     #endif
     enable_state = enable;
@@ -285,7 +281,7 @@ public:
         set_enabled(state);
         if (state) {
           if (!menuPower) menuPower = cpwr_to_upwr(SPEED_POWER_STARTUP);
-          power = TERN(SPINDLE_LASER_USE_PWM, upower_to_ocr(menuPower), 255);
+          power = upower_to_ocr(menuPower);
           apply_power(power);
         } else
           apply_power(0);

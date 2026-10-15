@@ -22,8 +22,7 @@
 #pragma once
 
 /**
- * Tenlog MB1 V2.3 pin assignments
- * ATmega2560
+ * Tenlog pin assignments
  */
 
 #define REQUIRE_MEGA2560
@@ -95,7 +94,7 @@
 #define HEATER_1_PIN                          10
 #define HEATER_BED_PIN                         8
 
-#define FAN0_PIN                               9
+#define FAN_PIN                                9
 #define FAN2_PIN                               5  // Normally this would be a servo pin
 
 //#define NUM_RUNOUT_SENSORS                   0
@@ -125,7 +124,7 @@
 // Use the RAMPS 1.4 Analog input 5 on the AUX2 connector
 //#define FILWIDTH_PIN                         5  // Analog Input
 
-#define SD_SS_PIN                             53
+#define SDSS                                  53
 #define SD_DETECT_PIN                         49
 
 //
@@ -139,7 +138,7 @@
 //#endif
 
 #define LCD_PINS_RS                           -1
-#define LCD_PINS_EN                           -1
+#define LCD_PINS_ENABLE                       -1
 #define LCD_PINS_D4                           -1
 #define LCD_PINS_D5                           -1
 #define LCD_PINS_D6                           -1

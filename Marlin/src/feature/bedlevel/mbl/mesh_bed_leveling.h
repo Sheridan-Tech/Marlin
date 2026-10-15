@@ -32,7 +32,8 @@ enum MeshLevelingState : char {
   MeshReset       // G29 S5
 };
 
-#include "../../../module/motion.h"
+#define MESH_X_DIST (float(MESH_MAX_X - (MESH_MIN_X)) / (GRID_MAX_CELLS_X))
+#define MESH_Y_DIST (float(MESH_MAX_Y - (MESH_MIN_Y)) / (GRID_MAX_CELLS_Y))
 
 class mesh_bed_leveling {
 public:
@@ -43,11 +44,9 @@ public:
 
   mesh_bed_leveling();
 
-  static void reset();
-
-  static void initialize();
-
   static void report_mesh();
+
+  static void reset();
 
   FORCE_INLINE static bool has_mesh() {
     GRID_LOOP(x, y) if (z_values[x][y]) return true;
@@ -56,7 +55,7 @@ public:
 
   static bool mesh_is_valid() { return has_mesh(); }
 
-  static void set_z(const int8_t px, const int8_t py, const float z) { z_values[px][py] = z; }
+  static void set_z(const int8_t px, const int8_t py, const_float_t z) { z_values[px][py] = z; }
 
   static void zigzag(const int8_t index, int8_t &px, int8_t &py) {
     px = index % (GRID_MAX_POINTS_X);
@@ -64,7 +63,7 @@ public:
     if (py & 1) px = (GRID_MAX_POINTS_X) - 1 - px; // Zig zag
   }
 
-  static void set_zigzag_z(const int8_t index, const float z) {
+  static void set_zigzag_z(const int8_t index, const_float_t z) {
     int8_t px, py;
     zigzag(index, px, py);
     set_z(px, py, z);
@@ -73,33 +72,33 @@ public:
   static float get_mesh_x(const uint8_t i) { return index_to_xpos[i]; }
   static float get_mesh_y(const uint8_t i) { return index_to_ypos[i]; }
 
-  static uint8_t cell_index_x(const float x) {
-    const int8_t cx = (x - mesh_min.x) * RECIPROCAL(MESH_X_DIST);
+  static int8_t cell_index_x(const_float_t x) {
+    int8_t cx = (x - (MESH_MIN_X)) * RECIPROCAL(MESH_X_DIST);
     return constrain(cx, 0, GRID_MAX_CELLS_X - 1);
   }
-  static uint8_t cell_index_y(const float y) {
-    const int8_t cy = (y - mesh_min.y) * RECIPROCAL(MESH_Y_DIST);
+  static int8_t cell_index_y(const_float_t y) {
+    int8_t cy = (y - (MESH_MIN_Y)) * RECIPROCAL(MESH_Y_DIST);
     return constrain(cy, 0, GRID_MAX_CELLS_Y - 1);
   }
-  static xy_uint8_t cell_indexes(const float x, const float y) {
+  static xy_int8_t cell_indexes(const_float_t x, const_float_t y) {
     return { cell_index_x(x), cell_index_y(y) };
   }
-  static xy_uint8_t cell_indexes(const xy_pos_t &xy) { return cell_indexes(xy.x, xy.y); }
+  static xy_int8_t cell_indexes(const xy_pos_t &xy) { return cell_indexes(xy.x, xy.y); }
 
-  static int8_t probe_index_x(const float x) {
-    const int8_t px = (x - mesh_min.x + 0.5f * (MESH_X_DIST)) * RECIPROCAL(MESH_X_DIST);
+  static int8_t probe_index_x(const_float_t x) {
+    int8_t px = (x - (MESH_MIN_X) + 0.5f * (MESH_X_DIST)) * RECIPROCAL(MESH_X_DIST);
     return WITHIN(px, 0, (GRID_MAX_POINTS_X) - 1) ? px : -1;
   }
-  static int8_t probe_index_y(const float y) {
-    const int8_t py = (y - mesh_min.y + 0.5f * (MESH_Y_DIST)) * RECIPROCAL(MESH_Y_DIST);
+  static int8_t probe_index_y(const_float_t y) {
+    int8_t py = (y - (MESH_MIN_Y) + 0.5f * (MESH_Y_DIST)) * RECIPROCAL(MESH_Y_DIST);
     return WITHIN(py, 0, (GRID_MAX_POINTS_Y) - 1) ? py : -1;
   }
-  static xy_int8_t probe_indexes(const float x, const float y) {
+  static xy_int8_t probe_indexes(const_float_t x, const_float_t y) {
     return { probe_index_x(x), probe_index_y(y) };
   }
   static xy_int8_t probe_indexes(const xy_pos_t &xy) { return probe_indexes(xy.x, xy.y); }
 
-  static float calc_z0(const float a0, const float a1, const float z1, const float a2, const float z2) {
+  static float calc_z0(const_float_t a0, const_float_t a1, const_float_t z1, const_float_t a2, const_float_t z2) {
     const float delta_z = (z2 - z1) / (a2 - a1),
                 delta_a = a0 - a1;
     return z1 + delta_a * delta_z;
@@ -108,7 +107,7 @@ public:
   static float get_z_offset() { return z_offset; }
 
   static float get_z_correction(const xy_pos_t &pos) {
-    const xy_uint8_t ind = cell_indexes(pos);
+    const xy_int8_t ind = cell_indexes(pos);
     const float x1 = index_to_xpos[ind.x], x2 = index_to_xpos[ind.x+1],
                 y1 = index_to_ypos[ind.y], y2 = index_to_ypos[ind.y+1],
                 z1 = calc_z0(pos.x, x1, z_values[ind.x][ind.y  ], x2, z_values[ind.x+1][ind.y  ]),
@@ -119,7 +118,7 @@ public:
   }
 
   #if IS_CARTESIAN && DISABLED(SEGMENT_LEVELED_MOVES)
-    static void line_to_destination(const feedRate_t scaled_fr_mm_s, uint8_t x_splits=0xFF, uint8_t y_splits=0xFF);
+    static void line_to_destination(const_feedRate_t scaled_fr_mm_s, uint8_t x_splits=0xFF, uint8_t y_splits=0xFF);
   #endif
 };
 

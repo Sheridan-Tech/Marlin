@@ -4,6 +4,7 @@
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
+ * Copyright (c) 2017 Victor Perez
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +45,7 @@ struct USARTMin {
   volatile uint32_t CR2;
 };
 
-#if WITHIN(SERIAL_PORT, 1, 9)
+#if WITHIN(SERIAL_PORT, 1, 6)
   // Depending on the CPU, the serial port is different for USART1
   static const uintptr_t regsAddr[] = {
     TERN(STM32F1xx, 0x40013800, 0x40011000), // USART1
@@ -52,10 +53,7 @@ struct USARTMin {
     0x40004800, // USART3
     0x40004C00, // UART4_BASE
     0x40005000, // UART5_BASE
-    0x40011400, // USART6
-    0x40007800, // UART7_BASE
-    0x40007C00, // UART8_BASE
-    0x40011800  // UART9_BASE
+    0x40011400  // USART6
   };
   static USARTMin * regs = (USARTMin*)regsAddr[SERIAL_PORT - 1];
 #endif
@@ -118,7 +116,7 @@ static void TXBegin() {
 // A SW memory barrier, to ensure GCC does not overoptimize loops
 #define sw_barrier() __asm__ volatile("": : :"memory");
 static void TX(char c) {
-  #if WITHIN(SERIAL_PORT, 1, 9)
+  #if WITHIN(SERIAL_PORT, 1, 6)
     constexpr uint32_t usart_sr_txe = _BV(7);
     while (!(regs->SR & usart_sr_txe)) {
       hal.watchdog_refresh();
@@ -137,18 +135,18 @@ void install_min_serial() {
 }
 
 #if NONE(DYNAMIC_VECTORTABLE, STM32F0xx, STM32G0xx) // Cortex M0 can't jump to a symbol that's too far from the current function, so we work around this in exception_arm.cpp
-  extern "C" {
-    __attribute__((naked)) void JumpHandler_ASM() {
-      __asm__ __volatile__ (
-        "b CommonHandler_ASM\n"
-      );
-    }
-    void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) HardFault_Handler();
-    void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) BusFault_Handler();
-    void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) UsageFault_Handler();
-    void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) MemManage_Handler();
-    void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) NMI_Handler();
+extern "C" {
+  __attribute__((naked)) void JumpHandler_ASM() {
+    __asm__ __volatile__ (
+      "b CommonHandler_ASM\n"
+    );
   }
+  void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) HardFault_Handler();
+  void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) BusFault_Handler();
+  void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) UsageFault_Handler();
+  void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) MemManage_Handler();
+  void __attribute__((naked, alias("JumpHandler_ASM"), nothrow)) NMI_Handler();
+}
 #endif
 
 #endif // POSTMORTEM_DEBUGGING

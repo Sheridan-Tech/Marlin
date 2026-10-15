@@ -47,9 +47,9 @@
 #if ENABLED(IIC_BL24CXX_EEPROM)
   #define IIC_EEPROM_SDA                    PA11
   #define IIC_EEPROM_SCL                    PA12
-  #define MARLIN_EEPROM_SIZE              0x800U  // 2K (24C16)
+  #define MARLIN_EEPROM_SIZE               0x800  // 2K (24C16)
 #elif ENABLED(SDCARD_EEPROM_EMULATION)
-  #define MARLIN_EEPROM_SIZE              0x800U  // 2K
+  #define MARLIN_EEPROM_SIZE               0x800  // 2K
 #endif
 
 //
@@ -64,8 +64,14 @@
 //
 // Probe
 //
-#ifndef PROBE_TARE_PIN
-  #define PROBE_TARE_PIN                    PA5
+#if ENABLED(NOZZLE_AS_PROBE)
+  #ifndef PROBE_TARE_PIN
+    #define PROBE_TARE_PIN                  PA5
+  #endif
+#else
+  #ifndef SERVO0_PIN
+    #define SERVO0_PIN                      PA5
+  #endif
 #endif
 
 //
@@ -103,12 +109,14 @@
 // SD Card
 //
 #define SD_DETECT_PIN                       PC7
-#define BOARD_NO_HOST_DRIVE                       // SD is only seen by the printer
+#define NO_SD_HOST_DRIVE                          // SD is only seen by the printer
 
-#define ONBOARD_SDIO                              // Extra added by Creality
+#define SDIO_SUPPORT                              // Extra added by Creality
 #define SDIO_CLOCK                       6000000  // In original source code overridden by Creality in sdio.h
 
 //
 // Misc. Functions
 //
 #define CASE_LIGHT_PIN                      PA6
+
+#define LED_PIN                             PA6

@@ -28,7 +28,7 @@
 
 #include "../../inc/MarlinConfigPre.h"
 
-#if HAS_HOTEND
+#if HAS_EXTRUDERS
 
 #include "../gcode.h"
 #include "../../module/temperature.h"
@@ -43,6 +43,10 @@
   #if ENABLED(CANCEL_OBJECTS)
     #include "../../feature/cancel_object.h"
   #endif
+#endif
+
+#if ENABLED(SINGLENOZZLE_STANDBY_TEMP)
+  #include "../../module/tool_change.h"
 #endif
 
 /**
@@ -70,9 +74,6 @@
  *  (used by printingIsActive, etc.) and turning off heaters will stop the timer.
  */
 void GcodeSuite::M104_M109(const bool isM109) {
-  #if ENABLED(AUTOTEMP)
-    if (!isM109 && !parser.seen_any()) return M104_report();
-  #endif
 
   if (DEBUGGING(DRYRUN)) return;
 
@@ -106,13 +107,13 @@ void GcodeSuite::M104_M109(const bool isM109) {
   if (got_temp) {
     #if ENABLED(SINGLENOZZLE_STANDBY_TEMP)
       thermalManager.singlenozzle_temp[target_extruder] = temp;
-      if (target_extruder != motion.extruder) return;
+      if (target_extruder != active_extruder) return;
     #endif
     thermalManager.setTargetHotend(temp, target_extruder);
 
     #if ENABLED(DUAL_X_CARRIAGE)
-      if (motion.idex_is_duplicating() && target_extruder == 0)
-        thermalManager.setTargetHotend(temp ? temp + motion.duplicate_extruder_temp_offset : 0, 1);
+      if (idex_is_duplicating() && target_extruder == 0)
+        thermalManager.setTargetHotend(temp ? temp + duplicate_extruder_temp_offset : 0, 1);
     #endif
 
     #if ENABLED(PRINTJOB_TIMER_AUTOSTART)
@@ -128,30 +129,10 @@ void GcodeSuite::M104_M109(const bool isM109) {
       thermalManager.set_heating_message(target_extruder, !isM109 && got_temp);
   }
 
-  TERN_(AUTOTEMP, thermalManager.autotemp_M104_M109());
+  TERN_(AUTOTEMP, planner.autotemp_M104_M109());
 
-  if (isM109 && got_temp) {
+  if (isM109 && got_temp)
     (void)thermalManager.wait_for_hotend(target_extruder, no_wait_for_cooling);
-    #if ENABLED(REMAINING_TIME_AUTOPRIME)
-      if (card.isStillPrinting()) {
-        print_job_timer.primeRemainingTimeEstimate(card.getIndex(), card.getFileSize());
-        //SERIAL_ECHOLN(F("M109 - Prime Remaining Time Estimate: "), print_job_timer.duration(), C(' '), card.getIndex(), C(' '), card.getFileSize() - card.getIndex());
-      }
-    #endif
-  }
-
 }
 
-#if ENABLED(AUTOTEMP)
-  //
-  // Report AUTOTEMP settings saved to EEPROM
-  //
-  void GcodeSuite::M104_report(const bool forReplay/*=true*/) {
-    TERN_(MARLIN_SMALL_BUILD, return);
-    report_heading_etc(forReplay, F(STR_AUTOTEMP));
-    const autotemp_cfg_t &c = thermalManager.autotemp.cfg;
-    SERIAL_ECHOLNPGM("  M104 S", c.min, " B", c.max, " F", c.factor);
-  }
-#endif
-
-#endif // HAS_HOTEND
+#endif // EXTRUDERS

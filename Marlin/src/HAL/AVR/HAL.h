@@ -1,9 +1,7 @@
 /**
  * Marlin 3D Printer Firmware
  * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
- *
- * Based on Sprinter and grbl.
- * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
+ * Copyright (c) 2016 Bob Cousins bobcousins42@googlemail.com
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -129,11 +127,11 @@ typedef Servo hal_servo_t;
   #endif
 #endif
 
-#ifdef MMU_SERIAL_PORT
-  #if !WITHIN(MMU_SERIAL_PORT, 0, 3)
-    #error "MMU_SERIAL_PORT must be from 0 to 3"
+#ifdef MMU2_SERIAL_PORT
+  #if !WITHIN(MMU2_SERIAL_PORT, 0, 3)
+    #error "MMU2_SERIAL_PORT must be from 0 to 3"
   #endif
-  #define MMU_SERIAL mmuSerial
+  #define MMU2_SERIAL mmuSerial
 #endif
 
 #ifdef LCD_SERIAL_PORT
@@ -141,16 +139,16 @@ typedef Servo hal_servo_t;
     #error "LCD_SERIAL_PORT must be from 0 to 3."
   #endif
   #define LCD_SERIAL lcdSerial
-  #if ANY(HAS_DGUS_LCD, EXTENSIBLE_UI)
-    #define LCD_SERIAL_TX_BUFFER_FREE() LCD_SERIAL.get_tx_buffer_free()
+  #if HAS_DGUS_LCD || ENABLED(DGUS_LCD_UI_CREALITY_TOUCH)
+    #define SERIAL_GET_TX_BUFFER_FREE() LCD_SERIAL.get_tx_buffer_free()
   #endif
 #endif
 
 //
 // ADC
 //
-#define HAL_ADC_VREF_MV   5000
-#define HAL_ADC_RESOLUTION  10
+#define HAL_ADC_VREF        5.0
+#define HAL_ADC_RESOLUTION 10
 
 //
 // Pin Mapping for M42, M43, M226
@@ -159,7 +157,7 @@ typedef Servo hal_servo_t;
 #define GET_PIN_MAP_INDEX(pin) pin
 #define PARSED_PIN_INDEX(code, dval) parser.intval(code, dval)
 
-#define HAL_SENSITIVE_PINS 0, 1
+#define HAL_SENSITIVE_PINS 0, 1,
 
 #ifdef __AVR_AT90USB1286__
   #define JTAG_DISABLE() do{ MCUCR = 0x80; MCUCR = 0x80; }while(0)
@@ -189,7 +187,7 @@ class MarlinHAL {
 public:
 
   // Earliest possible init, before setup()
-  MarlinHAL();
+  MarlinHAL() {}
 
   // Watchdog
   static void watchdog_init()    IF_DISABLED(USE_WATCHDOG, {});
@@ -204,9 +202,9 @@ public:
   static void isr_on()  { sei(); }
   static void isr_off() { cli(); }
 
-  static void delay_ms(const int ms) { delay(ms); }
+  static void delay_ms(const int ms) { _delay_ms(ms); }
 
-  // Tasks, called from marlin.idle()
+  // Tasks, called from idle()
   static void idletask() {}
 
   // Reset

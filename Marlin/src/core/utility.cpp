@@ -22,16 +22,22 @@
 
 #include "utility.h"
 
+#include "../MarlinCore.h"
 #include "../module/temperature.h"
 
-#if ENABLED(MARLIN_DEV_MODE)
-  MarlinError marlin_error_number;    // Error Number - Marlin can beep X times periodically, display, and emit...
-#endif
+void safe_delay(millis_t ms) {
+  while (ms > 50) {
+    ms -= 50;
+    delay(50);
+    thermalManager.task();
+  }
+  delay(ms);
+  thermalManager.task(); // This keeps us safe if too many small safe_delay() calls are made
+}
 
 // A delay to provide brittle hosts time to receive bytes
 #if ENABLED(SERIAL_OVERRUN_PROTECTION)
 
-  #include "../MarlinCore.h"  // for safe_delay
   #include "../gcode/gcode.h" // for set_autoreport_paused
 
   void serial_delay(const millis_t ms) {
@@ -50,38 +56,27 @@
   #include "../feature/bedlevel/bedlevel.h"
 
   void log_machine_info() {
-    SERIAL_ECHOLNPGM("Machine Type:"
-      TERN_(DELTA,                 " Delta")
-      TERN_(IS_SCARA,              " SCARA")
-      TERN_(AXEL_TPARA,            " TPARA")
-      TERN_(IS_CORE,               " Core")
-      TERN_(BELTPRINTER,           " Belt Printer")
-      TERN_(MARKFORGED_XY,         " MarkForgedXY")
-      TERN_(MARKFORGED_YX,         " MarkForgedYX")
-      TERN_(POLAR,                 " Polar")
-      TERN_(POLARGRAPH,            " Polargraph")
-      TERN_(ARTICULATED_ROBOT_ARM, " Robot Arm")
-      TERN_(FOAMCUTTER_XYUV,       " Foam Cutter")
-      TERN_(IS_CARTESIAN,          " Cartesian")
+    SERIAL_ECHOLNPGM("Machine Type: "
+      TERN_(DELTA,         "Delta")
+      TERN_(IS_SCARA,      "SCARA")
+      TERN_(IS_CORE,       "Core")
+      TERN_(MARKFORGED_XY, "MarkForgedXY")
+      TERN_(MARKFORGED_YX, "MarkForgedYX")
+      TERN_(IS_CARTESIAN,  "Cartesian")
     );
 
     SERIAL_ECHOLNPGM("Probe: "
-      TERN_(PROBE_MANUALLY,        "PROBE_MANUALLY")
-      TERN_(NOZZLE_AS_PROBE,       "NOZZLE_AS_PROBE")
-      TERN_(FIX_MOUNTED_PROBE,     "FIX_MOUNTED_PROBE")
-      TERN_(HAS_Z_SERVO_PROBE,     TERN(BLTOUCH, "BLTOUCH", "SERVO PROBE"))
-      TERN_(BD_SENSOR,             "BD_SENSOR")
-      TERN_(TOUCH_MI_PROBE,        "TOUCH_MI_PROBE")
-      TERN_(Z_PROBE_ALLEN_KEY,     "Z_PROBE_ALLEN_KEY")
-      TERN_(Z_PROBE_SLED,          "Z_PROBE_SLED")
-      TERN_(RACK_AND_PINION_PROBE, "RACK_AND_PINION_PROBE")
-      TERN_(SOLENOID_PROBE,        "SOLENOID_PROBE")
-      TERN_(SENSORLESS_PROBING,    "SENSORLESS_PROBING")
-      TERN_(MAGLEV4,               "MAGLEV4")
-      TERN_(MAG_MOUNTED_PROBE,     "MAG_MOUNTED_PROBE")
-      TERN_(BIQU_MICROPROBE_V1,    "BIQU_MICROPROBE_V1")
-      TERN_(BIQU_MICROPROBE_V2,    "BIQU_MICROPROBE_V2")
-      IF_DISABLED(PROBE_SELECTED,  "NONE")
+      TERN_(PROBE_MANUALLY, "PROBE_MANUALLY")
+      TERN_(NOZZLE_AS_PROBE, "NOZZLE_AS_PROBE")
+      TERN_(FIX_MOUNTED_PROBE, "FIX_MOUNTED_PROBE")
+      TERN_(HAS_Z_SERVO_PROBE, TERN(BLTOUCH, "BLTOUCH", "SERVO PROBE"))
+      TERN_(BD_SENSOR, "BD_SENSOR")
+      TERN_(TOUCH_MI_PROBE, "TOUCH_MI_PROBE")
+      TERN_(Z_PROBE_SLED, "Z_PROBE_SLED")
+      TERN_(Z_PROBE_ALLEN_KEY, "Z_PROBE_ALLEN_KEY")
+      TERN_(SOLENOID_PROBE, "SOLENOID_PROBE")
+      TERN_(MAGLEV4, "MAGLEV4")
+      IF_DISABLED(PROBE_SELECTED, "NONE")
     );
 
     #if HAS_BED_PROBE
@@ -100,9 +95,9 @@
           SERIAL_ECHOPGM(" (Aligned With");
 
         if (probe.offset_xy.y > 0)
-          SERIAL_ECHO(F(TERN(IS_SCARA, "-Distal", "-Back")));
+          SERIAL_ECHOPGM(TERN(IS_SCARA, "-Distal", "-Back"));
         else if (probe.offset_xy.y < 0)
-          SERIAL_ECHO(F(TERN(IS_SCARA, "-Proximal", "-Front")));
+          SERIAL_ECHOPGM(TERN(IS_SCARA, "-Proximal", "-Front"));
         else if (probe.offset_xy.x != 0)
           SERIAL_ECHOPGM("-Center");
 
@@ -110,7 +105,7 @@
 
       #endif
 
-      SERIAL_ECHO(probe.offset.z < 0 ? F("Below") : probe.offset.z > 0 ? F("Above") : F("Same Z as"));
+      SERIAL_ECHOF(probe.offset.z < 0 ? F("Below") : probe.offset.z > 0 ? F("Above") : F("Same Z as"));
       SERIAL_ECHOLNPGM(" Nozzle)");
 
     #endif
@@ -133,7 +128,7 @@
           SERIAL_ECHOPGM("ABL Adjustment");
           LOOP_NUM_AXES(a) {
             SERIAL_ECHOPGM_P((PGM_P)pgm_read_ptr(&SP_AXIS_STR[a]));
-            serial_offset(planner.get_axis_position_mm((AxisEnum)a) - motion.position[a]);
+            serial_offset(planner.get_axis_position_mm(AxisEnum(a)) - current_position[a]);
           }
         #else
           #if ENABLED(AUTO_BED_LEVELING_UBL)
@@ -141,11 +136,13 @@
           #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
             SERIAL_ECHOPGM("ABL Adjustment Z");
           #endif
-          const float rz = bedlevel.get_z_correction(motion.position);
+          const float rz = bedlevel.get_z_correction(current_position);
           SERIAL_ECHO(ftostr43sign(rz, '+'));
           #if ENABLED(ENABLE_LEVELING_FADE_HEIGHT)
-            if (planner.z_fade_height)
-              SERIAL_ECHO(F(" ("), ftostr43sign(rz * planner.fade_scaling_factor_for_z(motion.position.z), '+'), C(')'));
+            if (planner.z_fade_height) {
+              SERIAL_ECHOPGM(" (", ftostr43sign(rz * planner.fade_scaling_factor_for_z(current_position.z), '+'));
+              SERIAL_CHAR(')');
+            }
           #endif
         #endif
       }
@@ -160,11 +157,14 @@
       if (planner.leveling_active) {
         SERIAL_ECHOLNPGM(" (enabled)");
         const float z_offset = bedlevel.get_z_offset(),
-                    z_correction = bedlevel.get_z_correction(motion.position);
+                    z_correction = bedlevel.get_z_correction(current_position);
         SERIAL_ECHOPGM("MBL Adjustment Z", ftostr43sign(z_offset + z_correction, '+'));
         #if ENABLED(ENABLE_LEVELING_FADE_HEIGHT)
           if (planner.z_fade_height) {
-            SERIAL_ECHO(F(" ("), ftostr43sign(z_offset + z_correction * planner.fade_scaling_factor_for_z(motion.position.z), '+'), C(')'));
+            SERIAL_ECHOPGM(" (", ftostr43sign(
+              z_offset + z_correction * planner.fade_scaling_factor_for_z(current_position.z), '+'
+            ));
+            SERIAL_CHAR(')');
           }
         #endif
       }

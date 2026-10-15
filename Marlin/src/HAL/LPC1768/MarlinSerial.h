@@ -21,7 +21,6 @@
  */
 #pragma once
 
-#include <CDCSerial.h>
 #include <HardwareSerial.h>
 #include <WString.h>
 
@@ -31,18 +30,14 @@
 #endif
 #include "../../core/serial_hook.h"
 
-typedef ForwardSerial1Class< decltype(UsbSerial) > DefaultSerial1;
-extern DefaultSerial1 USBSerial;
-
-#define SERIAL_INDEX_MIN 0
-#define SERIAL_INDEX_MAX 3
-#define USB_SERIAL_PORT(...) USBSerial
-#include "../shared/serial_ports.h"
-
-#if defined(LCD_SERIAL_PORT) && ANY(HAS_DGUS_LCD, EXTENSIBLE_UI)
-  // LCD_SERIAL is ForwardSerial<MarlinSerial> on LPC1768. ForwardSerial doesn't expose
-  // availableForWrite(), so call through the wrapped instance (`out`) to get real TX free space.
-  #define LCD_SERIAL_TX_BUFFER_FREE() LCD_SERIAL.out.availableForWrite()
+#ifndef SERIAL_PORT
+  #define SERIAL_PORT 0
+#endif
+#ifndef RX_BUFFER_SIZE
+  #define RX_BUFFER_SIZE 128
+#endif
+#ifndef TX_BUFFER_SIZE
+  #define TX_BUFFER_SIZE 32
 #endif
 
 class MarlinSerial : public HardwareSerial<RX_BUFFER_SIZE, TX_BUFFER_SIZE> {
@@ -51,6 +46,7 @@ public:
 
   void end() {}
 
+  uint8_t availableForWrite(void) { /* flushTX(); */ return TX_BUFFER_SIZE; }
 
   #if ENABLED(EMERGENCY_PARSER)
     bool recv_callback(const char c) override;

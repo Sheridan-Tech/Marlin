@@ -39,16 +39,12 @@ static void spi_init(spi_t *obj, uint32_t speed, spi_mode_e mode, uint8_t msb, u
 
 void MarlinSPI::setClockDivider(uint8_t _div) {
   _speed = spi_getClkFreq(&_spi);// / _div;
-  if (_clockDivider != _div) {
-    _clockDivider = _div;
-    _mustInit = true;
-  }
+  _clockDivider = _div;
 }
 
 void MarlinSPI::begin(void) {
-  if (!_mustInit) return;
+  //TODO: only call spi_init if any parameter changed!!
   spi_init(&_spi, _speed, _dataMode, _bitOrder, _dataSize);
-  _mustInit = false;
 }
 
 void MarlinSPI::setupDma(SPI_HandleTypeDef &_spiHandle, DMA_HandleTypeDef &_dmaHandle, uint32_t direction, bool minc) {

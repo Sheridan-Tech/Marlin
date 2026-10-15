@@ -21,7 +21,6 @@
  */
 
 #ifdef __PLAT_LINUX__
-#ifndef UNIT_TEST
 
 //#define GPIO_LOGGING // Full GPIO and Positional Logging
 
@@ -112,7 +111,7 @@ int main() {
 
   #ifdef MYSERIAL1
     MYSERIAL1.begin(BAUDRATE);
-    SERIAL_ECHOLN("x86_64 Initialized");
+    SERIAL_ECHOLNPGM("x86_64 Initialized");
     SERIAL_FLUSHTX();
   #endif
 
@@ -136,5 +135,4 @@ int main() {
   read_serial.join();
 }
 
-#endif // UNIT_TEST
 #endif // __PLAT_LINUX__

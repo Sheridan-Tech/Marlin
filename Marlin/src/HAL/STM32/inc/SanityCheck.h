@@ -22,20 +22,14 @@
 #pragma once
 
 /**
- * Require pins to be defined as macros with numerical values
- */
-#ifndef PA0
-  #error "Your ARM platform pins are not defined as macros, only as enums! Provide pins_arduino.h and/or 'buildroot/share/PlatformIO/variants/*/variant.h' to define the pins."
-#endif
-
-/**
  * Test STM32-specific configuration values for errors at compile-time.
  */
 //#if ENABLED(SPINDLE_LASER_USE_PWM) && !(SPINDLE_LASER_PWM_PIN == 4 || SPINDLE_LASER_PWM_PIN == 6 || SPINDLE_LASER_PWM_PIN == 11)
 //  #error "SPINDLE_LASER_PWM_PIN must use SERVO0, SERVO1 or SERVO3 connector"
 //#endif
 
-#if ENABLED(SDCARD_EEPROM_EMULATION) && !HAS_MEDIA
+
+#if ENABLED(SDCARD_EEPROM_EMULATION) && DISABLED(SDSUPPORT)
   #undef SDCARD_EEPROM_EMULATION // Avoid additional error noise
   #if USE_FALLBACK_EEPROM
     #warning "EEPROM type not specified. Fallback is SDCARD_EEPROM_EMULATION."
@@ -43,8 +37,8 @@
   #error "SDCARD_EEPROM_EMULATION requires SDSUPPORT. Enable SDSUPPORT or choose another EEPROM emulation."
 #endif
 
-#if NONE(STM32F4xx, STM32H7xx) && ENABLED(FLASH_EEPROM_LEVELING)
-  #error "FLASH_EEPROM_LEVELING is currently only supported on STM32F4/H7 hardware." // IRON
+#if !defined(STM32F4xx) && ENABLED(FLASH_EEPROM_LEVELING)
+  #error "FLASH_EEPROM_LEVELING is currently only supported on STM32F4 hardware."
 #endif
 
 #if ENABLED(SERIAL_STATS_MAX_RX_QUEUED)
@@ -57,17 +51,12 @@
   #error "TFT_COLOR_UI, TFT_LVGL_UI and TFT_CLASSIC_UI are currently only supported on STM32H7, STM32F4 and STM32F1 hardware."
 #endif
 
-#if TEMP_SENSOR_SOC && defined(ATEMP) && TEMP_SOC_PIN != ATEMP
-  #error "TEMP_SENSOR_SOC requires 'TEMP_SOC_PIN ATEMP' on STM32."
-#endif
-
 /**
  * Check for common serial pin conflicts
  */
 #define _CHECK_SERIAL_PIN(N) (( \
-    BTN_EN1 == N || BTN_EN2 == N || DOGLCD_CS == N || HEATER_BED_PIN == N || FAN0_PIN == N || \
-    SDIO_D2_PIN == N || SDIO_D3_PIN == N || SDIO_CK_PIN == N || SDIO_CMD_PIN == N || \
-    Y_STEP_PIN == N || Y_ENABLE_PIN == N || E0_ENABLE_PIN == N || POWER_LOSS_PIN == N \
+    BTN_EN1 == N || DOGLCD_CS == N || HEATER_BED_PIN == N || FAN_PIN == N || \
+    SDIO_D2_PIN == N || SDIO_D3_PIN == N || SDIO_CK_PIN == N || SDIO_CMD_PIN == N \
   ))
 #define CHECK_SERIAL_PIN(T,N) defined(UART##N##_##T##_PIN) && _CHECK_SERIAL_PIN(UART##N##_##T##_PIN)
 #if SERIAL_IN_USE(1)

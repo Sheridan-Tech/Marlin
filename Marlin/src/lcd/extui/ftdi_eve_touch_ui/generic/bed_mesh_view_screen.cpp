@@ -53,7 +53,10 @@ constexpr static float gaugeThickness = 0.25;
 #endif
 
 static float meshGetter(uint8_t x, uint8_t y, void*) {
-  return ExtUI::getMeshPoint(xy_uint8_t({x, y}));
+  xy_uint8_t pos;
+  pos.x = x;
+  pos.y = y;
+  return ExtUI::getMeshPoint(pos);
 }
 
 void BedMeshViewScreen::onEntry() {
@@ -122,7 +125,7 @@ void BedMeshViewScreen::onMeshUpdate(const int8_t x, const int8_t y, const ExtUI
       mydata.count = 0;
       break;
     case ExtUI::G29_FINISH:
-      if (mydata.count == GRID_MAX_POINTS && ExtUI::getLevelingIsValid())
+      if (mydata.count == GRID_MAX_POINTS && ExtUI::getMeshValid())
         mydata.message = GET_TEXT_F(MSG_BED_MAPPING_DONE);
       else
         mydata.message = GET_TEXT_F(MSG_BED_MAPPING_INCOMPLETE);
@@ -155,7 +158,7 @@ void BedMeshViewScreen::doProbe() {
 }
 
 void BedMeshViewScreen::show() {
-  TERN_(AUTO_BED_LEVELING_UBL, injectCommands(F("G29 L1")));
+  injectCommands(F("G29 L1"));
   GOTO_SCREEN(BedMeshViewScreen);
 }
 

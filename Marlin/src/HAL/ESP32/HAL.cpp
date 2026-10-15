@@ -34,13 +34,13 @@
 
 #if ENABLED(WIFISUPPORT)
   #include <ESPAsyncWebServer.h>
-  #include "wifi/wifi.h"
+  #include "wifi.h"
   #if ENABLED(OTASUPPORT)
-    #include "wifi/ota.h"
+    #include "ota.h"
   #endif
   #if ENABLED(WEBSUPPORT)
-    #include "wifi/spiffs.h"
-    #include "wifi/web.h"
+    #include "spiffs.h"
+    #include "web.h"
   #endif
 #endif
 
@@ -165,7 +165,7 @@ void MarlinHAL::init_board() {
 }
 
 void MarlinHAL::idletask() {
-  #if ALL(WIFISUPPORT, OTASUPPORT)
+  #if BOTH(WIFISUPPORT, OTASUPPORT)
     OTA_handle();
   #endif
   TERN_(ESP3D_WIFISUPPORT, esp3dlib.idletask());
@@ -174,6 +174,8 @@ void MarlinHAL::idletask() {
 uint8_t MarlinHAL::get_reset_source() { return rtc_get_reset_reason(1); }
 
 void MarlinHAL::reboot() { ESP.restart(); }
+
+void _delay_ms(int delay_ms) { delay(delay_ms); }
 
 // return free memory between end of heap (or end bss) and whatever is current
 int MarlinHAL::freeMemory() { return ESP.getFreeHeap(); }
@@ -207,17 +209,16 @@ int MarlinHAL::freeMemory() { return ESP.getFreeHeap(); }
 // ADC
 // ------------------------
 
-// https://docs.espressif.com/projects/esp-idf/en/release-v4.4/esp32/api-reference/peripherals/adc.html
+#define ADC1_CHANNEL(pin) ADC1_GPIO ## pin ## _CHANNEL
+
 adc1_channel_t get_channel(int pin) {
   switch (pin) {
-    case 39: return ADC1_CHANNEL_3;
-    case 36: return ADC1_CHANNEL_0;
-    case 35: return ADC1_CHANNEL_7;
-    case 34: return ADC1_CHANNEL_6;
-    case 33: return ADC1_CHANNEL_5;
-    case 32: return ADC1_CHANNEL_4;
-    case 37: return ADC1_CHANNEL_1;
-    case 38: return ADC1_CHANNEL_2;
+    case 39: return ADC1_CHANNEL(39);
+    case 36: return ADC1_CHANNEL(36);
+    case 35: return ADC1_CHANNEL(35);
+    case 34: return ADC1_CHANNEL(34);
+    case 33: return ADC1_CHANNEL(33);
+    case 32: return ADC1_CHANNEL(32);
   }
   return ADC1_CHANNEL_MAX;
 }
@@ -242,13 +243,12 @@ void MarlinHAL::adc_init() {
   TERN_(HAS_TEMP_ADC_5,        adc1_set_attenuation(get_channel(TEMP_5_PIN), ADC_ATTEN_11db));
   TERN_(HAS_TEMP_ADC_6,        adc2_set_attenuation(get_channel(TEMP_6_PIN), ADC_ATTEN_11db));
   TERN_(HAS_TEMP_ADC_7,        adc3_set_attenuation(get_channel(TEMP_7_PIN), ADC_ATTEN_11db));
-  TERN_(HAS_TEMP_ADC_BED,      adc1_set_attenuation(get_channel(TEMP_BED_PIN), ADC_ATTEN_11db));
-  TERN_(HAS_TEMP_ADC_CHAMBER,  adc1_set_attenuation(get_channel(TEMP_CHAMBER_PIN), ADC_ATTEN_11db));
-  TERN_(HAS_TEMP_ADC_PROBE,    adc1_set_attenuation(get_channel(TEMP_PROBE_PIN), ADC_ATTEN_11db));
-  TERN_(HAS_TEMP_ADC_COOLER,   adc1_set_attenuation(get_channel(TEMP_COOLER_PIN), ADC_ATTEN_11db));
-  TERN_(HAS_TEMP_ADC_BOARD,    adc1_set_attenuation(get_channel(TEMP_BOARD_PIN), ADC_ATTEN_11db));
-  TERN_(HAS_FILWIDTH_ADC,      adc1_set_attenuation(get_channel(FILWIDTH_PIN), ADC_ATTEN_11db));
-  TERN_(HAS_FILWIDTH2_ADC,     adc1_set_attenuation(get_channel(FILWIDTH2_PIN), ADC_ATTEN_11db));
+  TERN_(HAS_HEATED_BED,        adc1_set_attenuation(get_channel(TEMP_BED_PIN), ADC_ATTEN_11db));
+  TERN_(HAS_TEMP_CHAMBER,      adc1_set_attenuation(get_channel(TEMP_CHAMBER_PIN), ADC_ATTEN_11db));
+  TERN_(HAS_TEMP_PROBE,        adc1_set_attenuation(get_channel(TEMP_PROBE_PIN), ADC_ATTEN_11db));
+  TERN_(HAS_TEMP_COOLER,       adc1_set_attenuation(get_channel(TEMP_COOLER_PIN), ADC_ATTEN_11db));
+  TERN_(HAS_TEMP_BOARD,        adc1_set_attenuation(get_channel(TEMP_BOARD_PIN), ADC_ATTEN_11db));
+  TERN_(FILAMENT_WIDTH_SENSOR, adc1_set_attenuation(get_channel(FILWIDTH_PIN), ADC_ATTEN_11db));
 
   // Note that adc2 is shared with the WiFi module, which has higher priority, so the conversion may fail.
   // That's why we're not setting it up here.
@@ -271,8 +271,7 @@ void MarlinHAL::adc_start(const pin_t pin) {
   uint32_t mv;
   esp_adc_cal_get_voltage((adc_channel_t)chan, &characteristics[attenuations[chan]], &mv);
 
-  static constexpr uint32_t adc_divisor = uint32_t((ADC_REFERENCE_VOLTAGE) * 1000UL);
-  adc_result = (mv * 1023UL) / adc_divisor;
+  adc_result = mv * isr_float_t(1023) / isr_float_t(ADC_REFERENCE_VOLTAGE) / isr_float_t(1000);
 
   // Change the attenuation level based on the new reading
   adc_atten_t atten;
@@ -343,16 +342,16 @@ void MarlinHAL::set_pwm_duty(const pin_t pin, const uint16_t v, const uint16_t v
       }
       else
         pindata.pwm_duty_ticks = duty; // PWM duty count = # of 4µs ticks per full PWM cycle
-
-      return;
     }
+    else
   #endif
-
-  const int8_t cid = get_pwm_channel(pin, PWM_FREQUENCY, PWM_RESOLUTION);
-  if (cid >= 0) {
-    const uint32_t duty = map(invert ? v_size - v : v, 0, v_size, 0, _BV(PWM_RESOLUTION)-1);
-    ledcWrite(cid, duty);
-  }
+    {
+      const int8_t cid = get_pwm_channel(pin, PWM_FREQUENCY, PWM_RESOLUTION);
+      if (cid >= 0) {
+        const uint32_t duty = map(invert ? v_size - v : v, 0, v_size, 0, _BV(PWM_RESOLUTION)-1);
+        ledcWrite(cid, duty);
+      }
+    }
 }
 
 int8_t MarlinHAL::set_pwm_frequency(const pin_t pin, const uint32_t f_desired) {
@@ -361,15 +360,17 @@ int8_t MarlinHAL::set_pwm_frequency(const pin_t pin, const uint32_t f_desired) {
       pwm_pin_data[pin & 0x7F].pwm_cycle_ticks = 1000000UL / f_desired / 4; // # of 4µs ticks per full PWM cycle
       return 0;
     }
+    else
   #endif
-
-  const int8_t cid = channel_for_pin(pin);
-  if (cid >= 0) {
-    if (f_desired == ledcReadFreq(cid)) return cid; // no freq change
-    ledcDetachPin(chan_pin[cid]);
-    chan_pin[cid] = 0;              // remove old freq channel
-  }
-  return get_pwm_channel(pin, f_desired, PWM_RESOLUTION); // try for new one
+    {
+      const int8_t cid = channel_for_pin(pin);
+      if (cid >= 0) {
+        if (f_desired == ledcReadFreq(cid)) return cid; // no freq change
+        ledcDetachPin(chan_pin[cid]);
+        chan_pin[cid] = 0;              // remove old freq channel
+      }
+      return get_pwm_channel(pin, f_desired, PWM_RESOLUTION); // try for new one
+    }
 }
 
 // use hardware PWM if avail, if not then ISR

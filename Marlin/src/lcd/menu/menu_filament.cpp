@@ -26,7 +26,7 @@
 
 #include "../../inc/MarlinConfigPre.h"
 
-#if ALL(HAS_MARLINUI_MENU, ADVANCED_PAUSE_FEATURE)
+#if BOTH(HAS_MARLINUI_MENU, ADVANCED_PAUSE_FEATURE)
 
 #include "menu_item.h"
 #include "../../module/temperature.h"
@@ -35,7 +35,7 @@
 #if HAS_FILAMENT_SENSOR
   #include "../../feature/runout.h"
 #endif
-#if E_STEPPERS > 1 || ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
+#if ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
   #include "../../MarlinCore.h"
 #endif
 
@@ -59,8 +59,10 @@ inline FSTR_P _change_filament_command() {
 
 // Initiate Filament Load/Unload/Change at the specified temperature
 static void _change_filament_with_temp(const uint16_t celsius) {
+  char cmd[11];
+  sprintf_P(cmd, FTOP(_change_filament_command()), _change_filament_extruder);
   thermalManager.setTargetHotend(celsius, _change_filament_extruder);
-  queue.inject(MString<16>{}.setf_P(FTOP(_change_filament_command()), _change_filament_extruder));
+  queue.inject(cmd);
 }
 
 #if HAS_PREHEAT
@@ -94,7 +96,7 @@ void _menu_temp_filament_op(const PauseMode mode, const int8_t extruder) {
   if (LCD_HEIGHT >= 4) STATIC_ITEM_F(change_filament_header(mode), SS_DEFAULT|SS_INVERT);
   BACK_ITEM(MSG_BACK);
   #if HAS_PREHEAT
-    for (uint8_t m = 0; m < PREHEAT_COUNT; ++m)
+    LOOP_L_N(m, PREHEAT_COUNT)
       ACTION_ITEM_N_f(m, ui.get_preheat_label(m), MSG_PREHEAT_M, _change_filament_with_preset);
   #endif
   EDIT_ITEM_FAST_N(int3, extruder, MSG_PREHEAT_CUSTOM, &thermalManager.temp_hotend[extruder].target,
@@ -108,10 +110,14 @@ void _menu_temp_filament_op(const PauseMode mode, const int8_t extruder) {
 /**
  * "Change Filament" submenu
  */
+#if E_STEPPERS > 1 || ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
+  bool printingIsPaused();
+#endif
+
 void menu_change_filament() {
   #if E_STEPPERS > 1 || ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
     // Say "filament change" when no print is active
-    editable.int8 = marlin.printingIsPaused() ? PAUSE_MODE_PAUSE_PRINT : PAUSE_MODE_CHANGE_FILAMENT;
+    editable.int8 = printingIsPaused() ? PAUSE_MODE_PAUSE_PRINT : PAUSE_MODE_CHANGE_FILAMENT;
 
     #if E_STEPPERS > 1 && ENABLED(FILAMENT_UNLOAD_ALL_EXTRUDERS)
       bool too_cold = false;
@@ -120,27 +126,30 @@ void menu_change_filament() {
     #endif
 
     #if ENABLED(FILAMENT_LOAD_UNLOAD_GCODES)
-      const bool is_busy = marlin.printer_busy();
+      const bool is_busy = printer_busy();
     #endif
 
     START_MENU();
-    BACK_ITEM(MSG_MAIN_MENU);
+    BACK_ITEM(MSG_MAIN);
 
     // Change filament
     #if E_STEPPERS == 1
       FSTR_P const fmsg = GET_TEXT_F(MSG_FILAMENTCHANGE);
-      if (thermalManager.targetTooColdToExtrude(motion.extruder))
+      if (thermalManager.targetTooColdToExtrude(active_extruder))
         SUBMENU_F(fmsg, []{ _menu_temp_filament_op(PAUSE_MODE_CHANGE_FILAMENT, 0); });
       else
         GCODES_ITEM_F(fmsg, F("M600 B0"));
     #else
       FSTR_P const fmsg = GET_TEXT_F(MSG_FILAMENTCHANGE_E);
-      for (uint8_t s = 0; s < E_STEPPERS; ++s) {
+      LOOP_L_N(s, E_STEPPERS) {
         if (thermalManager.targetTooColdToExtrude(s))
           SUBMENU_N_F(s, fmsg, []{ _menu_temp_filament_op(PAUSE_MODE_CHANGE_FILAMENT, MenuItemBase::itemIndex); });
         else {
           ACTION_ITEM_N_F(s, fmsg, []{
-            queue.inject(TS(F("M600 B0 T"), int(MenuItemBase::itemIndex)));
+            PGM_P const cmdpstr = PSTR("M600 B0 T%i");
+            char cmd[strlen_P(cmdpstr) + 3 + 1];
+            sprintf_P(cmd, cmdpstr, int(MenuItemBase::itemIndex));
+            queue.inject(cmd);
           });
         }
       }
@@ -151,18 +160,20 @@ void menu_change_filament() {
         // Load filament
         #if E_STEPPERS == 1
           FSTR_P const msg_load = GET_TEXT_F(MSG_FILAMENTLOAD);
-          if (thermalManager.targetTooColdToExtrude(motion.extruder))
+          if (thermalManager.targetTooColdToExtrude(active_extruder))
             SUBMENU_F(msg_load, []{ _menu_temp_filament_op(PAUSE_MODE_LOAD_FILAMENT, 0); });
           else
             GCODES_ITEM_F(msg_load, F("M701"));
         #else
           FSTR_P const msg_load = GET_TEXT_F(MSG_FILAMENTLOAD_E);
-          for (uint8_t s = 0; s < E_STEPPERS; ++s) {
+          LOOP_L_N(s, E_STEPPERS) {
             if (thermalManager.targetTooColdToExtrude(s))
               SUBMENU_N_F(s, msg_load, []{ _menu_temp_filament_op(PAUSE_MODE_LOAD_FILAMENT, MenuItemBase::itemIndex); });
             else {
               ACTION_ITEM_N_F(s, msg_load, []{
-                queue.inject(TS(F("M701 T"), int(MenuItemBase::itemIndex)));
+                char cmd[12];
+                sprintf_P(cmd, PSTR("M701 T%i"), int(MenuItemBase::itemIndex));
+                queue.inject(cmd);
               });
             }
           }
@@ -171,7 +182,7 @@ void menu_change_filament() {
         // Unload filament
         #if E_STEPPERS == 1
           FSTR_P const msg_unload = GET_TEXT_F(MSG_FILAMENTUNLOAD);
-          if (thermalManager.targetTooColdToExtrude(motion.extruder))
+          if (thermalManager.targetTooColdToExtrude(active_extruder))
             SUBMENU_F(msg_unload, []{ _menu_temp_filament_op(PAUSE_MODE_UNLOAD_FILAMENT, 0); });
           else
             GCODES_ITEM_F(msg_unload, F("M702"));
@@ -183,12 +194,14 @@ void menu_change_filament() {
               GCODES_ITEM(MSG_FILAMENTUNLOAD_ALL, F("M702"));
           #endif
           FSTR_P const msg_unload = GET_TEXT_F(MSG_FILAMENTUNLOAD_E);
-          for (uint8_t s = 0; s < E_STEPPERS; ++s) {
+          LOOP_L_N(s, E_STEPPERS) {
             if (thermalManager.targetTooColdToExtrude(s))
               SUBMENU_N_F(s, msg_unload, []{ _menu_temp_filament_op(PAUSE_MODE_UNLOAD_FILAMENT, MenuItemBase::itemIndex); });
             else {
               ACTION_ITEM_N_F(s, msg_unload, []{
-                queue.inject(TS(F("M702 T"), int(MenuItemBase::itemIndex)));
+                char cmd[12];
+                sprintf_P(cmd, PSTR("M702 T%i"), int(MenuItemBase::itemIndex));
+                queue.inject(cmd);
               });
             }
           }
@@ -200,7 +213,7 @@ void menu_change_filament() {
 
   #else
 
-    if (thermalManager.targetHotEnoughToExtrude(motion.extruder))
+    if (thermalManager.targetHotEnoughToExtrude(active_extruder))
       queue.inject(F("M600B0"));
     else
       ui.goto_screen([]{ _menu_temp_filament_op(PAUSE_MODE_CHANGE_FILAMENT, 0); });
@@ -222,24 +235,21 @@ static FSTR_P pause_header() {
 
 // Portions from STATIC_ITEM...
 #define HOTEND_STATUS_ITEM() do { \
-  if ( MY_LINE()) { \
+  if (_menuLineNr == _thisItemNr) { \
     if (ui.should_draw()) { \
       IF_DISABLED(HAS_GRAPHICAL_TFT, MenuItem_static::draw(_lcdLineNr, GET_TEXT_F(MSG_FILAMENT_CHANGE_NOZZLE), SS_INVERT)); \
       ui.draw_hotend_status(_lcdLineNr, hotend_status_extruder); \
     } \
-    STATIC_SKIP(); \
+    if (_skipStatic && encoderLine <= _thisItemNr) { \
+      ui.encoderPosition += ENCODER_STEPS_PER_MENU_ITEM; \
+      ++encoderLine; \
+    } \
     ui.refresh(LCDVIEW_CALL_REDRAW_NEXT); \
   } \
-  NEXT_ITEM(); \
+  ++_thisItemNr; \
 }while(0)
 
 void menu_pause_option() {
-  #if HAS_FILAMENT_SENSOR
-    const bool still_out = runout.filament_ran_out;
-  #else
-    constexpr bool still_out = false;
-  #endif
-
   START_MENU();
   #if LCD_HEIGHT > 2
     STATIC_ITEM(MSG_FILAMENT_CHANGE_OPTION_HEADER);
@@ -247,8 +257,11 @@ void menu_pause_option() {
   ACTION_ITEM(MSG_FILAMENT_CHANGE_OPTION_PURGE, []{ pause_menu_response = PAUSE_RESPONSE_EXTRUDE_MORE; });
 
   #if HAS_FILAMENT_SENSOR
+    const bool still_out = runout.filament_ran_out;
     if (still_out)
-      EDIT_ITEM(bool, MSG_RUNOUT_SENSOR, &runout.enabled, runout.reset);
+      EDIT_ITEM(bool, MSG_RUNOUT_SENSOR, &runout.enabled[active_extruder], runout.reset);
+  #else
+    constexpr bool still_out = false;
   #endif
 
   if (!still_out)
@@ -291,9 +304,11 @@ void lcd_pause_waiting_message()  { _lcd_pause_message(GET_TEXT_F(MSG_ADVANCED_P
 void lcd_pause_resume_message()   { _lcd_pause_message(GET_TEXT_F(MSG_FILAMENT_CHANGE_RESUME));  }
 
 void lcd_pause_purge_message() {
-  _lcd_pause_message(GET_TEXT_F(
-    TERN(ADVANCED_PAUSE_CONTINUOUS_PURGE, MSG_FILAMENT_CHANGE_CONT_PURGE, MSG_FILAMENT_CHANGE_PURGE)
-  ));
+  #if ENABLED(ADVANCED_PAUSE_CONTINUOUS_PURGE)
+    _lcd_pause_message(GET_TEXT_F(MSG_FILAMENT_CHANGE_CONT_PURGE));
+  #else
+    _lcd_pause_message(GET_TEXT_F(MSG_FILAMENT_CHANGE_PURGE));
+  #endif
 }
 
 FORCE_INLINE screenFunc_t ap_message_screen(const PauseMessage message) {
@@ -319,7 +334,7 @@ FORCE_INLINE screenFunc_t ap_message_screen(const PauseMessage message) {
 void MarlinUI::pause_show_message(
   const PauseMessage message,
   const PauseMode mode/*=PAUSE_MODE_SAME*/,
-  const uint8_t extruder/*=motion.extruder*/
+  const uint8_t extruder/*=active_extruder*/
 ) {
   if (mode != PAUSE_MODE_SAME) pause_mode = mode;
   hotend_status_extruder = extruder;

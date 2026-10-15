@@ -20,11 +20,13 @@
  *
  */
 
-#include "../../fontdata.h"
+#include "../../../../../inc/MarlinConfigPre.h"
 
-#if HAS_GRAPHICAL_TFT && TFT_FONT == NOTOSANS
+#if HAS_GRAPHICAL_TFT
 
-// NotoSans Medium Cyrillic 26pt, capital 'A' height: 19px, width: 100%, range: 0x0401-0x0491, glyphs: 74
+#include <stdint.h>
+
+// NotoSans Medium Cyrillic 26pt, capital 'A' heigth: 19px, width: 100%, range: 0x0401-0x0491, glyphs: 74
 extern const uint8_t NotoSans_Medium_Cyrillic_19[6037] = {
   130,19,1,4,145,4,25,249, // unifont_t
   // 0x0401  Ё

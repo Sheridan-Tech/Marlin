@@ -23,7 +23,6 @@
 
 /**
  * Arduino Mega for Tronxy X5S-2E, etc.
- * ATmega2560
  */
 
 #define REQUIRE_MEGA2560
@@ -38,7 +37,7 @@
 //
 // Servos
 //
-#define SERVO1_PIN                            12  // 2560 PIN 25/PB6
+#define SERVO1_PIN         12   // 2560 PIN 25/PB6
 
 //
 // Import RAMPS 1.4 pins

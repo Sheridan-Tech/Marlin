@@ -45,7 +45,7 @@
 // Public functions
 // --------------------------------------------------------------------------
 
-#if ANY(SOFTWARE_SPI, FORCE_SOFT_SPI)
+#if EITHER(SOFTWARE_SPI, FORCE_SOFT_SPI)
 
   // ------------------------
   // Software SPI
@@ -64,7 +64,7 @@
   }
 
   void spiInit(uint8_t spiRate) {
-    // Use Marlin datarates
+    // Use datarates Marlin uses
     uint32_t clock;
     switch (spiRate) {
       case SPI_FULL_SPEED:      clock = 8000000; break;
@@ -108,6 +108,7 @@
     SPI.beginTransaction(spiConfig);
     SPI.transfer(buf, nbyte);
     SPI.endTransaction();
+
   }
 
   /**

@@ -32,4 +32,3 @@ public:
 };
 
 extern Serial1Class<FlushableHardwareSerial> flushableSerial;
-extern Serial1Class<FlushableHardwareSerial> flushableSerial2;

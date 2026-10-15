@@ -10,6 +10,7 @@
 
 #include "dac_dac084s085.h"
 
+#include "../../MarlinCore.h"
 #include "../../HAL/shared/Delay.h"
 
 dac084s085::dac084s085() { }

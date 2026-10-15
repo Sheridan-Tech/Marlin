@@ -32,9 +32,7 @@
 //
 // I2S (steppers & other output-only pins)
 //
-#ifndef I2S_STEPPER_STREAM
-  #define I2S_STEPPER_STREAM
-#endif
+#define I2S_STEPPER_STREAM
 #if ENABLED(I2S_STEPPER_STREAM)
   #define I2S_WS                              25
   #define I2S_BCK                             26
@@ -81,8 +79,8 @@
 // Heaters / Fans
 //
 #define HEATER_0_PIN                           2
-#define FAN0_PIN                              13
+#define FAN_PIN                               13
 #define HEATER_BED_PIN                         4
 
 // SPI
-#define SD_SS_PIN                              5
+#define SDSS                                   5

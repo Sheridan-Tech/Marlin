@@ -22,7 +22,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "SdInfo.h"
 
 /**
  * DiskIO Interface
@@ -40,22 +39,6 @@ public:
   virtual bool init(const uint8_t sckRateID, const pin_t chipSelectPin) = 0; //TODO: only for SPI
 
   /**
-   * Start an initialization that is completed by calling initStep(),
-   * so the caller isn't blocked while the card gets ready.
-   * By default the whole initialization is done here.
-   */
-  virtual void initStart(const uint8_t sckRateID, const pin_t chipSelectPin) {
-    initResult = init(sckRateID, chipSelectPin) ? 1 : -1;
-  }
-
-  /**
-   * Continue an initialization started by initStart().
-   *
-   * \return 0 while in progress, 1 for success, or -1 for failure.
-   */
-  virtual int8_t initStep() { return initResult; }
-
-  /**
    * Read a card's CSD register. The CSD contains Card-Specific Data that
    * provides information regarding access to the card's contents.
    *
@@ -63,25 +46,22 @@ public:
    *
    * \return true for success or false for failure.
    */
-  virtual bool readCSD(csd_t * const csd) = 0;
+  virtual bool readCSD(csd_t* csd) = 0;
 
   virtual bool readStart(const uint32_t block) = 0;
-  virtual bool readData(uint8_t * const dst) = 0;
+  virtual bool readData(uint8_t* dst) = 0;
   virtual bool readStop() = 0;
 
   virtual bool writeStart(const uint32_t block, const uint32_t) = 0;
   virtual bool writeData(const uint8_t* src) = 0;
   virtual bool writeStop() = 0;
 
-  virtual bool readBlock(const uint32_t block, uint8_t * const dst) = 0;
-  virtual bool writeBlock(const uint32_t blockNumber, const uint8_t * const src) = 0;
+  virtual bool readBlock(uint32_t block, uint8_t* dst) = 0;
+  virtual bool writeBlock(uint32_t blockNumber, const uint8_t* src) = 0;
 
   virtual uint32_t cardSize() = 0;
 
   virtual bool isReady() = 0;
 
   virtual void idle() = 0;
-
-protected:
-  int8_t initResult = 0;
 };

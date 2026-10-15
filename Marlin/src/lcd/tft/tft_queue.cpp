@@ -28,10 +28,6 @@
 #include "tft.h"
 #include "tft_image.h"
 
-#if ALL(TFT_COLOR_UI, AUTO_BED_LEVELING_UBL)
-  #include "ui_common.h"   // HAS_TFT_TINY_FONT
-#endif
-
 uint8_t TFT_Queue::queue[];
 uint8_t *TFT_Queue::end_of_queue = queue;
 uint8_t *TFT_Queue::current_task = nullptr;
@@ -90,9 +86,9 @@ void TFT_Queue::fill(queueTask_t *task) {
     task->state = TASK_STATE_IN_PROGRESS;
   }
 
-  if (task_parameters->count > DMA_MAX_WORDS) {
-    count = DMA_MAX_WORDS;
-    task_parameters->count -= DMA_MAX_WORDS;
+  if (task_parameters->count > DMA_MAX_SIZE) {
+    count = DMA_MAX_SIZE;
+    task_parameters->count -= DMA_MAX_SIZE;
   }
   else {
     count = task_parameters->count;
@@ -111,51 +107,39 @@ void TFT_Queue::canvas(queueTask_t *task) {
 
   if (task->state == TASK_STATE_READY) {
     task->state = TASK_STATE_IN_PROGRESS;
-    tftCanvas.instantiate(task_parameters->x, task_parameters->y, task_parameters->width, task_parameters->height);
+    Canvas.New(task_parameters->x, task_parameters->y, task_parameters->width, task_parameters->height);
   }
-  tftCanvas.next();
+  Canvas.Continue();
 
   for (i = 0; i < task_parameters->count; i++) {
     switch (*item) {
       case CANVAS_SET_BACKGROUND:
-        tftCanvas.setBackground(((parametersCanvasBackground_t *)item)->color);
+        Canvas.SetBackground(((parametersCanvasBackground_t *)item)->color);
+        break;
+      case CANVAS_ADD_TEXT:
+        Canvas.AddText(((parametersCanvasText_t *)item)->x, ((parametersCanvasText_t *)item)->y, ((parametersCanvasText_t *)item)->color, (uint16_t*)(item + sizeof(parametersCanvasText_t)), ((parametersCanvasText_t *)item)->maxWidth);
         break;
 
-      case CANVAS_ADD_TEXT: {
-        parametersCanvasText_t *p_text = (parametersCanvasText_t *)item;
-        uint16_t *str = (uint16_t*)(item + sizeof(parametersCanvasText_t));
-        tftCanvas.addText(p_text->x, p_text->y, p_text->color, str, p_text->maxWidth);
-      } break;
+      case CANVAS_ADD_IMAGE:
+        MarlinImage image;
+        uint16_t *colors;
 
-      #if HAS_TFT_TINY_FONT
-        case CANVAS_ADD_TINY_TEXT: {
-          parametersCanvasText_t *p_text = (parametersCanvasText_t *)item;
-          uint16_t *str = (uint16_t*)(item + sizeof(parametersCanvasText_t));
-          tftCanvas.addTinyText(p_text->x, p_text->y, p_text->color, str);
-        } break;
-      #endif
+        image = ((parametersCanvasImage_t *)item)->image;
+        colors = (uint16_t *)(item + sizeof(parametersCanvasImage_t));
+        Canvas.AddImage(((parametersCanvasImage_t *)item)->x, ((parametersCanvasImage_t *)item)->y, image, colors);
+        break;
 
-      case CANVAS_ADD_IMAGE: {
-        parametersCanvasImage_t *p_img = (parametersCanvasImage_t *)item;
-        MarlinImage image = p_img->image;
-        uint16_t *colors = (uint16_t *)(item + sizeof(parametersCanvasImage_t));
-        tftCanvas.addImage(p_img->x, p_img->y, image, colors);
-      } break;
-
-      case CANVAS_ADD_BAR: {
-        parametersCanvasBar_t *p_bar = (parametersCanvasBar_t *)item;
-        tftCanvas.addBar(p_bar->x, p_bar->y, p_bar->width, p_bar->height, p_bar->color);
-      } break;
-
-      case CANVAS_ADD_RECT: {
-        parametersCanvasRectangle_t *p_rect = (parametersCanvasRectangle_t *)item;
-        tftCanvas.addRect(p_rect->x, p_rect->y, p_rect->width, p_rect->height, p_rect->color);
-      } break;
+      case CANVAS_ADD_BAR:
+        Canvas.AddBar(((parametersCanvasBar_t *)item)->x, ((parametersCanvasBar_t *)item)->y, ((parametersCanvasBar_t *)item)->width, ((parametersCanvasBar_t *)item)->height, ((parametersCanvasBar_t *)item)->color);
+        break;
+      case CANVAS_ADD_RECTANGLE:
+        Canvas.AddRectangle(((parametersCanvasRectangle_t *)item)->x, ((parametersCanvasRectangle_t *)item)->y, ((parametersCanvasRectangle_t *)item)->width, ((parametersCanvasRectangle_t *)item)->height, ((parametersCanvasRectangle_t *)item)->color);
+        break;
     }
     item = ((parametersCanvasBackground_t *)item)->nextParameter;
   }
 
-  if (tftCanvas.toScreen()) task->state = TASK_STATE_COMPLETED;
+  if (Canvas.ToScreen()) task->state = TASK_STATE_COMPLETED;
 }
 
 void TFT_Queue::fill(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color) {
@@ -231,7 +215,7 @@ void TFT_Queue::handle_queue_overflow(uint16_t sizeNeeded) {
   }
 }
 
-void TFT_Queue::add_text(uint16_t x, uint16_t y, uint16_t color, const uint8_t *string, uint16_t maxWidth, const CanvasSubtype type/*=CANVAS_ADD_TEXT*/) {
+void TFT_Queue::add_text(uint16_t x, uint16_t y, uint16_t color, const uint8_t *string, uint16_t maxWidth) {
   handle_queue_overflow(sizeof(parametersCanvasText_t) + maxWidth);
   parametersCanvas_t *task_parameters = (parametersCanvas_t *)(((uint8_t *)last_task) + sizeof(queueTask_t));
   parametersCanvasText_t *parameters = (parametersCanvasText_t *)end_of_queue;
@@ -239,7 +223,7 @@ void TFT_Queue::add_text(uint16_t x, uint16_t y, uint16_t color, const uint8_t *
 
   const uint8_t *pointer = string;
 
-  parameters->type = type;
+  parameters->type = CANVAS_ADD_TEXT;
   parameters->x = x;
   parameters->y = y;
   parameters->color = ENDIAN_COLOR(color);
@@ -281,7 +265,7 @@ void TFT_Queue::add_text(uint16_t x, uint16_t y, uint16_t color, const uint16_t 
   end_of_queue += sizeof(parametersCanvasText_t);
 
   uint16_t *character = (uint16_t *)end_of_queue;
-  // TODO: Deal with maxWidth
+  /* TODO: Deal with maxWidth */
   while ((*character++ = *pointer++) != 0);
   end_of_queue = (uint8_t *)character;
 
@@ -305,7 +289,7 @@ void TFT_Queue::add_image(int16_t x, int16_t y, MarlinImage image, uint16_t *col
   task_parameters->count++;
   parameters->nextParameter = end_of_queue;
 
-  colorMode_t color_mode = images[image].colorMode;
+  colorMode_t color_mode = Images[image].colorMode;
 
   if (color_mode == HIGHCOLOR) return;
 
@@ -341,7 +325,7 @@ uint16_t gradient(uint16_t colorA, uint16_t colorB, uint16_t factor) {
 
 void TFT_Queue::add_image(int16_t x, int16_t y, MarlinImage image, uint16_t color_main, uint16_t color_background, uint16_t color_shadow) {
   uint16_t colors[16];
-  colorMode_t color_mode = images[image].colorMode;
+  colorMode_t color_mode = Images[image].colorMode;
   uint16_t i;
 
   switch (color_mode) {
@@ -389,7 +373,7 @@ void TFT_Queue::add_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t h
   parametersCanvasRectangle_t *parameters = (parametersCanvasRectangle_t *)end_of_queue;
   last_parameter = end_of_queue;
 
-  parameters->type = CANVAS_ADD_RECT;
+  parameters->type = CANVAS_ADD_RECTANGLE;
   parameters->x = x;
   parameters->y = y;
   parameters->width = width;

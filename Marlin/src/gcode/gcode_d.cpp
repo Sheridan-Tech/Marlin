@@ -58,7 +58,7 @@ void GcodeSuite::D(const int16_t dcode) {
       break;
 
     case 10:
-      marlin.kill(F("D10"), F("KILL TEST"), parser.seen_test('P'));
+      kill(F("D10"), F("KILL TEST"), parser.seen_test('P'));
       break;
 
     case 1: {
@@ -99,7 +99,6 @@ void GcodeSuite::D(const int16_t dcode) {
     } break;
 
     #if ENABLED(EEPROM_SETTINGS)
-
       case 3: { // D3 Read / Write EEPROM
         uint8_t *pointer = parser.hex_adr_val('A');
         uint16_t len = parser.ushortval('C', 1);
@@ -108,27 +107,35 @@ void GcodeSuite::D(const int16_t dcode) {
         NOMORE(len, persistentStore.capacity() - addr);
         if (parser.seenval('X')) {
           uint16_t val = parser.hex_val('X');
-          persistentStore.access_start();
-          while (len--) {
-            int pos = 0;
-            persistentStore.write_data(pos, (uint8_t *)&val, sizeof(val));
-          }
-          SERIAL_EOL();
-          persistentStore.access_finish();
+          #if ENABLED(EEPROM_SETTINGS)
+            persistentStore.access_start();
+            while (len--) {
+              int pos = 0;
+              persistentStore.write_data(pos, (uint8_t *)&val, sizeof(val));
+            }
+            SERIAL_EOL();
+            persistentStore.access_finish();
+          #else
+            SERIAL_ECHOLNPGM("NO EEPROM");
+          #endif
         }
         else {
           // Read bytes from EEPROM
-          persistentStore.access_start();
-          int pos = 0;
-          uint8_t val;
-          while (len--) if (!persistentStore.read_data(pos, &val, 1)) print_hex_byte(val);
-          SERIAL_EOL();
-          persistentStore.access_finish();
+          #if ENABLED(EEPROM_SETTINGS)
+            persistentStore.access_start();
+            int pos = 0;
+            uint8_t val;
+            while (len--) if (!persistentStore.read_data(pos, &val, 1)) print_hex_byte(val);
+            SERIAL_EOL();
+            persistentStore.access_finish();
+          #else
+            SERIAL_ECHOLNPGM("NO EEPROM");
+            len = 0;
+          #endif
           SERIAL_EOL();
         }
       } break;
-
-    #endif // EEPROM_SETTINGS
+    #endif
 
     case 4: { // D4 Read / Write PIN
       //const bool is_out = parser.boolval('F');
@@ -179,46 +186,20 @@ void GcodeSuite::D(const int16_t dcode) {
       break;
 
     case 100: { // D100 Disable heaters and attempt a hard hang (Watchdog Test)
-
-      #ifdef __PLAT_RP2040__
-        const uint8_t core = parser.byteval('C', 0); // C parameter: which core to freeze (0=Core 0, 1=Core 1)
-      #else
-        constexpr uint8_t core = 0;
-      #endif
-
       SERIAL_ECHOLNPGM("Disabling heaters and attempting to trigger Watchdog");
       SERIAL_ECHOLNPGM("(USE_WATCHDOG " TERN(USE_WATCHDOG, "ENABLED", "DISABLED") ")");
-      #ifdef __PLAT_RP2040__
-        SERIAL_ECHOLNPGM("Freezing Core ", core);
-      #endif
-
       thermalManager.disable_all_heaters();
       delay(1000); // Allow time to print
-
-      if (core == 1) {
-        #ifdef __PLAT_RP2040__
-          // Freeze Core 1 by setting a flag it will check
-          extern volatile bool core1_freeze_test;
-          core1_freeze_test = true;
-          delay(10000); // Wait 10 seconds for watchdog to trigger
-          core1_freeze_test = false;
-        #endif
-      }
-      else {
-        // Freeze Core 0 (original behavior)
-        hal.isr_off();
-        // Use a low-level delay that does not rely on interrupts to function
-        // Do not spin forever, to avoid thermal risks if heaters are enabled and
-        // watchdog does not work.
-        for (int i = 10000; i--;) DELAY_US(1000UL);
-        hal.isr_on();
-      }
-
+      hal.isr_off();
+      // Use a low-level delay that does not rely on interrupts to function
+      // Do not spin forever, to avoid thermal risks if heaters are enabled and
+      // watchdog does not work.
+      for (int i = 10000; i--;) DELAY_US(1000UL);
+      hal.isr_on();
       SERIAL_ECHOLNPGM("FAILURE: Watchdog did not trigger board reset.");
-
     } break;
 
-    #if HAS_MEDIA
+    #if ENABLED(SDSUPPORT)
 
       case 101: { // D101 Test SD Write
         card.openFileWrite("test.gco");
@@ -269,7 +250,7 @@ void GcodeSuite::D(const int16_t dcode) {
         card.closefile();
       } break;
 
-    #endif // HAS_MEDIA
+    #endif // SDSUPPORT
 
     #if ENABLED(POSTMORTEM_DEBUGGING)
 

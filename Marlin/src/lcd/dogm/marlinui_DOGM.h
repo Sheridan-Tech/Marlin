@@ -28,35 +28,25 @@
 #include "../../inc/MarlinConfigPre.h"
 
 #include <U8glib-HAL.h>
-#include "u8g/HAL_LCD_class_defines.h"
+#include "HAL_LCD_class_defines.h"
 
 //#define ALTERNATIVE_LCD
-
-// Defined DOGLCD_SDA_PIN and DOGLCD_SCL_PIN pins indicate I2C LCD
-#if PINS_EXIST(DOGLCD_SDA, DOGLCD_SCL)
-  #define IS_I2C_LCD 1
-#endif
 
 #if ENABLED(REPRAPWORLD_GRAPHICAL_LCD)
 
   // RepRapWorld Graphical LCD
 
-  #if HAS_MEDIA
-    #ifdef __SAMD21__
-      #define U8G_CLASS U8GLIB_ST7920_128X64_4X_HAL             // 2 stripes, HW SPI (Shared with SD card. Non-standard LCD adapter on AVR.)
-    #else
-      // Hardware SPI on DUE
-      #define U8G_CLASS U8GLIB_ST7920_128X64_4X                 // 2 stripes, SW SPI (Original u8glib device)
-    #endif
+
+  #if DISABLED(SDSUPPORT) && (LCD_PINS_D4 == SD_SCK_PIN) && (LCD_PINS_ENABLE == SD_MOSI_PIN)
+    #define U8G_CLASS U8GLIB_ST7920_128X64_4X_HAL
     #define U8G_PARAM LCD_PINS_RS
-  #elif (LCD_PINS_D4 == SD_SCK_PIN) && (LCD_PINS_EN == SD_MOSI_PIN)
-    // Hardware SPI shared with SD Card
-    #define U8G_CLASS U8GLIB_ST7920_128X64_4X_HAL               // 2 stripes, HW SPI (Shared with SD card. Non-standard LCD adapter on AVR.)
+  #elif ENABLED(SDSUPPORT) && __SAMD21__
+
+    #define U8G_CLASS U8GLIB_ST7920_128X64_4X
     #define U8G_PARAM LCD_PINS_RS
   #else
-    // Software SPI
-    #define U8G_CLASS U8GLIB_ST7920_128X64_4X                   // 2 stripes, SW SPI (Original u8glib device)
-    #define U8G_PARAM LCD_PINS_D4, LCD_PINS_EN, LCD_PINS_RS
+    #define U8G_CLASS U8GLIB_ST7920_128X64_4X
+    #define U8G_PARAM LCD_PINS_D4, LCD_PINS_ENABLE, LCD_PINS_RS
   #endif
 
 #elif IS_U8GLIB_ST7920
@@ -64,7 +54,7 @@
   // RepRap Discount Full Graphics Smart Controller
   // and other variant LCDs using ST7920
 
-  #if !HAS_MEDIA && (LCD_PINS_D4 == SD_SCK_PIN) && (LCD_PINS_EN == SD_MOSI_PIN)
+  #if DISABLED(SDSUPPORT) && (LCD_PINS_D4 == SD_SCK_PIN) && (LCD_PINS_ENABLE == SD_MOSI_PIN)
     #define U8G_CLASS U8GLIB_ST7920_128X64_4X_HAL               // 2 stripes, HW SPI (Shared with SD card. Non-standard LCD adapter on AVR.)
     #define U8G_PARAM LCD_PINS_RS
   #else
@@ -73,7 +63,7 @@
     #else
       #define U8G_CLASS U8GLIB_ST7920_128X64_RRD                // Adjust stripes with PAGE_HEIGHT in ultralcd_st7920_u8glib_rrd.h
     #endif
-    #define U8G_PARAM LCD_PINS_D4, LCD_PINS_EN, LCD_PINS_RS     // AVR version ignores these pin settings
+    #define U8G_PARAM LCD_PINS_D4, LCD_PINS_ENABLE, LCD_PINS_RS // AVR version ignores these pin settings
                                                                 // HAL version uses these pin settings
   #endif
 
@@ -83,7 +73,7 @@
 
   #if ENABLED(ALTERNATIVE_LCD)
     #define U8G_CLASS U8GLIB_DOGM128_2X                         // 4 stripes
-    #define DOGM_FORCE_SOFT_SPI                                 // SW-SPI
+    #define FORCE_SOFT_SPI                                      // SW-SPI
   #else
     #define U8G_CLASS U8GLIB_DOGM128_2X                         // 4 stripes (HW-SPI)
   #endif
@@ -105,12 +95,8 @@
   #define SMART_RAMPS MB(RAMPS_SMART_EFB, RAMPS_SMART_EEB, RAMPS_SMART_EFF, RAMPS_SMART_EEF, RAMPS_SMART_SF)
   #define U8G_CLASS U8GLIB_64128N_2X_HAL                        // 4 stripes (HW-SPI)
 
-  // Bit-bang a display that is on pins other than the SD card's, unless it has
-  // an SPI peripheral of its own (HAS_DOGLCD_HW_SPI).
-  #if !HAS_DOGLCD_HW_SPI && ( (SMART_RAMPS && defined(__SAM3X8E__)) \
-    || (defined(DOGLCD_SCK) && (DOGLCD_SCK >= 0 && DOGLCD_SCK != SD_SCK_PIN)) \
-    || (defined(DOGLCD_MOSI) && (DOGLCD_MOSI >= 0 && DOGLCD_MOSI != SD_MOSI_PIN)) )
-    #define DOGM_FORCE_SOFT_SPI                                 // SW-SPI
+  #if (SMART_RAMPS && defined(__SAM3X8E__)) || DOGLCD_SCK != SD_SCK_PIN || DOGLCD_MOSI != SD_MOSI_PIN
+    #define FORCE_SOFT_SPI                                      // SW-SPI
   #endif
 
 #elif ANY(FYSETC_MINI_12864, MKS_MINI_12864, ENDER2_STOCKDISPLAY)
@@ -135,23 +121,20 @@
 
   // MKS 128x64 (SSD1306) OLED I2C LCD
 
-  #if IS_I2C_LCD
-    #define U8G_CLASS U8GLIB_SSD1306_128X64_2X_I2C_2_WIRE       // I2C
+  #define FORCE_SOFT_SPI                                        // SW-SPI
+
+  #if ENABLED(ALTERNATIVE_LCD)
+    #define U8G_CLASS U8GLIB_SSD1306_128X64_2X                  // 4 stripes
   #else
-    #define DOGM_FORCE_SOFT_SPI                                 // SW-SPI
-    #if ENABLED(ALTERNATIVE_LCD)
-      #define U8G_CLASS U8GLIB_SSD1306_128X64_2X                // 4 stripes
-    #else
-      #define U8G_CLASS U8GLIB_SSD1306_128X64                   // 8 stripes
-    #endif
+    #define U8G_CLASS U8GLIB_SSD1306_128X64                     // 8 stripes
   #endif
 
-#elif ANY(FYSETC_242_OLED_12864, K3D_242_OLED_CONTROLLER)
+#elif EITHER(FYSETC_242_OLED_12864, K3D_242_OLED_CONTROLLER)
 
   // FYSETC OLED 2.42" 128 × 64 Full Graphics Controller
   // or K3D OLED 2.42" 128 × 64 Full Graphics Controller
 
-  #define DOGM_FORCE_SOFT_SPI                                   // SW-SPI
+  #define FORCE_SOFT_SPI                                        // SW-SPI
 
   #if ENABLED(ALTERNATIVE_LCD)
     #define U8G_CLASS U8GLIB_SSD1306_128X64_2X                  // 4 stripes
@@ -163,34 +146,24 @@
 
   // Zonestar SSD1306 OLED SPI LCD
 
-  #define DOGM_FORCE_SOFT_SPI                                   // SW-SPI
+  #define FORCE_SOFT_SPI                                        // SW-SPI
   #if ENABLED(ALTERNATIVE_LCD)
     #define U8G_CLASS U8GLIB_SH1306_128X64_2X                   // 4 stripes
   #else
-    #if ENABLED(U8GLIB_SSD1306_SPI)
-      #define U8G_CLASS U8GLIB_SSD1306_128X64_SW_SPI_HAL
-    #else
-      #define U8G_CLASS U8GLIB_SH1306_128X64                    // 8 stripes
-    #endif
+    #define U8G_CLASS U8GLIB_SH1306_128X64                      // 8 stripes
   #endif
 
-#elif ANY(MKS_12864OLED, ZONESTAR_12864OLED)
+#elif EITHER(MKS_12864OLED, ZONESTAR_12864OLED)
 
   // MKS 128x64 (SH1106) OLED I2C LCD
   // - or -
   // Zonestar SH1106 OLED SPI LCD
 
-  #if !IS_I2C_LCD
-    #define DOGM_FORCE_SOFT_SPI                                 // SW-SPI
-  #endif
+  #define FORCE_SOFT_SPI                                        // SW-SPI
   #if ENABLED(ALTERNATIVE_LCD)
     #define U8G_CLASS U8GLIB_SH1106_128X64_2X                   // 4 stripes
   #else
-    #if ENABLED(U8GLIB_SH1106_SPI)
-      #define U8G_CLASS U8GLIB_SH1106_128X64_SW_SPI_HAL
-    #else
-      #define U8G_CLASS U8GLIB_SH1106_128X64                    // 8 stripes
-    #endif
+    #define U8G_CLASS U8GLIB_SH1106_128X64                      // 8 stripes
   #endif
 
 #elif ENABLED(U8GLIB_SH1106_EINSTART)
@@ -215,7 +188,7 @@
 
   // Generic support for SSD1309 OLED I2C LCDs
 
-  #define U8G_CLASS TERN(LCD_DOUBLE_BUFFER, U8GLIB_SSD1309_128X64_F, U8GLIB_SSD1309_128X64)
+  #define U8G_CLASS U8GLIB_SSD1309_128X64
   #define U8G_PARAM (U8G_I2C_OPT_NONE | U8G_I2C_OPT_FAST)       // I2C
 
 #elif ENABLED(U8GLIB_SSD1306)
@@ -250,23 +223,12 @@
 
 #endif
 
-// Some displays require soft SPI. Conditionals-5-post.h covers the other cases.
-#if defined(DOGM_FORCE_SOFT_SPI) && !defined(FORCE_SOFT_SPI) && !defined(LCD_FORCE_SOFT_SPI)
-  #define FORCE_SOFT_SPI
-  #ifndef LCD_USE_SOFT_SPI
-    #define LCD_USE_SOFT_SPI 1
-  #endif
-#endif
-#undef DOGM_FORCE_SOFT_SPI
-
 // Use HW-SPI if no other option is specified
 #ifndef U8G_PARAM
-  #if IS_I2C_LCD
-    #define U8G_PARAM U8G_I2C_OPT_NONE                              // I2C LCD
-  #elif ENABLED(LCD_USE_SOFT_SPI)
+  #if ENABLED(FORCE_SOFT_SPI)
     #define U8G_PARAM DOGLCD_SCK, DOGLCD_MOSI, DOGLCD_CS, DOGLCD_A0 // SW-SPI
   #else
-    #define U8G_PARAM DOGLCD_CS, DOGLCD_A0                          // HW-SPI
+    #define U8G_PARAM DOGLCD_CS, DOGLCD_A0                      // HW-SPI
   #endif
 #endif
 

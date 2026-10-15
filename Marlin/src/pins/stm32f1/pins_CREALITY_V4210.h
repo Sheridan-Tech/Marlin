@@ -54,10 +54,10 @@
 #if ENABLED(IIC_BL24CXX_EEPROM)
   #define IIC_EEPROM_SDA                    PA11
   #define IIC_EEPROM_SCL                    PA12
-  #define MARLIN_EEPROM_SIZE              0x800U  // 2K (24C16)
+  #define MARLIN_EEPROM_SIZE               0x800  // 2K (24C16)
 #else
   #define SDCARD_EEPROM_EMULATION                 // SD EEPROM until all EEPROM is BL24CXX
-  #define MARLIN_EEPROM_SIZE              0x800U  // 2K
+  #define MARLIN_EEPROM_SIZE               0x800  // 2K
 #endif
 
 //
@@ -74,13 +74,6 @@
 
 #ifndef Z_MIN_PROBE_PIN
   #define Z_MIN_PROBE_PIN                   PA5   // BLTouch IN
-#endif
-
-//
-// Probe enable
-//
-#if ENABLED(PROBE_ENABLE_DISABLE) && !defined(PROBE_ENABLE_PIN)
-  #define PROBE_ENABLE_PIN            SERVO0_PIN
 #endif
 
 //
@@ -137,7 +130,7 @@
 #define HEATER_0_PIN                        PA0   // HEATER1
 #define HEATER_BED_PIN                      PA1   // HOT BED
 
-#define FAN0_PIN                            PA2   // FAN
+#define FAN_PIN                             PA2   // FAN
 #define FAN_SOFT_PWM_REQUIRED
 
 //
@@ -147,8 +140,8 @@
 #define SDCARD_CONNECTION                ONBOARD
 #define ONBOARD_SPI_DEVICE                     1
 #define ONBOARD_SD_CS_PIN                   PA4   // SDSS
-#define ONBOARD_SDIO
-#define BOARD_NO_HOST_DRIVE                       // SD is only seen by the printer
+#define SDIO_SUPPORT
+#define NO_SD_HOST_DRIVE                          // This board's SD is only seen by the printer
 
 #if ANY(RET6_12864_LCD, HAS_DWIN_E3V2, IS_DWIN_MARLINUI)
 
@@ -171,7 +164,7 @@
   #define EXP3_07_PIN                       PB12
   #define EXP3_08_PIN                       PB15
 
-#elif ANY(VET6_12864_LCD, DWIN_VET6_CREALITY_LCD)
+#elif EITHER(VET6_12864_LCD, DWIN_VET6_CREALITY_LCD)
 
   /**
    *    VET6 12864 LCD
@@ -200,7 +193,7 @@
   #endif
 
   #define LCD_PINS_RS                EXP3_07_PIN
-  #define LCD_PINS_EN                EXP3_08_PIN
+  #define LCD_PINS_ENABLE            EXP3_08_PIN
   #define LCD_PINS_D4                EXP3_06_PIN
 
   #define BTN_ENC                    EXP3_02_PIN

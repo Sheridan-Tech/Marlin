@@ -50,7 +50,7 @@
 #include "udd.h"
 #include "udc_desc.h"
 
-#if HAS_MEDIA
+#if ENABLED(SDSUPPORT)
 
 /**
  * \defgroup udi_group_desc Descriptors for a USB Device
@@ -92,6 +92,7 @@ UDC_DESC_STORAGE usb_dev_desc_t udc_device_desc = {
 #endif
   .bNumConfigurations        = 1
 };
+
 
 #ifdef USB_DEVICE_HS_SUPPORT
 //! USB Device Qualifier Descriptor for HS
@@ -146,6 +147,7 @@ UDC_DESC_STORAGE udc_desc_t udc_desc_hs = {
 };
 #endif
 
+
 /**
  * \name UDC structures which contains all USB Device definitions
  */
@@ -185,6 +187,6 @@ UDC_DESC_STORAGE udc_config_t udc_config = {
 /**INDENT-ON**/
 //@}
 
-#endif // HAS_MEDIA
-
 #endif // ARDUINO_ARCH_SAM
+
+#endif // SDSUPPORT

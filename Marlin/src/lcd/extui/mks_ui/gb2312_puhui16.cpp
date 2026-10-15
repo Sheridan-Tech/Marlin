@@ -29,7 +29,7 @@
 
 #include "../../../inc/MarlinConfig.h"
 
-#if MKS_SPI_FLASH_FONT
+#if HAS_SPI_FLASH_FONT
 
 typedef struct {
   uint16_t min;
@@ -102,5 +102,5 @@ void init_gb2312_font() {
   gb2312_puhui32.base_line = 0;
 }
 
-#endif // MKS_SPI_FLASH_FONT
+#endif // HAS_SPI_FLASH_FONT
 #endif // HAS_TFT_LVGL_UI

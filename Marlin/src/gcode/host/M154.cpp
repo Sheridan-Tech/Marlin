@@ -33,7 +33,7 @@
 void GcodeSuite::M154() {
 
   if (parser.seenval('S'))
-    motion.position_auto_reporter.set_interval(parser.value_byte());
+    position_auto_reporter.set_interval(parser.value_byte());
 
 }
 

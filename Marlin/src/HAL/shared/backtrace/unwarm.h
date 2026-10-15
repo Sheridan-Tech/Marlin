@@ -15,7 +15,7 @@
 
 #include "unwinder.h"
 
-/** The maximum number of instructions to interpret in a function.
+/** The maximum number of instructions to interpet in a function.
  * Unwinding will be unconditionally stopped and UNWIND_EXHAUSTED returned
  * if more than this number of instructions are interpreted in a single
  * function without unwinding a stack frame.  This prevents infinite loops
@@ -41,6 +41,7 @@ typedef enum {
   REG_VAL_ARITHMETIC  = 0x80
 } RegValOrigin;
 
+
 /** Type for tracking information about a register.
  * This stores the register value, as well as other data that helps unwinding.
  */
@@ -54,6 +55,7 @@ typedef struct {
    */
   int o; /* (RegValOrigin) */
 } RegData;
+
 
 /** Structure used to track reads and writes to memory.
  * This structure is used as a hash to store a small number of writes
@@ -78,6 +80,7 @@ typedef struct {
    */
   uint8_t tracked[(MEM_HASH_SIZE + 7) / 8];
 } MemData;
+
 
 /** Structure that is used to keep track of unwinding meta-data.
  * This data is passed between all the unwinding functions.

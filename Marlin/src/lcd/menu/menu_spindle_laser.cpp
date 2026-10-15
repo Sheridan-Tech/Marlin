@@ -39,7 +39,7 @@
     #endif
 
     START_MENU();
-    BACK_ITEM(MSG_MAIN_MENU);
+    BACK_ITEM(MSG_MAIN);
 
     #if ENABLED(SPINDLE_LASER_USE_PWM)
       // Change the cutter's "current power" value without turning the cutter on or off
@@ -75,7 +75,7 @@
     #endif
 
     #if ENABLED(LASER_FEATURE)
-      // Setup and fire a test pulse using the current PWM power level for a duration of test_pulse_min to test_pulse_max ms.
+      // Setup and fire a test pulse using the current PWM power level for for a duration of test_pulse_min to test_pulse_max ms.
       EDIT_ITEM_FAST(CUTTER_MENU_PULSE_TYPE, MSG_LASER_PULSE_MS, &cutter.testPulse, LASER_TEST_PULSE_MIN, LASER_TEST_PULSE_MAX);
       ACTION_ITEM(MSG_LASER_FIRE_PULSE, cutter.test_fire_pulse);
       #if ENABLED(HAL_CAN_SET_PWM_FREQ) && SPINDLE_LASER_FREQUENCY

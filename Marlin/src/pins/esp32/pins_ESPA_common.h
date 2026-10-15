@@ -68,14 +68,14 @@
 // Heaters / Fans
 //
 #define HEATER_0_PIN                           2
-#define FAN0_PIN                              13
+#define FAN_PIN                               13
 #define HEATER_BED_PIN                         4
 
 //
-// MicroSD card on VSPI (bus 3)
+// MicroSD card
 //
 #define SD_MOSI_PIN                           23
 #define SD_MISO_PIN                           19
 #define SD_SCK_PIN                            18
-#define SD_SS_PIN                              5
+#define SDSS                                   5
 #define USES_SHARED_SPI                           // SPI is shared by SD card with TMC SPI drivers

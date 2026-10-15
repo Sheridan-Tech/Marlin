@@ -29,8 +29,8 @@
 // https://github.com/bigtreetech/BTT-Expansion-module/tree/master/BTT%20EXP-MOT
 //#define BTT_MOTOR_EXPANSION
 
-#if ALL(HAS_WIRED_LCD, BTT_MOTOR_EXPANSION)
-  #if ANY(CR10_STOCKDISPLAY, ENDER2_STOCKDISPLAY)
+#if BOTH(HAS_WIRED_LCD, BTT_MOTOR_EXPANSION)
+  #if EITHER(CR10_STOCKDISPLAY, ENDER2_STOCKDISPLAY)
     #define EXP_MOT_USE_EXP2_ONLY 1
   #else
     #error "You can't use both an LCD and a Motor Expansion Module on EXP1/EXP2 at the same time."
@@ -71,12 +71,61 @@
 //
 // Limit Switches
 //
-#define X_STOP_PIN                    X_DIAG_PIN  // X-STOP
-#define Y_STOP_PIN                    Y_DIAG_PIN  // Y-STOP
-#define Z_STOP_PIN                    Z_DIAG_PIN  // Z-STOP
-#define X_OTHR_PIN                          PC2   // E0DET
-#define Y_OTHR_PIN                          PA0   // E1DET
-#define Z_OTHR_PIN                          PC15  // PWRDET
+#ifdef X_STALL_SENSITIVITY
+  #define X_STOP_PIN                  X_DIAG_PIN
+  #if X_HOME_TO_MIN
+    #define X_MAX_PIN                       PC2   // E0DET
+  #else
+    #define X_MIN_PIN                       PC2   // E0DET
+  #endif
+#elif ENABLED(X_DUAL_ENDSTOPS)
+  #ifndef X_MIN_PIN
+    #define X_MIN_PIN                       PC1   // X-STOP
+  #endif
+  #ifndef X_MAX_PIN
+    #define X_MAX_PIN                       PC2   // E0DET
+  #endif
+#else
+  #define X_STOP_PIN                        PC1   // X-STOP
+#endif
+
+#ifdef Y_STALL_SENSITIVITY
+  #define Y_STOP_PIN                  Y_DIAG_PIN
+  #if Y_HOME_TO_MIN
+    #define Y_MAX_PIN                       PA0   // E1DET
+  #else
+    #define Y_MIN_PIN                       PA0   // E1DET
+  #endif
+#elif ENABLED(Y_DUAL_ENDSTOPS)
+  #ifndef Y_MIN_PIN
+    #define Y_MIN_PIN                       PC3   // Y-STOP
+  #endif
+  #ifndef Y_MAX_PIN
+    #define Y_MAX_PIN                       PA0   // E1DET
+  #endif
+#else
+  #define Y_STOP_PIN                        PC3   // Y-STOP
+#endif
+
+#ifdef Z_STALL_SENSITIVITY
+  #define Z_STOP_PIN                  Z_DIAG_PIN
+  #if Z_HOME_TO_MIN
+    #define Z_MAX_PIN                       PC15  // PWRDET
+  #else
+    #define Z_MIN_PIN                       PC15  // PWRDET
+  #endif
+#elif ENABLED(Z_MULTI_ENDSTOPS)
+  #ifndef Z_MIN_PIN
+    #define Z_MIN_PIN                       PC0   // Z-STOP
+  #endif
+  #ifndef Z_MAX_PIN
+    #define Z_MAX_PIN                       PC15  // PWRDET
+  #endif
+#else
+  #ifndef Z_STOP_PIN
+    #define Z_STOP_PIN                      PC0   // Z-STOP
+  #endif
+#endif
 
 //
 // Z Probe (when not Z_MIN_PIN)
@@ -88,8 +137,10 @@
 //
 // Probe enable
 //
-#if ENABLED(PROBE_ENABLE_DISABLE) && !defined(PROBE_ENABLE_PIN)
-  #define PROBE_ENABLE_PIN            SERVO0_PIN
+#if ENABLED(PROBE_ENABLE_DISABLE)
+  #ifndef PROBE_ENABLE_PIN
+    #define PROBE_ENABLE_PIN          SERVO0_PIN
+  #endif
 #endif
 
 //
@@ -200,8 +251,8 @@
 #ifndef HEATER_BED_PIN
   #define HEATER_BED_PIN                    PD7   // Hotbed
 #endif
-#ifndef FAN0_PIN
-  #define FAN0_PIN                          PB7   // Fan0
+#ifndef FAN_PIN
+  #define FAN_PIN                           PB7   // Fan0
 #endif
 
 #if HAS_CUTTER
@@ -221,16 +272,18 @@
 #endif // SPINDLE_FEATURE || LASER_FEATURE
 
 //
-// SPI pins for TMC2130 stepper drivers
+// Software SPI pins for TMC2130 stepper drivers
 //
-#ifndef TMC_SPI_MOSI
-  #define TMC_SPI_MOSI                      PE14
-#endif
-#ifndef TMC_SPI_MISO
-  #define TMC_SPI_MISO                      PA14
-#endif
-#ifndef TMC_SPI_SCK
-  #define TMC_SPI_SCK                       PE15
+#if ENABLED(TMC_USE_SW_SPI)
+  #ifndef TMC_SW_MOSI
+    #define TMC_SW_MOSI                     PE14
+  #endif
+  #ifndef TMC_SW_MISO
+    #define TMC_SW_MISO                     PA14
+  #endif
+  #ifndef TMC_SW_SCK
+    #define TMC_SW_SCK                      PE15
+  #endif
 #endif
 
 #if HAS_TMC_UART
@@ -256,17 +309,23 @@
   // Software serial
   //
   #define X_SERIAL_TX_PIN                   PE0
+  #define X_SERIAL_RX_PIN        X_SERIAL_TX_PIN
+
   #define Y_SERIAL_TX_PIN                   PD3
+  #define Y_SERIAL_RX_PIN        Y_SERIAL_TX_PIN
+
   #define Z_SERIAL_TX_PIN                   PD0
+  #define Z_SERIAL_RX_PIN        Z_SERIAL_TX_PIN
+
   #define E0_SERIAL_TX_PIN                  PC6
+  #define E0_SERIAL_RX_PIN      E0_SERIAL_TX_PIN
+
   #define E1_SERIAL_TX_PIN                  PD12
+  #define E1_SERIAL_RX_PIN      E1_SERIAL_TX_PIN
 
   // Reduce baud rate to improve software serial reliability
-  #ifndef TMC_BAUD_RATE
-    #define TMC_BAUD_RATE                  19200
-  #endif
-
-#endif // HAS_TMC_UART
+  #define TMC_BAUD_RATE                    19200
+#endif
 
 //
 // SD Connection
@@ -308,13 +367,14 @@
 // Must use soft SPI because Marlin's default hardware SPI is tied to LCD's EXP2
 //
 #if SD_CONNECTION_IS(LCD)
-  #define SD_SS_PIN                  EXP2_04_PIN
+  #define SDSS                       EXP2_04_PIN
+  #define SD_SS_PIN                         SDSS
   #define SD_SCK_PIN                 EXP2_02_PIN
   #define SD_MISO_PIN                EXP2_01_PIN
   #define SD_MOSI_PIN                EXP2_06_PIN
   #define SD_DETECT_PIN              EXP2_07_PIN
 #elif SD_CONNECTION_IS(ONBOARD)
-  #define ONBOARD_SDIO                            // Use SDIO for onboard SD
+  #define SDIO_SUPPORT                            // Use SDIO for onboard SD
 #elif SD_CONNECTION_IS(CUSTOM_CABLE)
   #error "No custom SD drive cable defined for this board."
 #endif
@@ -341,6 +401,7 @@
     #define E2_CS_PIN                EXP1_06_PIN
     #if HAS_TMC_UART
       #define E2_SERIAL_TX_PIN       EXP1_06_PIN
+      #define E2_SERIAL_RX_PIN       EXP1_06_PIN
     #endif
   #endif
 
@@ -353,6 +414,7 @@
     #define E3_CS_PIN                EXP1_04_PIN
     #if HAS_TMC_UART
       #define E3_SERIAL_TX_PIN       EXP1_04_PIN
+      #define E3_SERIAL_RX_PIN       EXP1_04_PIN
     #endif
   #else
     #define E3_ENABLE_PIN            EXP2_07_PIN
@@ -367,6 +429,7 @@
     #define E4_CS_PIN                EXP1_02_PIN
     #if HAS_TMC_UART
       #define E4_SERIAL_TX_PIN       EXP1_02_PIN
+      #define E4_SERIAL_RX_PIN       EXP1_02_PIN
     #endif
   #else
     #define E4_ENABLE_PIN            EXP2_07_PIN
@@ -375,9 +438,8 @@
 #endif // BTT_MOTOR_EXPANSION
 
 //
-// LCD / Controller
+// LCDs and Controllers
 //
-
 #if IS_TFTGLCD_PANEL
 
   #if ENABLED(TFTGLCD_PANEL_SPI)
@@ -396,7 +458,7 @@
     #define BTN_EN1                  EXP1_03_PIN
     #define BTN_EN2                  EXP1_05_PIN
 
-    #define LCD_PINS_EN              EXP1_08_PIN
+    #define LCD_PINS_ENABLE          EXP1_08_PIN
     #define LCD_PINS_D4              EXP1_06_PIN
 
   #elif ENABLED(MKS_MINI_12864)
@@ -413,7 +475,7 @@
     #define BTN_EN1                  EXP2_03_PIN
     #define BTN_EN2                  EXP2_05_PIN
 
-    #define LCD_PINS_EN              EXP1_03_PIN
+    #define LCD_PINS_ENABLE          EXP1_03_PIN
     #define LCD_PINS_D4              EXP1_05_PIN
 
     #if ENABLED(FYSETC_MINI_12864)
@@ -421,7 +483,7 @@
       #define DOGLCD_A0              EXP1_04_PIN
       //#define LCD_BACKLIGHT_PIN           -1
       #define LCD_RESET_PIN          EXP1_05_PIN  // Must be high or open for LCD to operate normally.
-      #if ANY(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
+      #if EITHER(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
         #ifndef RGB_LED_R_PIN
           #define RGB_LED_R_PIN      EXP1_06_PIN
         #endif
@@ -434,7 +496,7 @@
       #elif ENABLED(FYSETC_MINI_12864_2_1)
         #define NEOPIXEL_PIN         EXP1_06_PIN
       #endif
-    #endif // FYSETC_MINI_12864
+    #endif // !FYSETC_MINI_12864
 
     #if IS_ULTIPANEL
       #define LCD_PINS_D5            EXP1_06_PIN
@@ -451,118 +513,6 @@
 
 #endif // HAS_WIRED_LCD
 
-#if HAS_SPI_TFT
-
-  #define TFT_SCK_PIN                EXP2_02_PIN
-  #define TFT_MISO_PIN               EXP2_01_PIN
-  #define TFT_MOSI_PIN               EXP2_06_PIN
-
-  #define BTN_ENC                    EXP1_02_PIN
-  #define BTN_EN1                    EXP2_03_PIN
-  #define BTN_EN2                    EXP2_05_PIN
-
-  #ifndef TFT_WIDTH
-    #define TFT_WIDTH                        480
-  #endif
-  #ifndef TFT_HEIGHT
-    #define TFT_HEIGHT                       320
-  #endif
-
-  #if ENABLED(BTT_TFT35_SPI_V1_0)
-
-    /**
-     *            ------                       ------
-     *    BEEPER | 1  2 | LCD-BTN        MISO | 1  2 | CLK
-     *    T_MOSI | 3  4 | T_CS       LCD-ENCA | 3  4 | TFTCS
-     *     T_CLK | 5  6   T_MISO     LCD-ENCB | 5  6   MOSI
-     *    PENIRQ | 7  8 | F_CS             RS | 7  8 | RESET
-     *       GND | 9 10 | VCC             GND | 9 10 | NC
-     *            ------                       ------
-     *             EXP1                         EXP2
-     *
-     * 480x320, 3.5", SPI Display with Rotary Encoder.
-     * Stock Display for the BIQU B1 SE Series.
-     * Schematic: https://github.com/bigtreetech/TFT35-SPI/blob/master/v1/Hardware/BTT%20TFT35-SPI%20V1-SCH.pdf
-     */
-    #define TFT_CS_PIN               EXP2_04_PIN
-    #define TFT_DC_PIN               EXP2_07_PIN
-    #define TFT_A0_PIN                TFT_DC_PIN
-
-    #define TOUCH_CS_PIN             EXP1_04_PIN
-    #define TOUCH_SCK_PIN            EXP1_05_PIN
-    #define TOUCH_MISO_PIN           EXP1_06_PIN
-    #define TOUCH_MOSI_PIN           EXP1_03_PIN
-    #define TOUCH_INT_PIN            EXP1_07_PIN
-
-    #ifndef TOUCH_CALIBRATION_X
-      #define TOUCH_CALIBRATION_X          17540
-    #endif
-    #ifndef TOUCH_CALIBRATION_Y
-      #define TOUCH_CALIBRATION_Y         -11388
-    #endif
-    #ifndef TOUCH_OFFSET_X
-      #define TOUCH_OFFSET_X                 -21
-    #endif
-    #ifndef TOUCH_OFFSET_Y
-      #define TOUCH_OFFSET_Y                 337
-    #endif
-    #ifndef TOUCH_ORIENTATION
-      #define TOUCH_ORIENTATION TOUCH_LANDSCAPE
-    #endif
-
-  #elif ENABLED(MKS_TS35_V2_0)
-
-    /**                      ------                                   ------
-     *               BEEPER | 1  2 | BTN_ENC               SPI1_MISO | 1  2 | SPI1_SCK
-     *     TFT_BKL / LCD_EN | 3  4 | TFT_RESET / LCD_RS      BTN_EN1 | 3  4 | SPI1_CS
-     *    TOUCH_CS / LCD_D4 | 5  6   TOUCH_INT / LCD_D5      BTN_EN2 | 5  6   SPI1_MOSI
-     *     SPI1_CS / LCD_D6 | 7  8 | SPI1_RS / LCD_D7       SPI1_RS  | 7  8 | RESET
-     *                  GND | 9 10 | VCC                         GND | 9 10 | VCC
-     *                       ------                                   ------
-     *                        EXP1                                     EXP2
-     */
-    #define TFT_CS_PIN               EXP1_07_PIN  // SPI1_CS
-    #define TFT_DC_PIN               EXP1_08_PIN  // SPI1_RS
-    #define TFT_A0_PIN                TFT_DC_PIN
-
-    #define TFT_RESET_PIN            EXP1_04_PIN
-
-    #define LCD_BACKLIGHT_PIN        EXP1_03_PIN
-    #define TFT_BACKLIGHT_PIN  LCD_BACKLIGHT_PIN
-
-    #define TOUCH_BUTTONS_HW_SPI
-    #define TOUCH_BUTTONS_HW_SPI_DEVICE        1
-
-    #define TOUCH_CS_PIN             EXP1_05_PIN  // SPI1_NSS
-    #define TOUCH_SCK_PIN            EXP2_02_PIN  // SPI1_SCK
-    #define TOUCH_MISO_PIN           EXP2_01_PIN  // SPI1_MISO
-    #define TOUCH_MOSI_PIN           EXP2_06_PIN  // SPI1_MOSI
-
-    #define LCD_READ_ID                     0xD3
-    #define LCD_USE_DMA_SPI
-
-    #define TFT_BUFFER_WORDS               14400
-
-    #ifndef TOUCH_CALIBRATION_X
-      #define TOUCH_CALIBRATION_X         -17253
-    #endif
-    #ifndef TOUCH_CALIBRATION_Y
-      #define TOUCH_CALIBRATION_Y          11579
-    #endif
-    #ifndef TOUCH_OFFSET_X
-      #define TOUCH_OFFSET_X                 514
-    #endif
-    #ifndef TOUCH_OFFSET_Y
-      #define TOUCH_OFFSET_Y                 -24
-    #endif
-    #ifndef TOUCH_ORIENTATION
-      #define TOUCH_ORIENTATION TOUCH_LANDSCAPE
-    #endif
-
-  #endif
-
-#endif // HAS_SPI_TFT
-
 // Alter timing for graphical display
 #if IS_U8GLIB_ST7920
   #ifndef BOARD_ST7920_DELAY_1
@@ -576,34 +526,55 @@
   #endif
 #endif
 
+#if HAS_SPI_TFT
+
+  #define BTN_EN1                    EXP2_03_PIN
+  #define BTN_EN2                    EXP2_05_PIN
+  #define BTN_ENC                    EXP1_02_PIN
+
+  //
+  // e.g., BTT_TFT35_SPI_V1_0 (480x320, 3.5", SPI Stock Display with Rotary Encoder in BIQU B1 SE)
+  //
+  #define TFT_CS_PIN                 EXP2_04_PIN
+  #define TFT_A0_PIN                 EXP2_07_PIN
+  #define TFT_SCK_PIN                EXP2_02_PIN
+  #define TFT_MISO_PIN               EXP2_01_PIN
+  #define TFT_MOSI_PIN               EXP2_06_PIN
+
+  #define TOUCH_INT_PIN              EXP1_07_PIN
+  #define TOUCH_MISO_PIN             EXP1_06_PIN
+  #define TOUCH_MOSI_PIN             EXP1_03_PIN
+  #define TOUCH_SCK_PIN              EXP1_05_PIN
+  #define TOUCH_CS_PIN               EXP1_04_PIN
+
+#endif
+
 //
 // NeoPixel LED
 //
-#ifndef BOARD_NEOPIXEL_PIN
-  #define BOARD_NEOPIXEL_PIN                PE6
+#ifndef NEOPIXEL_PIN
+  #define NEOPIXEL_PIN                      PE6
 #endif
 
-#if ENABLED(WIFISUPPORT)
-  //
-  // WIFI
-  //
+//
+// WIFI
+//
 
-  /**
-   *                      -------
-   *            GND | 9  |       | 8 | 3.3V
-   *  (ESP-CS) PB12 | 10 |       | 7 | PB15 (ESP-MOSI)
-   *           3.3V | 11 |       | 6 | PB14 (ESP-MISO)
-   * (ESP-IO0) PB10 | 12 |       | 5 | PB13 (ESP-CLK)
-   * (ESP-IO4) PB11 | 13 |       | 4 | --
-   *             -- | 14 |       | 3 | 3.3V (ESP-EN)
-   *  (ESP-RX)  PD8 | 15 |       | 2 | --
-   *  (ESP-TX)  PD9 | 16 |       | 1 | PC14 (ESP-RST)
-   *                      -------
-   *                       WIFI
-   */
-  #define ESP_WIFI_MODULE_COM                  3  // Must also set either SERIAL_PORT or SERIAL_PORT_2 to this
-  #define ESP_WIFI_MODULE_BAUDRATE      BAUDRATE  // Must use same BAUDRATE as SERIAL_PORT & SERIAL_PORT_2
-  #define ESP_WIFI_MODULE_RESET_PIN         PC14
-  #define ESP_WIFI_MODULE_GPIO0_PIN         PB10
-  #define ESP_WIFI_MODULE_GPIO4_PIN         PB11
-#endif
+/**
+ *                      -------
+ *            GND | 9  |       | 8 | 3.3V
+ *  (ESP-CS) PB12 | 10 |       | 7 | PB15 (ESP-MOSI)
+ *           3.3V | 11 |       | 6 | PB14 (ESP-MISO)
+ * (ESP-IO0) PB10 | 12 |       | 5 | PB13 (ESP-CLK)
+ * (ESP-IO4) PB11 | 13 |       | 4 | --
+ *             -- | 14 |       | 3 | 3.3V (ESP-EN)
+ *  (ESP-RX)  PD8 | 15 |       | 2 | --
+ *  (ESP-TX)  PD9 | 16 |       | 1 | PC14 (ESP-RST)
+ *                      -------
+ *                       WIFI
+ */
+#define ESP_WIFI_MODULE_COM                    3  // Must also set either SERIAL_PORT or SERIAL_PORT_2 to this
+#define ESP_WIFI_MODULE_BAUDRATE        BAUDRATE  // Must use same BAUDRATE as SERIAL_PORT & SERIAL_PORT_2
+#define ESP_WIFI_MODULE_RESET_PIN           PC14
+#define ESP_WIFI_MODULE_GPIO0_PIN           PB10
+#define ESP_WIFI_MODULE_GPIO4_PIN           PB11

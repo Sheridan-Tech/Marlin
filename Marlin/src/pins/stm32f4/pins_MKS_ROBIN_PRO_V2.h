@@ -37,7 +37,7 @@
 //#define SRAM_EEPROM_EMULATION                   // Use BackSRAM-based EEPROM emulation
 //#define FLASH_EEPROM_EMULATION                  // Use Flash-based EEPROM emulation
 #define I2C_EEPROM
-#define MARLIN_EEPROM_SIZE               0x1000U  // 4K
+#define MARLIN_EEPROM_SIZE                0x1000  // 4K
 
 #define HAS_OTG_USB_HOST_SUPPORT                  // USB Flash Drive support
 
@@ -72,13 +72,6 @@
 
 #ifndef FIL_RUNOUT_PIN
   #define FIL_RUNOUT_PIN                    PA4   // MT_DET
-#endif
-
-//
-// Probe enable
-//
-#if ENABLED(PROBE_ENABLE_DISABLE) && !defined(PROBE_ENABLE_PIN)
-  #define PROBE_ENABLE_PIN            SERVO0_PIN
 #endif
 
 //
@@ -120,16 +113,18 @@
 #endif
 
 //
-// SPI pins for TMC2130 stepper drivers
+// Software SPI pins for TMC2130 stepper drivers
 //
-#ifndef TMC_SPI_MOSI
-  #define TMC_SPI_MOSI                      PD14
-#endif
-#ifndef TMC_SPI_MISO
-  #define TMC_SPI_MISO                      PD1
-#endif
-#ifndef TMC_SPI_SCK
-  #define TMC_SPI_SCK                       PD0
+#if ENABLED(TMC_USE_SW_SPI)
+  #ifndef TMC_SW_MOSI
+    #define TMC_SW_MOSI                     PD14
+  #endif
+  #ifndef TMC_SW_MISO
+    #define TMC_SW_MISO                     PD1
+  #endif
+  #ifndef TMC_SW_SCK
+    #define TMC_SW_SCK                      PD0
+  #endif
 #endif
 
 #if HAS_TMC_UART
@@ -152,16 +147,22 @@
   //#define E4_HARDWARE_SERIAL Serial1
 
   #define X_SERIAL_TX_PIN                   PD5
+  #define X_SERIAL_RX_PIN        X_SERIAL_TX_PIN
+
   #define Y_SERIAL_TX_PIN                   PD7
+  #define Y_SERIAL_RX_PIN        Y_SERIAL_TX_PIN
+
   #define Z_SERIAL_TX_PIN                   PD4
+  #define Z_SERIAL_RX_PIN        Z_SERIAL_TX_PIN
+
   #define E0_SERIAL_TX_PIN                  PD9
+  #define E0_SERIAL_RX_PIN      E0_SERIAL_TX_PIN
+
   #define E1_SERIAL_TX_PIN                  PD8
+  #define E1_SERIAL_RX_PIN      E1_SERIAL_TX_PIN
 
   // Reduce baud rate to improve software serial reliability
-  #ifndef TMC_BAUD_RATE
-    #define TMC_BAUD_RATE                  19200
-  #endif
-
+  #define TMC_BAUD_RATE                    19200
 #endif // HAS_TMC_UART
 
 //
@@ -178,7 +179,7 @@
 #define HEATER_1_PIN                        PB0   // HEATER2
 #define HEATER_BED_PIN                      PA0   // HOT BED
 
-#define FAN0_PIN                            PB1   // FAN
+#define FAN_PIN                             PB1   // FAN
 
 //
 // Thermocouples
@@ -213,19 +214,19 @@
 // Onboard SD card
 // NOT compatible with LCD
 //
+// Detect pin doesn't work when ONBOARD and NO_SD_HOST_DRIVE disabled
 #if SD_CONNECTION_IS(ONBOARD)
   #if USE_NEW_SPI_API
     #define SD_SPI MARLIN_SPI(HardwareSPI3, PC9)
   #else
     #define ENABLE_SPI3
-    #define SD_SS_PIN                       PC9
+    #define SD_SS_PIN                       -1
+    #define SDSS                            PC9
     #define SD_SCK_PIN                      PC10
     #define SD_MISO_PIN                     PC11
     #define SD_MOSI_PIN                     PC12
   #endif
-  #if ENABLED(NO_SD_HOST_DRIVE)
-    #define SD_DETECT_PIN                   PD12  // Detect pin doesn't work with SD Host Drive
-  #endif
+  #define SD_DETECT_PIN                     PD12
 #endif
 
 /**               ------                                      ------
@@ -237,23 +238,23 @@
  *                ------                                      ------
  *                 EXP1                                        EXP2
  */
-#define EXP1_01_PIN                         PC5
-#define EXP1_02_PIN                         PE13
-#define EXP1_03_PIN                         PD13
-#define EXP1_04_PIN                         PC6
-#define EXP1_05_PIN                         PE14
-#define EXP1_06_PIN                         PE15
-#define EXP1_07_PIN                         PD11
-#define EXP1_08_PIN                         PD10
+#define EXP1_01_PIN                     PC5
+#define EXP1_02_PIN                     PE13
+#define EXP1_03_PIN                     PD13
+#define EXP1_04_PIN                     PC6
+#define EXP1_05_PIN                     PE14
+#define EXP1_06_PIN                     PE15
+#define EXP1_07_PIN                     PD11
+#define EXP1_08_PIN                     PD10
 
-#define EXP2_01_PIN                         PA6
-#define EXP2_02_PIN                         PA5
-#define EXP2_03_PIN                         PE8
-#define EXP2_04_PIN                         PE10
-#define EXP2_05_PIN                         PE11
-#define EXP2_06_PIN                         PA7
-#define EXP2_07_PIN                         PE12
-#define EXP2_08_PIN                         -1    // RESET
+#define EXP2_01_PIN                     PA6
+#define EXP2_02_PIN                     PA5
+#define EXP2_03_PIN                     PE8
+#define EXP2_04_PIN                     PE10
+#define EXP2_05_PIN                     PE11
+#define EXP2_06_PIN                     PA7
+#define EXP2_07_PIN                     PE12
+#define EXP2_08_PIN                     -1    // RESET
 
 //
 // LCD SD
@@ -261,7 +262,7 @@
 /*
 #if SD_CONNECTION_IS(LCD)
   #define ENABLE_SPI1
-  #define SD_SS_PIN                  EXP2_04_PIN
+  #define SDSS                       EXP2_04_PIN
   #define SD_SCK_PIN                 EXP2_02_PIN
   #define SD_MISO_PIN                EXP2_01_PIN
   #define SD_MOSI_PIN                EXP2_06_PIN
@@ -269,19 +270,18 @@
 #endif
 */
 
-#define SPI_FLASH
-#if ENABLED(SPI_FLASH)
-  #define SPI_DEVICE                           2  // Maple
-  #define SPI_FLASH_SIZE               0x1000000  // 16MB
-  #define SPI_FLASH_CS_PIN                  PB12
-  #define SPI_FLASH_SCK_PIN                 PB13
-  #define SPI_FLASH_MISO_PIN                PB14
-  #define SPI_FLASH_MOSI_PIN                PB15
-#endif
-
 //
 // LCD / Controller
-//
+#define SPI_FLASH
+#define SPI_FLASH
+#define SPI_DEVICE                             2
+#define SPI_FLASH_SIZE                 0x1000000
+#if ENABLED(SPI_FLASH)
+  #define SPI_FLASH_CS_PIN                  PB12
+  #define SPI_FLASH_MOSI_PIN                PB15
+  #define SPI_FLASH_MISO_PIN                PB14
+  #define SPI_FLASH_SCK_PIN                 PB13
+#endif
 
 #if ANY(TFT_COLOR_UI, TFT_LVGL_UI, TFT_CLASSIC_UI)
   #ifndef TOUCH_CALIBRATION_X
@@ -335,13 +335,13 @@
   #define LCD_USE_DMA_SPI
 
   //#define TFT_DRIVER                    ST7796
-  #define TFT_BUFFER_WORDS                 14400
+  #define TFT_BUFFER_SIZE                  14400
 
 #elif HAS_WIRED_LCD
 
   #define BEEPER_PIN                 EXP1_01_PIN
   #define BTN_ENC                    EXP1_02_PIN
-  #define LCD_PINS_EN                EXP1_03_PIN
+  #define LCD_PINS_ENABLE            EXP1_03_PIN
   #define LCD_PINS_RS                EXP1_04_PIN
   #define BTN_EN1                    EXP2_03_PIN
   #define BTN_EN2                    EXP2_05_PIN
@@ -358,8 +358,9 @@
 
     // Required for MKS_MINI_12864 with this board
     //#define MKS_LCD12864B
+    //#undef SHOW_BOOTSCREEN
 
-  #else // !MKS_MINI_12864
+  #else                                           // !MKS_MINI_12864
 
     #define LCD_PINS_D4              EXP1_05_PIN
     #if IS_ULTIPANEL

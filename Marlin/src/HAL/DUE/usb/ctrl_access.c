@@ -63,10 +63,11 @@
 #include "compiler.h"
 #include "preprocessor.h"
 #ifdef FREERTOS_USED
-#include <FreeRTOS.h>
-#include <semphr.h>
+#include "FreeRTOS.h"
+#include "semphr.h"
 #endif
 #include "ctrl_access.h"
+
 
 //_____ D E F I N I T I O N S ______________________________________________
 
@@ -110,6 +111,7 @@ static xSemaphoreHandle ctrl_access_semphr = NULL;
 //! @}
 
 #endif  // FREERTOS_USED
+
 
 #if MAX_LUN
 
@@ -240,13 +242,16 @@ static const struct
 
 #endif
 
+
 #if GLOBAL_WR_PROTECT == true
 bool g_wr_protect;
 #endif
 
+
 /*! \name Control Interface
  */
 //! @{
+
 
 #ifdef FREERTOS_USED
 
@@ -265,6 +270,7 @@ bool ctrl_access_init(void)
   return true;
 }
 
+
 /*! \brief Locks accesses to LUNs.
  *
  * \return \c true if the access was successfully locked, else \c false.
@@ -281,6 +287,7 @@ static bool ctrl_access_lock(void)
 }
 
 #endif  // FREERTOS_USED
+
 
 U8 get_nb_lun(void)
 {
@@ -302,10 +309,12 @@ U8 get_nb_lun(void)
 #endif
 }
 
+
 U8 get_cur_lun(void)
 {
   return LUN_ID_0;
 }
+
 
 Ctrl_status mem_test_unit_ready(U8 lun)
 {
@@ -328,6 +337,7 @@ Ctrl_status mem_test_unit_ready(U8 lun)
   return status;
 }
 
+
 Ctrl_status mem_read_capacity(U8 lun, U32 *u32_nb_sector)
 {
   Ctrl_status status;
@@ -349,6 +359,7 @@ Ctrl_status mem_read_capacity(U8 lun, U32 *u32_nb_sector)
   return status;
 }
 
+
 U8 mem_sector_size(U8 lun)
 {
   U8 sector_size;
@@ -369,6 +380,7 @@ U8 mem_sector_size(U8 lun)
 
   return sector_size;
 }
+
 
 bool mem_unload(U8 lun, bool unload)
 {
@@ -421,6 +433,7 @@ bool mem_wr_protect(U8 lun)
   return wr_protect;
 }
 
+
 bool mem_removal(U8 lun)
 {
   bool removal;
@@ -445,6 +458,7 @@ bool mem_removal(U8 lun)
   return removal;
 }
 
+
 const char *mem_name(U8 lun)
 {
 #if MAX_LUN==0
@@ -461,13 +475,16 @@ const char *mem_name(U8 lun)
 #endif
 }
 
+
 //! @}
+
 
 #if ACCESS_USB == true
 
 /*! \name MEM <-> USB Interface
  */
 //! @{
+
 
 Ctrl_status memory_2_usb(U8 lun, U32 addr, U16 nb_sector)
 {
@@ -488,6 +505,7 @@ Ctrl_status memory_2_usb(U8 lun, U32 addr, U16 nb_sector)
   return status;
 }
 
+
 Ctrl_status usb_2_memory(U8 lun, U32 addr, U16 nb_sector)
 {
   Ctrl_status status;
@@ -507,15 +525,18 @@ Ctrl_status usb_2_memory(U8 lun, U32 addr, U16 nb_sector)
   return status;
 }
 
+
 //! @}
 
 #endif  // ACCESS_USB == true
+
 
 #if ACCESS_MEM_TO_RAM == true
 
 /*! \name MEM <-> RAM Interface
  */
 //! @{
+
 
 Ctrl_status memory_2_ram(U8 lun, U32 addr, void *ram)
 {
@@ -543,6 +564,7 @@ Ctrl_status memory_2_ram(U8 lun, U32 addr, void *ram)
   return status;
 }
 
+
 Ctrl_status ram_2_memory(U8 lun, U32 addr, const void *ram)
 {
   Ctrl_status status;
@@ -569,15 +591,18 @@ Ctrl_status ram_2_memory(U8 lun, U32 addr, const void *ram)
   return status;
 }
 
+
 //! @}
 
 #endif  // ACCESS_MEM_TO_RAM == true
+
 
 #if ACCESS_STREAM == true
 
 /*! \name Streaming MEM <-> MEM Interface
  */
 //! @{
+
 
   #if ACCESS_MEM_TO_MEM == true
 
@@ -600,17 +625,20 @@ Ctrl_status stream_mem_to_mem(U8 src_lun, U32 src_addr, U8 dest_lun, U32 dest_ad
 
   #endif  // ACCESS_MEM_TO_MEM == true
 
+
 Ctrl_status stream_state(U8 id)
 {
   UNUSED(id);
   return CTRL_GOOD;
 }
 
+
 U16 stream_stop(U8 id)
 {
   UNUSED(id);
   return 0;
 }
+
 
 //! @}
 

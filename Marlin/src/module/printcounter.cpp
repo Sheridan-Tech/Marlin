@@ -34,13 +34,14 @@ Stopwatch print_job_timer;      // Global Print Job Timer instance
 #endif
 
 #include "printcounter.h"
+#include "../MarlinCore.h"
 #include "../HAL/shared/eeprom_api.h"
 
 #if HAS_SOUND && SERVICE_WARNING_BUZZES > 0
   #include "../libs/buzzer.h"
 #endif
 
-#if ENABLED(PRINTCOUNTER_SYNC)
+#if PRINTCOUNTER_SYNC
   #include "../module/planner.h"
 #endif
 
@@ -69,12 +70,12 @@ printStatistics PrintCounter::data;
 
 const PrintCounter::eeprom_address_t PrintCounter::address = STATS_EEPROM_ADDRESS;
 
-uint32_t PrintCounter::lastDuration;
+millis_t PrintCounter::lastDuration;
 bool PrintCounter::loaded = false;
 
-uint32_t PrintCounter::deltaDuration() {
+millis_t PrintCounter::deltaDuration() {
   TERN_(DEBUG_PRINTCOUNTER, debug(PSTR("deltaDuration")));
-  const uint32_t tmp = lastDuration;
+  millis_t tmp = lastDuration;
   lastDuration = duration();
   return lastDuration - tmp;
 }
@@ -236,24 +237,25 @@ void PrintCounter::showStats() {
 void PrintCounter::tick() {
   if (!isRunning()) return;
 
-  const millis_t now = millis();
+  millis_t now = millis();
+
   static millis_t update_next; // = 0
   if (ELAPSED(now, update_next)) {
     update_next = now + updateInterval;
 
     TERN_(DEBUG_PRINTCOUNTER, debug(PSTR("tick")));
 
-    const uint32_t delta_s = deltaDuration();
-    data.printTime += delta_s;
+    millis_t delta = deltaDuration();
+    data.printTime += delta;
 
     #if SERVICE_INTERVAL_1 > 0
-      data.nextService1 -= _MIN(delta_s, data.nextService1);
+      data.nextService1 -= _MIN(delta, data.nextService1);
     #endif
     #if SERVICE_INTERVAL_2 > 0
-      data.nextService2 -= _MIN(delta_s, data.nextService2);
+      data.nextService2 -= _MIN(delta, data.nextService2);
     #endif
     #if SERVICE_INTERVAL_3 > 0
-      data.nextService3 -= _MIN(delta_s, data.nextService3);
+      data.nextService3 -= _MIN(delta, data.nextService3);
     #endif
   }
 

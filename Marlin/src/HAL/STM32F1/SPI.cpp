@@ -517,6 +517,7 @@ uint8_t SPIClass::dmaSendAsync(const void * transmitBuf, uint16_t length, bool m
   return b;
 }
 
+
 /**
  *  New functions added to manage callbacks.
  *  Victor Perez 2017

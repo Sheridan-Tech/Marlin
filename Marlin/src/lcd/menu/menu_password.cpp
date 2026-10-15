@@ -26,7 +26,7 @@
 
 #include "../../inc/MarlinConfigPre.h"
 
-#if ALL(HAS_MARLINUI_MENU, PASSWORD_FEATURE)
+#if BOTH(HAS_MARLINUI_MENU, PASSWORD_FEATURE)
 
 #include "../../feature/password/password.h"
 
@@ -85,7 +85,7 @@ void Password::authentication_done() {
 // A single digit was completed
 void Password::digit_entered() {
   uint32_t multiplier = CAT(1e, PASSWORD_LENGTH); // 1e5 = 100000
-  for (uint8_t i = 0; i <= digit_no; ++i) multiplier /= 10;
+  LOOP_LE_N(i, digit_no) multiplier /= 10;
   value_entry += editable.uint8 * multiplier;
   string[digit_no++] = '0' + editable.uint8;
 
@@ -140,18 +140,8 @@ void Password::access_menu_password() {
 
 #if ENABLED(PASSWORD_ON_SD_PRINT_MENU)
   void Password::media_gatekeeper() {
-    authenticate_user(menu_file_selector, menu_main);
+    authenticate_user(menu_media, menu_main);
   }
-  #if HAS_SDCARD
-    void Password::media_gatekeeper_sd() {
-      authenticate_user(menu_file_selector_sd, menu_main);
-    }
-  #endif
-  #if HAS_USB_FLASH_DRIVE
-    void Password::media_gatekeeper_usb() {
-      authenticate_user(menu_file_selector_usb, menu_main);
-    }
-  #endif
 #endif
 
 void Password::start_over() {

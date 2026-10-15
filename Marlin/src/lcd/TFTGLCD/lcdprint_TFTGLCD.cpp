@@ -446,6 +446,7 @@ static const TFTGLCD_charmap_t g_TFTGLCD_charmap_device[] PROGMEM = {
     {IV('⭢'), 0xC7, 0},
     {IV('⭣'), 0xC6, 0},
 
+
     {IV('⯆'), 0xF5, 0},
     {IV('⯇'), 0xF7, 0}, // ⯅
     {IV('⯈'), 0xF6, 0},
@@ -1040,7 +1041,7 @@ int lcd_put_lchar_max(const lchar_t &c, const pixel_len_t max_length) {
  * @param cb_read_byte : the callback function to read one byte from the utf8_str (from RAM or ROM)
  * @param max_length : the pixel length of the string allowed (or number of slots in HD44780)
  *
- * @return the number of characters emitted
+ * @return the number of pixels advanced
  *
  * Draw a UTF-8 string
  */

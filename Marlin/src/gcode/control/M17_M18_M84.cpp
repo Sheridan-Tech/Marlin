@@ -48,19 +48,17 @@ inline stepper_flags_t selected_axis_bits() {
         selected.bits = e_axis_mask;
     }
   #endif
-  #if NUM_AXES
-    selected.bits |= NUM_AXIS_GANG(
-        (parser.seen_test('X')        << X_AXIS),
-      | (parser.seen_test('Y')        << Y_AXIS),
-      | (parser.seen_test('Z')        << Z_AXIS),
-      | (parser.seen_test(AXIS4_NAME) << I_AXIS),
-      | (parser.seen_test(AXIS5_NAME) << J_AXIS),
-      | (parser.seen_test(AXIS6_NAME) << K_AXIS),
-      | (parser.seen_test(AXIS7_NAME) << U_AXIS),
-      | (parser.seen_test(AXIS8_NAME) << V_AXIS),
-      | (parser.seen_test(AXIS9_NAME) << W_AXIS)
-    );
-  #endif
+  selected.bits |= NUM_AXIS_GANG(
+      (parser.seen_test('X')        << X_AXIS),
+    | (parser.seen_test('Y')        << Y_AXIS),
+    | (parser.seen_test('Z')        << Z_AXIS),
+    | (parser.seen_test(AXIS4_NAME) << I_AXIS),
+    | (parser.seen_test(AXIS5_NAME) << J_AXIS),
+    | (parser.seen_test(AXIS6_NAME) << K_AXIS),
+    | (parser.seen_test(AXIS7_NAME) << U_AXIS),
+    | (parser.seen_test(AXIS8_NAME) << V_AXIS),
+    | (parser.seen_test(AXIS9_NAME) << W_AXIS)
+  );
   return selected;
 }
 
@@ -73,12 +71,12 @@ void do_enable(const stepper_flags_t to_enable) {
 
   if (!shall_enable) return;    // All specified axes already enabled?
 
-  ena_mask_t also_enabled = 0;  // Track steppers enabled due to overlap
+  ena_mask_t also_enabled = 0;    // Track steppers enabled due to overlap
 
   // Enable all flagged axes
   LOOP_NUM_AXES(a) {
     if (TEST(shall_enable, a)) {
-      stepper.enable_axis((AxisEnum)a);         // Mark and enable the requested axis
+      stepper.enable_axis(AxisEnum(a));         // Mark and enable the requested axis
       DEBUG_ECHOLNPGM("Enabled ", AXIS_CHAR(a), " (", a, ") with overlap ", hex_word(enable_overlap[a]), " ... Enabled: ", hex_word(stepper.axis_enabled.bits));
       also_enabled |= enable_overlap[a];
     }
@@ -153,7 +151,7 @@ void try_to_disable(const stepper_flags_t to_disable) {
   LOOP_NUM_AXES(a)
     if (TEST(to_disable.bits, a)) {
       DEBUG_ECHOPGM("Try to disable ", AXIS_CHAR(a), " (", a, ") with overlap ", hex_word(enable_overlap[a]), " ... ");
-      if (stepper.disable_axis((AxisEnum)a)) {            // Mark the requested axis and request to disable
+      if (stepper.disable_axis(AxisEnum(a))) {            // Mark the requested axis and request to disable
         DEBUG_ECHOPGM("OK");
         still_enabled &= ~(_BV(a) | enable_overlap[a]);   // If actually disabled, clear one or more tracked bits
       }
@@ -214,7 +212,7 @@ void try_to_disable(const stepper_flags_t to_disable) {
 void GcodeSuite::M18_M84() {
   if (parser.seenval('S')) {
     reset_stepper_timeout();
-    #if HAS_DISABLE_IDLE_AXES
+    #if HAS_DISABLE_INACTIVE_AXIS
       const millis_t ms = parser.value_millis_from_seconds();
       #if LASER_SAFETY_TIMEOUT_MS > 0
         if (ms && ms <= LASER_SAFETY_TIMEOUT_MS) {

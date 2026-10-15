@@ -5,18 +5,16 @@
 # the appropriate framework variants folder, so that its contents
 # will be picked up by PlatformIO just like any other variant.
 #
-import pioutil, re
-
-marlin_variant_pattern = re.compile("marlin_.*")
+import pioutil
 if pioutil.is_pio_build():
-    import shutil, marlin
+    import shutil,marlin
     from pathlib import Path
 
     #
     # Get the platform name from the 'platform_packages' option,
     # or look it up by the platform.class.name.
     #
-    env = pioutil.env
+    env = marlin.env
     platform = env.PioPlatform()
 
     from platformio.package.meta import PackageSpec
@@ -32,34 +30,29 @@ if pioutil.is_pio_build():
         }
         platform_name = framewords[platform.__class__.__name__]
     else:
-        spec = PackageSpec(platform_packages[0])
-        if spec.uri and '@' in spec.uri:
-            platform_name = re.sub(r'@.+', '', spec.uri)
-        else:
-            platform_name = spec.name
+        platform_name = PackageSpec(platform_packages[0]).name
+
+    if platform_name in [ "usb-host-msc", "usb-host-msc-cdc-msc", "usb-host-msc-cdc-msc-2", "usb-host-msc-cdc-msc-3", "tool-stm32duino", "biqu-bx-workaround", "main" ]:
+        platform_name = "framework-arduinoststm32"
 
     FRAMEWORK_DIR = Path(platform.get_package_dir(platform_name))
     assert FRAMEWORK_DIR.is_dir()
 
-    #
-    # Point variants_dir to our variant folder when board_build.variant
-    # is provided and the variant name begins with "marlin_".
-    #
     board = env.BoardConfig()
-    variant = board.get("build.variant")
+
     #mcu_type = board.get("build.mcu")[:-2]
+    variant = board.get("build.variant")
     #series = mcu_type[:7].upper() + "xx"
 
-    # Make sure the local variant sub-folder exists
-    if marlin_variant_pattern.match(str(variant).lower()):
-        variants_dir = Path('buildroot', 'share', 'PlatformIO', 'variants')
-        source_dir = Path.cwd() / variants_dir / variant
-        assert source_dir.is_dir()
-        # Relative, so the framework prefixes $PROJECT_DIR. STM32duino escapes '(' and ')'
-        # in a literal path, which breaks the include path when the project path has them.
-        board.update("build.variants_dir", variants_dir.as_posix())
+    # Prepare a new empty folder at the destination
+    variant_dir = FRAMEWORK_DIR / "variants" / variant
+    if variant_dir.is_dir():
+        shutil.rmtree(variant_dir)
+    if not variant_dir.is_dir():
+        variant_dir.mkdir()
 
-        # STM32duino 2.x includes 'variant_<BOARD>.h' by default. Variants shared by several
-        # boards provide 'variant_generic.h' instead, so select it explicitly.
-        if (source_dir / "variant_generic.h").is_file():
-            board.update("build.arduino.variant_h", "variant_generic.h")
+    # Source dir is a local variant sub-folder
+    source_dir = Path("buildroot/share/PlatformIO/variants", variant)
+    assert source_dir.is_dir()
+
+    marlin.copytree(source_dir, variant_dir)

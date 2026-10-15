@@ -25,6 +25,7 @@
 #if ENABLED(DIRECT_PIN_CONTROL)
 
 #include "../gcode.h"
+#include "../../MarlinCore.h" // for pin_is_protected and idle()
 #include "../../module/planner.h"
 
 void protected_pin_err();
@@ -39,7 +40,7 @@ void GcodeSuite::M226() {
     const pin_t pin = GET_PIN_MAP_PIN(pin_number);
 
     if (WITHIN(pin_state, -1, 1) && pin > -1) {
-      if (marlin.pin_is_protected(pin))
+      if (pin_is_protected(pin))
         protected_pin_err();
       else {
         int target = LOW;
@@ -50,7 +51,7 @@ void GcodeSuite::M226() {
           case 0: target = LOW; break;
           case -1: target = !extDigitalRead(pin); break;
         }
-        while (int(extDigitalRead(pin)) != target) marlin.idle();
+        while (int(extDigitalRead(pin)) != target) idle();
       }
     } // pin_state -1 0 1 && pin > -1
   } // parser.seen('P')

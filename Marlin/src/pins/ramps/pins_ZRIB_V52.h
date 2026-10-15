@@ -22,9 +22,7 @@
 #pragma once
 
 /**
- * ZONESTAR ZRIB V5.2 Based on MKS BASE v1.4 with A4982 stepper drivers and digital micro-stepping
- * Schematic: https://github.com/ZONESTAR3D/Control-Board/blob/main/8bit/ZRIB/ZRIB_V5/ZRIB_V52_Schematic.pdf
- * ATmega2560, ATmega1280
+ * ZRIB V5.2 Based on MKS BASE v1.4 with A4982 stepper drivers and digital micro-stepping
  */
 
 #if HOTENDS > 2 || E_STEPPERS > 2
@@ -38,6 +36,8 @@
 //
 // Heaters / Fans
 //
+#define HEATER_1_PIN                           7
+#define FAN_PIN                                9  // PH6 ** Pin18 ** PWM9
 #define FAN1_PIN                               6
 
 //

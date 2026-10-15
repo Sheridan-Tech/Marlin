@@ -457,6 +457,7 @@ void udi_cdc_data_sof_notify(void)
 #endif
 }
 
+
 // ------------------------
 //------- Internal routines to control serial line
 
@@ -519,6 +520,7 @@ static void udi_cdc_ctrl_state_change(uint8_t port, bool b_set, le16_t bit_mask)
 	udi_cdc_ctrl_state_notify(port, ep_comm);
 }
 
+
 static void udi_cdc_ctrl_state_notify(uint8_t port, udd_ep_id_t ep)
 {
 #if UDI_CDC_PORT_NB == 1 // To optimize code
@@ -539,6 +541,7 @@ static void udi_cdc_ctrl_state_notify(uint8_t port, udd_ep_id_t ep)
 				udi_cdc_serial_state_msg_sent);
 	}
 }
+
 
 static void udi_cdc_serial_state_msg_sent(udd_ep_status_t status, iram_size_t n, udd_ep_id_t ep)
 {
@@ -575,8 +578,10 @@ static void udi_cdc_serial_state_msg_sent(udd_ep_status_t status, iram_size_t n,
 	udi_cdc_ctrl_state_notify(port, ep);
 }
 
+
 // ------------------------
 //------- Internal routines to process data transfer
+
 
 static bool udi_cdc_rx_start(uint8_t port)
 {
@@ -627,6 +632,7 @@ static bool udi_cdc_rx_start(uint8_t port)
 			udi_cdc_data_received);
 }
 
+
 static void udi_cdc_data_received(udd_ep_status_t status, iram_size_t n, udd_ep_id_t ep)
 {
 	uint8_t buf_sel_trans;
@@ -662,6 +668,7 @@ static void udi_cdc_data_received(udd_ep_status_t status, iram_size_t n, udd_ep_
 	udi_cdc_rx_start(port);
 }
 
+
 static void udi_cdc_data_sent(udd_ep_status_t status, iram_size_t n, udd_ep_id_t ep)
 {
 	uint8_t port;
@@ -692,6 +699,7 @@ static void udi_cdc_data_sent(udd_ep_status_t status, iram_size_t n, udd_ep_id_t
 	}
 	udi_cdc_tx_send(port);
 }
+
 
 static void udi_cdc_tx_send(uint8_t port)
 {
@@ -772,8 +780,10 @@ static void udi_cdc_tx_send(uint8_t port)
 			udi_cdc_data_sent);
 }
 
+
 // ------------------------
 //------- Application interface
+
 
 //------- Application interface
 

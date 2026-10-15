@@ -53,14 +53,26 @@
  */
 
 /**
- * Requires this Arduino IDE extension for Boards Manager:
+ * Rev B    26 DEC 2016
+ *
+ * added pointer to a current Arduino IDE extension
+ */
+
+/**
+ * A useable Arduino IDE extension (board manager) can be found at
  * https://github.com/Lauszus/Sanguino
  *
- * Follow the installation instructions at https://learn.sparkfun.com/tutorials/installing-board-definitions-in-the-arduino-ide
- * Just use this JSON URL instead of Sparkfun's:
+ * This extension has been tested on Arduino 1.6.12 & 1.8.0
+ *
+ * Here's the JSON path:
  * https://raw.githubusercontent.com/Lauszus/Sanguino/master/package_lauszus_sanguino_index.json
  *
- * Once installed select the SANGUINO board and then select the CPU.
+ * When installing select 1.0.2
+ *
+ * Installation instructions can be found at http://learn.sparkfun.com/pages/CustomBoardsArduino
+ * Just use the above JSON URL instead of Sparkfun's JSON.
+ *
+ * Once installed select the Sanguino board and then select the CPU.
  */
 
 #if NOT_TARGET(__AVR_ATmega644P__, __AVR_ATmega644__)
@@ -116,14 +128,14 @@
 #define HEATER_0_PIN                           3  // DONE PWM on RIGHT connector
 #define HEATER_BED_PIN                         4
 
-#ifndef FAN0_PIN
-  #define FAN0_PIN                            14  // PWM on MIDDLE connector
+#ifndef FAN_PIN
+  #define FAN_PIN                             14  // PWM on MIDDLE connector
 #endif
 
 //
 // Misc. Functions
 //
-#define SD_SS_PIN                             11
+#define SDSS                                  11
 
 #define I2C_SCL_PIN                           16
 #define I2C_SDA_PIN                           17

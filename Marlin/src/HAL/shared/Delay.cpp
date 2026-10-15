@@ -85,7 +85,7 @@
     }
     else {
       // Enable DWT counter
-      // From https://stackoverflow.com/questions/36378280/stm32-how-to-enable-dwt-cycle-counter/41188674#41188674
+      // From https://stackoverflow.com/a/41188674/1469714
       HW_REG(_DEM_CR) = HW_REG(_DEM_CR) | 0x01000000;   // Enable trace
       #if __CORTEX_M == 7
         HW_REG(_LAR) = 0xC5ACCE55;                      // Unlock access to DWT registers, see https://developer.arm.com/documentation/ihi0029/e/ section B2.3.10
@@ -109,7 +109,13 @@
   #if ENABLED(MARLIN_DEV_MODE)
     void dump_delay_accuracy_check() {
       auto report_call_time = [](FSTR_P const name, FSTR_P const unit, const uint32_t cycles, const uint32_t total, const bool do_flush=true) {
-        SERIAL_ECHOLN(F("Calling "), name, F(" for "), cycles, C(' '), unit, F(" took: "), total, C(' '), unit);
+        SERIAL_ECHOPGM("Calling ");
+        SERIAL_ECHOF(name);
+        SERIAL_ECHOLNPGM(" for ", cycles);
+        SERIAL_ECHOF(unit);
+        SERIAL_ECHOLNPGM(" took: ", total);
+        SERIAL_CHAR(' ');
+        SERIAL_ECHOF(unit);
         if (do_flush) SERIAL_FLUSHTX();
       };
 
@@ -160,6 +166,7 @@
       }
     }
   #endif // MARLIN_DEV_MODE
+
 
 #else
 

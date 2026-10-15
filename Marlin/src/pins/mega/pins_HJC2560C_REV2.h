@@ -22,8 +22,7 @@
 #pragma once
 
 /**
- * Geeetech HJC2560-C Rev 1.x and 2.x board pin assignments
- * ATmega2560
+ * Geeetech HJC2560-C Rev 2.x board pin assignments
  */
 
 #include "env_validate.h"
@@ -79,13 +78,6 @@
 #define DEFAULT_PWM_MOTOR_CURRENT  { 1300, 1300, 1250 }
 
 //
-// Filament Runout Sensor
-//
-#ifndef FIL_RUNOUT_PIN
-  #define FIL_RUNOUT_PIN                      24  // Filament runout
-#endif
-
-//
 // Temperature Sensors
 //
 #define TEMP_0_PIN                             8  // Analog Input
@@ -99,14 +91,14 @@
 #define HEATER_1_PIN                           3
 #define HEATER_BED_PIN                         4
 
-#ifndef FAN0_PIN
-  #define FAN0_PIN                             7  //默认不使用PWM_FAN冷却喷嘴，如果需要，则取消注释
+#ifndef FAN_PIN
+  #define FAN_PIN                              7  //默认不使用PWM_FAN冷却喷嘴，如果需要，则取消注释
 #endif
 
 //
 // Misc. Functions
 //
-#define SD_SS_PIN                             53
+#define SDSS                                  53
 #define SD_DETECT_PIN                         39
 //#define LED_PIN                              8
 
@@ -121,15 +113,14 @@
 // M3/M4/M5 - Spindle/Laser Control
 //
 #if HAS_CUTTER
-  #define SPINDLE_LASER_PWM_PIN                9  // Hardware PWM
-  #define SPINDLE_LASER_ENA_PIN               17  // Pin should have a pullup!
   #define SPINDLE_DIR_PIN                     16
+  #define SPINDLE_LASER_ENA_PIN               17  // Pin should have a pullup!
+  #define SPINDLE_LASER_PWM_PIN                9  // Hardware PWM
 #endif
 
 //
 // LCD / Controller
 //
-
 #if HAS_WIRED_LCD
 
   #define BEEPER_PIN                          18
@@ -137,7 +128,7 @@
   #if IS_NEWPANEL
 
     #define LCD_PINS_RS                       20  // LCD_CS
-    #define LCD_PINS_EN                       15  // LCD_SDA
+    #define LCD_PINS_ENABLE                   15  // LCD_SDA
     #define LCD_PINS_D4                       14  // LCD_SCK
 
     #if ENABLED(HJC_LCD_SMART_CONTROLLER)
@@ -145,6 +136,9 @@
       //#ifndef LCD_CONTRAST_PIN
       //  #define LCD_CONTRAST_PIN             5  // LCD_Contrast
       //#endif
+      #ifndef FIL_RUNOUT_PIN
+        #define FIL_RUNOUT_PIN                24  // Filament runout
+      #endif
     #else
       #define LCD_PINS_D5                     21
       #define LCD_PINS_D6                      5
@@ -166,7 +160,7 @@
     #define SHIFT_EN_PIN                      17
 
     #define LCD_PINS_RS                       16
-    #define LCD_PINS_EN                        5
+    #define LCD_PINS_ENABLE                    5
     #define LCD_PINS_D4                        6
     #define LCD_PINS_D5                       21
     #define LCD_PINS_D6                       20

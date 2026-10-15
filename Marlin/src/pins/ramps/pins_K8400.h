@@ -24,8 +24,6 @@
 /**
  * Velleman K8400 (Vertex)
  * 3DRAG clone
- * Schematic: https://www.filimprimante3d.fr/documents/k8400-schema-electronique.jpg
- * ATmega2560, ATmega1280
  *
  * K8400 has some minor differences over a normal 3Drag:
  *  - No X/Y max endstops
@@ -52,19 +50,14 @@
 #define X_STOP_PIN                             3
 #define Y_STOP_PIN                            14
 
-//
-// Fans
-//
-#define FAN0_PIN                               8
-
-#if ANY(BLTOUCH, TOUCH_MI_PROBE, BIQU_MICROPROBE_V1, BIQU_MICROPROBE_V2)
+#if EITHER(BLTOUCH, TOUCH_MI_PROBE)
   #define INVERTED_PROBE_STATE
 #endif
 
 #include "pins_3DRAG.h" // ... RAMPS
 
 //
-// Heaters
+// Heaters / Fans
 //
 #undef HEATER_1_PIN
 #define HEATER_1_PIN                          11

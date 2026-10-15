@@ -29,21 +29,25 @@
 #include "../../module/probe.h"
 #include "../../module/planner.h"
 
+#if ENABLED(BABYSTEP_ZPROBE_OFFSET)
+  #include "../../core/serial.h"
+#endif
+
 #if ENABLED(MESH_BED_LEVELING)
   #include "../../feature/bedlevel/bedlevel.h"
 #endif
 
 #if ENABLED(BABYSTEP_ZPROBE_OFFSET)
 
-  FORCE_INLINE void mod_probe_offset(const float offs) {
-    if (TERN1(BABYSTEP_HOTEND_Z_OFFSET, motion.extruder == 0)) {
+  FORCE_INLINE void mod_probe_offset(const_float_t offs) {
+    if (TERN1(BABYSTEP_HOTEND_Z_OFFSET, active_extruder == 0)) {
       probe.offset.z += offs;
       SERIAL_ECHO_MSG(STR_PROBE_OFFSET " " STR_Z, probe.offset.z);
     }
     else {
       #if ENABLED(BABYSTEP_HOTEND_Z_OFFSET)
-        motion.active_hotend_offset().z -= offs;
-        SERIAL_ECHO_MSG(STR_PROBE_OFFSET STR_Z ": ", motion.active_hotend_offset().z);
+        hotend_offset[active_extruder].z -= offs;
+        SERIAL_ECHO_MSG(STR_PROBE_OFFSET STR_Z ": ", hotend_offset[active_extruder].z);
       #endif
     }
   }
@@ -93,15 +97,15 @@ void GcodeSuite::M290() {
     #if ENABLED(BABYSTEP_HOTEND_Z_OFFSET)
     {
       SERIAL_ECHOLNPGM_P(
-        PSTR("Hotend "), motion.extruder
+        PSTR("Hotend "), active_extruder
         #if ENABLED(BABYSTEP_XY)
-          , PSTR("Offset X"), motion.active_hotend_offset().x
-          , SP_Y_STR, motion.active_hotend_offset().y
+          , PSTR("Offset X"), hotend_offset[active_extruder].x
+          , SP_Y_STR, hotend_offset[active_extruder].y
           , SP_Z_STR
         #else
           , PSTR("Offset Z")
         #endif
-        , motion.active_hotend_offset().z
+        , hotend_offset[active_extruder].z
       );
     }
     #endif
@@ -126,11 +130,5 @@ void GcodeSuite::M290() {
     #endif
   }
 }
-
-#if ENABLED(EP_BABYSTEPPING) && DISABLED(EMERGENCY_PARSER)
-  // Without Emergency Parser M293/M294 will be added to the queue
-  void GcodeSuite::M293() { babystep.z_up(); }
-  void GcodeSuite::M294() { babystep.z_down(); }
-#endif
 
 #endif // BABYSTEPPING

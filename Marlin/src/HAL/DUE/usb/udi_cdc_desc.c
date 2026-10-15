@@ -51,7 +51,7 @@
 #include "udc_desc.h"
 #include "udi_cdc.h"
 
-#if !HAS_MEDIA
+#if DISABLED(SDSUPPORT)
 
 /**
  * \defgroup udi_cdc_group_single_desc USB device descriptors for a single interface
@@ -108,6 +108,7 @@ UDC_DESC_STORAGE usb_dev_desc_t udc_device_desc = {
 #endif
   .bNumConfigurations = 1
 };
+
 
 #ifdef USB_DEVICE_HS_SUPPORT
 //! USB Device Qualifier Descriptor for HS
@@ -255,6 +256,6 @@ UDC_DESC_STORAGE udc_config_t udc_config = {
 //@}
 //@}
 
-#endif // HAS_MEDIA
+#endif // SDSUPPORT
 
 #endif // ARDUINO_ARCH_SAM

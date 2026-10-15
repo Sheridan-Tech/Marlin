@@ -8,7 +8,8 @@ if pioutil.is_pio_build():
     from os.path import join, isfile
     from pprint import pprint
 
-    env = pioutil.env
+    Import("env")
+
     if env.MarlinHas("POSTMORTEM_DEBUGGING"):
         FRAMEWORK_DIR = env.PioPlatform().get_package_dir("framework-arduinoststm32-maple")
         patchflag_path = join(FRAMEWORK_DIR, ".exc-patching-done")
@@ -22,7 +23,7 @@ if pioutil.is_pio_build():
 
             assert isfile(original_file) and isfile(src_file)
             shutil.copyfile(original_file, backup_file)
-            shutil.copyfile(src_file, original_file)
+            shutil.copyfile(src_file, original_file);
 
             def _touch(path):
                 with open(path, "w") as fp:

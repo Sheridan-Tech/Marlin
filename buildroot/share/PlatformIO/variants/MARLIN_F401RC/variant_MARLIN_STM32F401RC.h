@@ -153,7 +153,7 @@
 #endif
 
 // Extra HAL modules
-#ifndef HAL_SD_MODULE_DISABLED
+#if !defined(HAL_SD_MODULE_DISABLED)
   #define HAL_SD_MODULE_ENABLED
 #endif
 

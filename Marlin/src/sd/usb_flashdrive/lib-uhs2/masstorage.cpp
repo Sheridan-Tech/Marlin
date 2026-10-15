@@ -25,7 +25,7 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#if ALL(HAS_USB_FLASH_DRIVE, USE_UHS2_USB)
+#if ENABLED(USB_FLASH_DRIVE_SUPPORT) && DISABLED(USE_UHS3_USB)
 
 #include "masstorage.h"
 
@@ -796,6 +796,7 @@ uint8_t BulkOnly::RequestSense(uint8_t lun, uint16_t size, uint8_t *buf) {
         return Transaction(&cbw, size, buf);
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // USB code
 ////////////////////////////////////////////////////////////////////////////////
@@ -1147,6 +1148,7 @@ uint8_t BulkOnly::HandleSCSIError(uint8_t status) {
   } // switch
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Debugging code
 ////////////////////////////////////////////////////////////////////////////////
@@ -1204,4 +1206,4 @@ uint8_t BulkOnly::Read(uint8_t lun __attribute__((unused)), uint32_t addr __attr
   #endif
 }
 
-#endif // HAS_USB_FLASH_DRIVE && USE_UHS2_USB
+#endif // USB_FLASH_DRIVE_SUPPORT

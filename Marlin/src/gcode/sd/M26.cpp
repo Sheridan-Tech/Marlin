@@ -22,22 +22,17 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if HAS_MEDIA
+#if ENABLED(SDSUPPORT)
 
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
 
 /**
- * M26: Set Media File current index
- *
- * Set the next read position for the open file.
- *
- * Parameters:
- *   S<pos>  Next file read position to set
+ * M26: Set SD Card file index
  */
 void GcodeSuite::M26() {
   if (card.isMounted() && parser.seenval('S'))
     card.setIndex(parser.value_long());
 }
 
-#endif // HAS_MEDIA
+#endif // SDSUPPORT

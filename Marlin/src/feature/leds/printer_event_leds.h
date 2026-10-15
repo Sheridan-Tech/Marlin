@@ -40,26 +40,26 @@ private:
 
 public:
   #if HAS_TEMP_HOTEND
-    static LED1Color_t onHotendHeatingStart() { old_intensity = 0; return leds.get_color(); }
+    static LEDColor onHotendHeatingStart() { old_intensity = 0; return leds.get_color(); }
     static void onHotendHeating(const celsius_t start, const celsius_t current, const celsius_t target);
   #endif
 
   #if HAS_HEATED_BED
-    static LED1Color_t onBedHeatingStart() { old_intensity = 127; return leds.get_color(); }
+    static LEDColor onBedHeatingStart() { old_intensity = 127; return leds.get_color(); }
     static void onBedHeating(const celsius_t start, const celsius_t current, const celsius_t target);
   #endif
 
   #if HAS_HEATED_CHAMBER
-    static LED1Color_t onChamberHeatingStart() { old_intensity = 127; return leds.get_color(); }
+    static LEDColor onChamberHeatingStart() { old_intensity = 127; return leds.get_color(); }
     static void onChamberHeating(const celsius_t start, const celsius_t current, const celsius_t target);
   #endif
 
   #if HAS_TEMP_HOTEND || HAS_HEATED_BED || HAS_HEATED_CHAMBER
     static void onHeatingDone()             { leds.set_white(); }
-    static void onPIDTuningDone(LED1Color_t c) { leds.set_color(c); }
+    static void onPidTuningDone(LEDColor c) { leds.set_color(c); }
   #endif
 
-  #if HAS_MEDIA
+  #if ENABLED(SDSUPPORT)
 
     static void onPrintCompleted() {
       leds.set_green();
@@ -80,7 +80,7 @@ public:
       #endif
     }
 
-  #endif // HAS_MEDIA
+  #endif // SDSUPPORT
 };
 
 extern PrinterEventLEDs printerEventLEDs;

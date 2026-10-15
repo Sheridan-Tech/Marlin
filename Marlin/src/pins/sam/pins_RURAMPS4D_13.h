@@ -114,7 +114,7 @@
 #define HEATER_2_PIN                          11
 #define HEATER_BED_PIN                         7  // BED H1
 
-#define FAN0_PIN                               9
+#define FAN_PIN                                9
 #define FAN1_PIN                               8
 #define CONTROLLER_FAN_PIN                    -1
 
@@ -135,7 +135,7 @@
 
 // SPI for MAX Thermocouple
 /*
-#if !HAS_MEDIA
+#if DISABLED(SDSUPPORT)
   #define TEMP_0_CS_PIN                       53
 #else
   #define TEMP_0_CS_PIN                       49
@@ -145,7 +145,7 @@
 //
 // Misc. Functions
 //
-#define SD_SS_PIN                              4  // 4,10,52 if using HW SPI.
+#define SDSS                                   4  // 4,10,52 if using HW SPI.
 #define LED_PIN                               -1  // 13 - HEATER_0_PIN
 #define PS_ON_PIN                             -1  // 65
 
@@ -153,18 +153,16 @@
 #define TFT_LCD_MODULE_COM                     1
 #define TFT_LCD_MODULE_BAUDRATE              115200
 
-#if ENABLED(WIFISUPPORT)
-  // ESP WiFi Use internal USART-2
-  #define ESP_WIFI_MODULE_COM                  2
-  #define ESP_WIFI_MODULE_BAUDRATE           115200
-  #define ESP_WIFI_MODULE_RESET_PIN           -1
-  #define PIGGY_GPIO_PIN                      -1
-#endif
+// ESP WiFi Use internal USART-2
+#define ESP_WIFI_MODULE_COM                    2
+#define ESP_WIFI_MODULE_BAUDRATE             115200
+#define ESP_WIFI_MODULE_RESET_PIN             -1
+#define PIGGY_GPIO_PIN                        -1
 
 //
 // EEPROM
 //
-#define MARLIN_EEPROM_SIZE               0x8000U  // 32K (24lc256)
+#define MARLIN_EEPROM_SIZE                0x8000  // 32K (24lc256)
 #define I2C_EEPROM                                // EEPROM on I2C-0
 //#define EEPROM_SD                               // EEPROM on SDCARD
 //#define SPI_EEPROM                              // EEPROM on SPI-0
@@ -206,7 +204,6 @@
 //
 // LCD / Controller
 //
-
 #if HAS_WIRED_LCD
 
   #if ANY(RADDS_DISPLAY, IS_RRD_SC, IS_RRD_FG_SC)
@@ -218,20 +215,20 @@
     #define SD_DETECT_PIN            EXP2_07_PIN
   #endif
 
-  #if ANY(RADDS_DISPLAY, IS_RRD_SC)
+  #if EITHER(RADDS_DISPLAY, IS_RRD_SC)
 
     #define LCD_PINS_RS              EXP1_04_PIN
-    #define LCD_PINS_EN              EXP1_03_PIN
+    #define LCD_PINS_ENABLE          EXP1_03_PIN
 
   #elif IS_RRD_FG_SC
 
     #define LCD_PINS_RS              EXP1_07_PIN
-    #define LCD_PINS_EN              EXP1_08_PIN
+    #define LCD_PINS_ENABLE          EXP1_08_PIN
 
   #elif HAS_U8GLIB_I2C_OLED
 
     #define BEEPER_PIN               EXP1_01_PIN
-    #define LCD_SDSS_PIN             EXP2_04_PIN
+    #define LCD_SDSS                 EXP2_04_PIN
     #define SD_DETECT_PIN            EXP2_07_PIN
 
   #elif ENABLED(FYSETC_MINI_12864)
@@ -245,7 +242,7 @@
 
     #define LCD_RESET_PIN            EXP1_05_PIN  // Must be high or open for LCD to operate normally.
 
-    #if ANY(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
+    #if EITHER(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
       #ifndef RGB_LED_R_PIN
         #define RGB_LED_R_PIN        EXP1_06_PIN  // D5
       #endif

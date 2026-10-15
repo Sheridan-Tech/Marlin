@@ -22,21 +22,16 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if HAS_MEDIA
+#if ENABLED(SDSUPPORT)
 
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
 #include "../../lcd/marlinui.h"
 
 /**
- * M23: Select File
+ * M23: Open a file
  *
- * Select a file on mounted media for printing or processing.
- * Follow with M24 to run the selected file.
- *
- * Parameters:
- *   <filename>  The filename of the file to open
- *   (The path is relative to the root directory)
+ * The path is relative to the root directory
  */
 void GcodeSuite::M23() {
   // Simplify3D includes the size, so zero out all spaces (#7227)
@@ -46,4 +41,4 @@ void GcodeSuite::M23() {
   TERN_(SET_PROGRESS_PERCENT, ui.set_progress(0));
 }
 
-#endif // HAS_MEDIA
+#endif // SDSUPPORT

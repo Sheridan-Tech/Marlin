@@ -43,14 +43,14 @@
 //
 // EEPROM
 //
-#if SHALL_USE_EEPROM(FLASH_EEPROM_EMULATION)
+#if EITHER(NO_EEPROM_SELECTED, FLASH_EEPROM_EMULATION)
   #define FLASH_EEPROM_EMULATION
-  #define EEPROM_PAGE_SIZE                0x800U  // 2K
-  #define EEPROM_START_ADDRESS (0x8000000UL + (STM32_FLASH_SIZE) * 1024UL - (EEPROM_PAGE_SIZE) * 2UL)
+  #define EEPROM_PAGE_SIZE              (0x800U)  // 2K
+  #define EEPROM_START_ADDRESS      (0x8000000UL + (STM32_FLASH_SIZE) * 1024UL - (EEPROM_PAGE_SIZE) * 2UL)
   #define MARLIN_EEPROM_SIZE    EEPROM_PAGE_SIZE  // 2K
 #endif
 
-#define SPI_DEVICE                             2  // Maple
+#define SPI_DEVICE                             2
 
 //
 // Servos
@@ -69,16 +69,6 @@
 
 #ifndef FIL_RUNOUT_PIN
   #define FIL_RUNOUT_PIN                    PA4   // MT_DET
-#endif
-#ifndef FIL_RUNOUT_STATE
-  #define FIL_RUNOUT_STATE                  LOW
-#endif
-
-//
-// Probe enable
-//
-#if ENABLED(PROBE_ENABLE_DISABLE) && !defined(PROBE_ENABLE_PIN)
-  #define PROBE_ENABLE_PIN            SERVO0_PIN
 #endif
 
 //
@@ -121,13 +111,18 @@
 #define HEATER_0_PIN                        PC3
 #define HEATER_BED_PIN                      PA0
 
-#define FAN0_PIN                            PB1   // FAN
+#define FAN_PIN                             PB1   // FAN
 
 //
 // Misc. Functions
 //
 #define POWER_LOSS_PIN                      PA2   // PW_DET
 #define PS_ON_PIN                           PA3   // PW_OFF
+
+#if HAS_TFT_LVGL_UI
+  #define MT_DET_1_PIN                      PA4   // MT_DET
+  #define MT_DET_PIN_STATE                  LOW
+#endif
 
 #define WIFI_IO0_PIN                        PC13
 
@@ -138,7 +133,7 @@
   #define SDCARD_CONNECTION              ONBOARD
 #endif
 
-#define ONBOARD_SDIO
+#define SDIO_SUPPORT
 #define SDIO_CLOCK                       4500000  // 4.5 MHz
 #define SD_DETECT_PIN                       PD12
 #define ONBOARD_SPI_DEVICE                     1  // SPI1
@@ -151,17 +146,22 @@
 
 /**
  * Note: MKS Robin TFT screens use various TFT controllers.
- * If the screen stays white, disable 'LCD_RESET_PIN' to let the bootloader init the screen.
+ * If the screen stays white, disable 'LCD_RESET_PIN'
+ * to let the bootloader init the screen.
  */
 #if HAS_FSMC_TFT
-  #define LCD_USE_DMA_FSMC
-  #define FSMC_CS_PIN                       PD7   // NE4
-  #define FSMC_RS_PIN                       PD11  // A0
-  #define TFT_CS_PIN                 FSMC_CS_PIN  // NE4
-  #define TFT_RS_PIN                 FSMC_RS_PIN  // A0
 
+  #define TFT_CS_PIN                        PD7   // NE4
+  #define TFT_RS_PIN                        PD11  // A0
   #define LCD_RESET_PIN                     PC6   // FSMC_RST
   #define LCD_BACKLIGHT_PIN                 PD13
+
+  #define FSMC_CS_PIN                 TFT_CS_PIN  // NE4
+  #define FSMC_RS_PIN                 TFT_RS_PIN  // A0
+
+  #define LCD_USE_DMA_FSMC                        // Use DMA transfers to send data to the TFT
+  #define FSMC_DMA_DEV                      DMA2
+  #define FSMC_DMA_CHANNEL               DMA_CH5
 
   #if NEED_TOUCH_PINS
     #define TOUCH_CS_PIN                    PC2   // SPI2_NSS
@@ -169,11 +169,12 @@
     #define TOUCH_MISO_PIN                  PB14  // SPI2_MISO
     #define TOUCH_MOSI_PIN                  PB15  // SPI2_MOSI
   #endif
+
 #endif
 
 #if ENABLED(TFT_320x240)                          // TFT32/28
   #define TFT_DRIVER                     ILI9341
-  #define TFT_BUFFER_WORDS                 14400
+  #define TFT_BUFFER_SIZE                  14400
   #define ILI9341_COLOR_RGB
   // YV for normal screen mounting
   #define ILI9341_ORIENTATION  ILI9341_MADCTL_MY | ILI9341_MADCTL_MV
@@ -200,7 +201,7 @@
 #if ENABLED(SPI_FLASH)
   #define SPI_FLASH_SIZE               0x1000000  // 16MB
   #define SPI_FLASH_CS_PIN                  PB12  // Flash chip-select
-  #define SPI_FLASH_SCK_PIN                 PB13
-  #define SPI_FLASH_MISO_PIN                PB14
   #define SPI_FLASH_MOSI_PIN                PB15
+  #define SPI_FLASH_MISO_PIN                PB14
+  #define SPI_FLASH_SCK_PIN                 PB13
 #endif

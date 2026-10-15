@@ -36,116 +36,128 @@
 namespace ExtUI {
 
   void onStartup() {
-    dgus.initDisplay();
-    screen.updateScreenVPData();
+    dgusdisplay.InitDisplay();
+    ScreenHandler.UpdateScreenVPData();
   }
 
-  void onIdle() { screen.loop(); }
+  void onIdle() { ScreenHandler.loop(); }
 
   void onPrinterKilled(FSTR_P const error, FSTR_P const) {
-    #if DGUS_LCD_UI_MKS
-      screen.sendInfoScreenMKS(GET_TEXT_F(MSG_HALTED), error, nullptr, GET_TEXT_F(MSG_PLEASE_RESET), mks_language_index);
-    #else
-      screen.sendInfoScreen(GET_TEXT_F(MSG_HALTED), error, FPSTR(NUL_STR), GET_TEXT_F(MSG_PLEASE_RESET));
-    #endif
-
-    screen.gotoScreen(DGUS_SCREEN_KILL);
-    while (!screen.loop());  // Wait while anything is left to be sent
+    ScreenHandler.sendinfoscreen(GET_TEXT_F(MSG_HALTED), error, FPSTR(NUL_STR), GET_TEXT_F(MSG_PLEASE_RESET), true, true, true, true);
+    ScreenHandler.GotoScreen(DGUSLCD_SCREEN_KILL);
+    while (!ScreenHandler.loop());  // Wait while anything is left to be sent
   }
 
-  void onMediaMounted() { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
-  void onMediaError()   { TERN_(HAS_MEDIA, screen.sdCardError()); }
-  void onMediaRemoved() { TERN_(HAS_MEDIA, screen.sdCardRemoved()); }
+  void onMediaInserted() { TERN_(SDSUPPORT, ScreenHandler.SDCardInserted()); }
+  void onMediaError()    { TERN_(SDSUPPORT, ScreenHandler.SDCardError()); }
+  void onMediaRemoved()  { TERN_(SDSUPPORT, ScreenHandler.SDCardRemoved()); }
+
+  void onPlayTone(const uint16_t frequency, const uint16_t duration) {}
+  void onPrintTimerStarted() {}
+  void onPrintTimerPaused() {}
+  void onPrintTimerStopped() {}
+  void onFilamentRunout(const extruder_t extruder) {}
 
   void onUserConfirmRequired(const char * const msg) {
     if (msg) {
-      #if DGUS_LCD_UI_MKS
-        screen.sendInfoScreenMKS(F("Please confirm."), nullptr, msg, nullptr, mks_language_index);
-      #else
-        screen.sendInfoScreen(F("Please confirm."), nullptr, msg, nullptr, true, false, false, false);
-      #endif
-      screen.setupConfirmAction(setUserConfirmed);
-      screen.gotoScreen(DGUS_SCREEN_POPUP);
+      ScreenHandler.sendinfoscreen(F("Please confirm."), nullptr, msg, nullptr, true, true, false, true);
+      ScreenHandler.SetupConfirmAction(setUserConfirmed);
+      ScreenHandler.GotoScreen(DGUSLCD_SCREEN_POPUP);
     }
-    else if (screen.getCurrentScreen() == DGUS_SCREEN_POPUP) {
-      screen.setupConfirmAction(nullptr);
-      screen.popToOldScreen();
+    else if (ScreenHandler.getCurrentScreen() == DGUSLCD_SCREEN_POPUP) {
+      ScreenHandler.SetupConfirmAction(nullptr);
+      ScreenHandler.PopToOldScreen();
     }
   }
 
-  // For fancy LCDs include an icon ID, message, and translated button title
-  void onUserConfirmRequired(const int, const char * const cstr, FSTR_P const) {
-    onUserConfirmRequired(cstr);
-  }
-  void onUserConfirmRequired(const int, FSTR_P const fstr, FSTR_P const) {
-    onUserConfirmRequired(fstr);
+  void onStatusChanged(const char * const msg) { ScreenHandler.setstatusmessage(msg); }
+
+  void onHomingStart() {}
+  void onHomingDone() {}
+  void onPrintDone() {}
+
+  void onFactoryReset() {}
+
+  void onStoreSettings(char *buff) {
+    // Called when saving to EEPROM (i.e. M500). If the ExtUI needs
+    // permanent data to be stored, it can write up to eeprom_data_size bytes
+    // into buff.
+
+    // Example:
+    //  static_assert(sizeof(myDataStruct) <= eeprom_data_size);
+    //  memcpy(buff, &myDataStruct, sizeof(myDataStruct));
   }
 
-  #if ENABLED(ADVANCED_PAUSE_FEATURE)
-    void onPauseMode(
-      const PauseMessage message,
-      const PauseMode mode/*=PAUSE_MODE_SAME*/,
-      const uint8_t extruder/*=motion.extruder*/
-    ) {
-      stdOnPauseMode(message, mode, extruder);
+  void onLoadSettings(const char *buff) {
+    // Called while loading settings from EEPROM. If the ExtUI
+    // needs to retrieve data, it should copy up to eeprom_data_size bytes
+    // from buff
+
+    // Example:
+    //  static_assert(sizeof(myDataStruct) <= eeprom_data_size);
+    //  memcpy(&myDataStruct, buff, sizeof(myDataStruct));
+  }
+
+  void onPostprocessSettings() {
+    // Called after loading or resetting stored settings
+  }
+
+  void onSettingsStored(bool success) {
+    // Called after the entire EEPROM has been written,
+    // whether successful or not.
+  }
+
+  void onSettingsLoaded(bool success) {
+    // Called after the entire EEPROM has been read,
+    // whether successful or not.
+  }
+
+  #if HAS_MESH
+    void onLevelingStart() {}
+    void onLevelingDone() {}
+
+    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval) {
+      // Called when any mesh points are updated
+    }
+
+    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const probe_state_t state) {
+      // Called to indicate a special condition
     }
   #endif
-
-  void onStatusChanged(const char * const msg) { screen.setStatusMessage(msg); }
 
   #if ENABLED(POWER_LOSS_RECOVERY)
     void onPowerLossResume() {
       // Called on resume from power-loss
-      IF_DISABLED(DGUS_LCD_UI_MKS, screen.gotoScreen(DGUS_SCREEN_POWER_LOSS));
+      IF_DISABLED(DGUS_LCD_UI_MKS, ScreenHandler.GotoScreen(DGUSLCD_SCREEN_POWER_LOSS));
     }
   #endif
 
   #if HAS_PID_HEATING
-    void onPIDTuning(const pidresult_t rst) {
+    void onPidTuning(const result_t rst) {
       // Called for temperature PID tuning result
       switch (rst) {
         case PID_STARTED:
-        case PID_BED_STARTED:
-        case PID_CHAMBER_STARTED:
-          screen.setStatusMessage(GET_TEXT_F(MSG_PID_AUTOTUNE));
+          ScreenHandler.setstatusmessage(GET_TEXT_F(MSG_PID_AUTOTUNE));
           break;
         case PID_BAD_HEATER_ID:
-          screen.setStatusMessage(GET_TEXT_F(MSG_PID_BAD_HEATER_ID));
+          ScreenHandler.setstatusmessage(GET_TEXT_F(MSG_PID_BAD_HEATER_ID));
           break;
         case PID_TEMP_TOO_HIGH:
-          screen.setStatusMessage(GET_TEXT_F(MSG_PID_TEMP_TOO_HIGH));
+          ScreenHandler.setstatusmessage(GET_TEXT_F(MSG_PID_TEMP_TOO_HIGH));
           break;
         case PID_TUNING_TIMEOUT:
-          screen.setStatusMessage(GET_TEXT_F(MSG_PID_TIMEOUT));
+          ScreenHandler.setstatusmessage(GET_TEXT_F(MSG_PID_TIMEOUT));
           break;
         case PID_DONE:
-          screen.setStatusMessage(GET_TEXT_F(MSG_PID_AUTOTUNE_DONE));
+          ScreenHandler.setstatusmessage(GET_TEXT_F(MSG_PID_AUTOTUNE_DONE));
           break;
       }
-      screen.gotoScreen(DGUS_SCREEN_MAIN);
+      ScreenHandler.GotoScreen(DGUSLCD_SCREEN_MAIN);
     }
   #endif
 
-  #if ENABLED(MPC_AUTOTUNE)
-    void onMPCTuning(const mpcresult_t rst) {
-      // Called for temperature MPC tuning result
-      switch (rst) {
-        case MPC_STARTED:
-          screen.setStatusMessage(GET_TEXT_F(MSG_MPC_AUTOTUNE));
-          break;
-        case MPC_TEMP_ERROR:
-          //screen.setStatusMessage(GET_TEXT_F(MSG_MPC_TEMP_ERROR));
-          break;
-        case MPC_INTERRUPTED:
-          //screen.setStatusMessage(GET_TEXT_F(MSG_MPC_INTERRUPTED));
-          break;
-        case MPC_DONE:
-          //screen.setStatusMessage(GET_TEXT_F(MSG_MPC_AUTOTUNE_DONE));
-          break;
-      }
-      screen.gotoScreen(DGUS_SCREEN_MAIN);
-    }
-  #endif
+  void onSteppersDisabled() {}
+  void onSteppersEnabled()  {}
 }
 
 #endif // HAS_DGUS_LCD_CLASSIC

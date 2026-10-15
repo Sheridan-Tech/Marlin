@@ -37,56 +37,101 @@ using namespace Anycubic;
 
 namespace ExtUI {
 
-  void onStartup() { chiron.startup(); }
+  void onStartup() { Chiron.Startup(); }
 
-  void onIdle() { chiron.idleLoop(); }
+  void onIdle() { Chiron.IdleLoop(); }
 
   void onPrinterKilled(FSTR_P const error, FSTR_P const component) {
-    chiron.printerKilled(error, component);
+    Chiron.PrinterKilled(error, component);
   }
 
-  void onMediaMounted() { chiron.mediaEvent(AC_media_inserted); }
-  void onMediaError()   { chiron.mediaEvent(AC_media_error);    }
-  void onMediaRemoved() { chiron.mediaEvent(AC_media_removed);  }
+  void onMediaInserted() { Chiron.MediaEvent(AC_media_inserted); }
+  void onMediaError()    { Chiron.MediaEvent(AC_media_error);    }
+  void onMediaRemoved()  { Chiron.MediaEvent(AC_media_removed);  }
 
-  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {
+  void onPlayTone(const uint16_t frequency, const uint16_t duration) {
     #if ENABLED(SPEAKER)
       ::tone(BEEPER_PIN, frequency, duration);
     #endif
   }
 
-  void onPrintTimerStarted() { chiron.timerEvent(AC_timer_started); }
-  void onPrintTimerPaused()  { chiron.timerEvent(AC_timer_paused);  }
-  void onPrintTimerStopped() { chiron.timerEvent(AC_timer_stopped); }
+  void onPrintTimerStarted() { Chiron.TimerEvent(AC_timer_started); }
+  void onPrintTimerPaused()  { Chiron.TimerEvent(AC_timer_paused);  }
+  void onPrintTimerStopped() { Chiron.TimerEvent(AC_timer_stopped); }
+  void onPrintDone() {}
 
-  void onFilamentRunout(const extruder_t)            { chiron.filamentRunout(); }
+  void onFilamentRunout(const extruder_t)            { Chiron.FilamentRunout();             }
 
-  void onUserConfirmRequired(const char * const msg) { chiron.confirmationRequest(msg); }
+  void onUserConfirmRequired(const char * const msg) { Chiron.ConfirmationRequest(msg);     }
+  void onStatusChanged(const char * const msg)       { Chiron.StatusChange(msg);            }
 
-  // For fancy LCDs include an icon ID, message, and translated button title
-  void onUserConfirmRequired(const int, const char * const cstr, FSTR_P const) {
-    onUserConfirmRequired(cstr);
+  void onHomingStart() {}
+  void onHomingDone() {}
+
+  void onFactoryReset() {}
+
+  void onStoreSettings(char *buff) {
+    // Called when saving to EEPROM (i.e. M500). If the ExtUI needs
+    // permanent data to be stored, it can write up to eeprom_data_size bytes
+    // into buff.
+
+    // Example:
+    //  static_assert(sizeof(myDataStruct) <= eeprom_data_size);
+    //  memcpy(buff, &myDataStruct, sizeof(myDataStruct));
   }
-  void onUserConfirmRequired(const int, FSTR_P const fstr, FSTR_P const) {
-    onUserConfirmRequired(fstr);
+
+  void onLoadSettings(const char *buff) {
+    // Called while loading settings from EEPROM. If the ExtUI
+    // needs to retrieve data, it should copy up to eeprom_data_size bytes
+    // from buff
+
+    // Example:
+    //  static_assert(sizeof(myDataStruct) <= eeprom_data_size);
+    //  memcpy(&myDataStruct, buff, sizeof(myDataStruct));
   }
 
-  #if ENABLED(ADVANCED_PAUSE_FEATURE)
-    void onPauseMode(
-      const PauseMessage message,
-      const PauseMode mode/*=PAUSE_MODE_SAME*/,
-      const uint8_t extruder/*=motion.extruder*/
-    ) {
-      stdOnPauseMode(message, mode, extruder);
+  void onPostprocessSettings() {
+    // Called after loading or resetting stored settings
+  }
+
+  void onSettingsStored(bool success) {
+    // Called after the entire EEPROM has been written,
+    // whether successful or not.
+  }
+
+  void onSettingsLoaded(bool success) {
+    // Called after the entire EEPROM has been read,
+    // whether successful or not.
+  }
+
+  #if HAS_MESH
+    void onLevelingStart() {}
+    void onLevelingDone() {}
+
+    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval) {
+      // Called when any mesh points are updated
+      //SERIAL_ECHOLNPGM("onMeshUpdate() x:", xpos, " y:", ypos, " z:", zval);
+    }
+
+    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const probe_state_t state) {
+      // Called to indicate a special condition
+      //SERIAL_ECHOLNPGM("onMeshUpdate() x:", xpos, " y:", ypos, " state:", state);
     }
   #endif
 
-  void onStatusChanged(const char * const msg)       { chiron.statusChange(msg); }
-
   #if ENABLED(POWER_LOSS_RECOVERY)
     // Called on resume from power-loss
-    void onPowerLossResume() { chiron.powerLossRecovery(); }
+    void onPowerLossResume() { Chiron.PowerLossRecovery(); }
   #endif
+
+  #if HAS_PID_HEATING
+    void onPidTuning(const result_t rst) {
+      // Called for temperature PID tuning result
+    }
+  #endif
+
+  void onSteppersDisabled() {}
+  void onSteppersEnabled()  {}
 }
 
 #endif // ANYCUBIC_LCD_CHIRON

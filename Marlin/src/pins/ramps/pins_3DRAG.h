@@ -23,9 +23,6 @@
 
 /**
  * 3DRAG (and K8200 / K8400) Arduino Mega with RAMPS v1.4 pin assignments
- * This may be compatible with the standalone Controller variant.
- * Schematic: https://reprap.org/wiki/File:Schema_base.jpg
- * ATmega2560, ATmega1280
  */
 
 #ifndef BOARD_INFO_NAME
@@ -74,7 +71,7 @@
 //
 // Misc. Functions
 //
-#define SD_SS_PIN                             25
+#define SDSS                                  25
 
 #ifndef CASE_LIGHT_PIN
   #define CASE_LIGHT_PIN                      -1  // Hardware PWM but one is not available on expansion header
@@ -84,13 +81,13 @@
  *  M3/M4/M5 - Spindle/Laser Control
  *
  *  If you want to control the speed of your spindle then you'll have
- *  to sacrifce the Extruder and pull some signals off the Z stepper
+ *  have to sacrifce the Extruder and pull some signals off the Z stepper
  *  driver socket.
  *
  *  The following assumes:
  *   - the Z stepper driver socket is empty
  *   - the extruder driver socket has a driver board plugged into it
- *   - the Z stepper wires are attached the extruder connector
+ *   - the Z stepper wires are attached the the extruder connector
  *
  *  If you want to keep the extruder AND don't have a LCD display then
  *  you can still control the power on/off and spindle direction.
@@ -116,7 +113,7 @@
     #define SPINDLE_LASER_PWM_PIN             46  // Hardware PWM
     #define SPINDLE_LASER_ENA_PIN             62  // Pullup!
     #define SPINDLE_DIR_PIN                   48
-  #elif !ALL(HAS_WIRED_LCD, IS_NEWPANEL)          // Use expansion header if no LCD in use
+  #elif !BOTH(HAS_WIRED_LCD, IS_NEWPANEL)          // Use expansion header if no LCD in use
     #define SPINDLE_LASER_ENA_PIN             16  // Pullup or pulldown!
     #define SPINDLE_DIR_PIN                   17
     #if !NUM_SERVOS                               // Use servo connector if possible
@@ -130,13 +127,12 @@
 //
 // LCD / Controller
 //
-
 #if HAS_WIRED_LCD && IS_NEWPANEL
   #undef BEEPER_PIN
 
   // TODO: Remap EXP1/2 based on adapter
   #define LCD_PINS_RS                         27
-  #define LCD_PINS_EN                         29
+  #define LCD_PINS_ENABLE                     29
   #define LCD_PINS_D4                         37
   #define LCD_PINS_D5                         35
   #define LCD_PINS_D6                         33

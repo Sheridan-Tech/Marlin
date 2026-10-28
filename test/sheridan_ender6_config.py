@@ -30,4 +30,14 @@ assert re.search(r"(?m)^#define BAUDRATE 250000",cfg)
 assert re.search(r"(?m)^\s*#define GRID_MAX_POINTS_X 5",cfg)
 assert re.search(r"(?m)^#define DEFAULT_AXIS_STEPS_PER_UNIT\s+\{\s*80,\s*80,\s*400,\s*140\s*\}",cfg)
 assert re.search(r"(?m)^#define TEMP_SENSOR_BED 5\b",cfg), "Unexpected bed thermistor table"
+
+# Regression: upstream IA_CREALITY formerly had an unconditional break immediately
+# before position-entry code, making X/Y/Z display commands unreachable while Home worked.
+rts=(base/"Marlin"/"src"/"lcd"/"extui"/"ia_creality"/"ia_creality_rts.cpp").read_text(encoding="utf-8")
+assert "case XYZEaxis: {" in rts and "case Filament: {" in rts, "IA_CREALITY position handler missing"
+jog=rts.split("case XYZEaxis: {",1)[1].split("case Filament: {",1)[0]
+assert all(key in jog for key in ("DisplayXaxis","DisplayYaxis","DisplayZaxis","AutoZero","setAxisPosition_mm(targetPos, axis)")), "IA_CREALITY touch motion handlers missing"
+assert not re.search(r"}\s*break;\s*\n\s*(?://[^\n]*\n\s*)*float targetPos",jog), "Unconditional break prevents DWIN X/Y/Z target movement"
+assert re.search(r"else if \(recdat\.addr == AutoZero\) \{.*?\n\s*break;[^\n]*\n\s*\}",jog,re.S), "Autohome must retain its own early exit"
+
 print("Ender 6 static profile assertions: PASS (physical hardware still unverified)")

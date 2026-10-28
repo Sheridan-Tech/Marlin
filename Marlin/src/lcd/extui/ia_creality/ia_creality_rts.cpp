@@ -1311,8 +1311,10 @@ void RTS::handleData() {
           axisPageNum = recdat.data[0];
           waitway = 0;
         }
-      } break;
+        break; // AutoZero handles homing / increment selection, not XYZE position entry.
+      }
 
+      // Reachable for DisplayXaxis, DisplayYaxis and DisplayZaxis touch targets.
       float targetPos = float(recdat.data[0]) / 10;
       LIMIT(targetPos, min, max);
       setAxisPosition_mm(targetPos, axis);

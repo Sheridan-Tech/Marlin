@@ -83,3 +83,10 @@ The exact heater and thermistor physically installed may differ from what origin
 
 ## Marlin 2.1.3-b3 shaping compile warning
 - Marlin emits: `#warning Input Shaping for CORE / MARKFORGED kinematic axes is still experimental.` The feature is deliberately enabled to preserve running M503 X/Y 40 Hz, D0.15 baseline. It is not proof those settings improve vibration or that this implementation matches the legacy vendor code. Do not validate high-speed acceleration from this configuration alone; perform print comparisons and observe for missed steps / oscillation.
+
+## Probable hotend identification, 2026-10-28
+- Owner reports likely **Creality Spider V2.0**, not yet independently verified by box/part number.
+- Likely matching Creality OEM item: **4008030043**, sold as "Spider High Temperature Hotend"; official listing describes a **300 C** hotend. Official product: https://mvip.creality.com/en/goods/goodsDetail/1833
+- The OEM hardware rating does NOT identify the installed thermistor curve or heater. The Spider may have received the original Ender 6 sensor/heater during installation or kit-supplied replacements. Confirm which were installed.
+- **Do not change** TEMP_SENSOR_0=1 or HEATER_0_MAXTEMP=260 based on a provisional identification. Thermistor table 1 is 100k EPCOS-style, used in the last working TinyMachines source, but accuracy at operating temperature is unverified.
+- To authorize a temperature capability change, record packaging SKU, installed sensor/heater details, independent temperature validation, and thermal-safety tests first. Higher-temperature printing is not required to benchmark CoreXY acceleration.

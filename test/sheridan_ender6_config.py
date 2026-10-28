@@ -20,7 +20,9 @@ for token in ["E6_USE_BLTOUCH","USE_PROBE_FOR_Z_HOMING",
 assert re.search(r"(?m)^#define DGUS_LCD_UI IA_CREALITY\s*$",cfg), "Wrong DWIN UI"
 assert re.search(r"(?m)^#define MOTHERBOARD BOARD_CREALITY_V431\s*$",cfg) or re.search(
     r"(?m)^\s+#define MOTHERBOARD BOARD_CREALITY_V431\s*$",cfg), "Wrong controller"
+assert re.search(r"(?m)^#define TEMP_SENSOR_0 1(?:\s|$)",cfg), "Unreviewed hotend thermistor change: identity still unverified"
 assert re.search(r"(?m)^#define HEATER_0_MAXTEMP 260\s*$",cfg), "Temperature limit changed"
+assert re.search(r"(?m)^#define HOTEND_OVERSHOOT 15(?:\s|$)",cfg), "Hotend overshoot guard changed"
 assert re.search(r"(?m)^#define DEFAULT_MAX_ACCELERATION\s+\{\s*7000,\s*7000,\s*100,\s*75\s*\}",cfg)
 assert re.search(r"(?m)^#define DEFAULT_ACCELERATION\s+3000",cfg)
 assert re.search(r"(?m)^#define DEFAULT_TRAVEL_ACCELERATION\s+5000",cfg)

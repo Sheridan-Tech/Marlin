@@ -99,7 +99,7 @@
  *
  * :[2400, 9600, 19200, 38400, 57600, 115200, 250000, 500000, 1000000]
  */
-#define BAUDRATE 115200
+#define BAUDRATE 250000 // Confirmed by OctoPrint handshake 2026-10-27
 
 //#define BAUD_RATE_GCODE     // Enable G-code M575 to set the baud rate
 
@@ -581,7 +581,7 @@
 #define TEMP_SENSOR_5 0
 #define TEMP_SENSOR_6 0
 #define TEMP_SENSOR_7 0
-#define TEMP_SENSOR_BED 1
+#define TEMP_SENSOR_BED 5 // Legacy TinyMachines BedDC profile; VERIFY physical sensor before heating
 #define TEMP_SENSOR_PROBE 0
 #define TEMP_SENSOR_CHAMBER 0
 #define TEMP_SENSOR_COOLER 0
@@ -715,9 +715,9 @@
     #define DEFAULT_Ki_LIST {   1.08,   1.08 }
     #define DEFAULT_Kd_LIST { 114.00, 114.00 }
   #else
-    #define DEFAULT_Kp  30.86
-    #define DEFAULT_Ki   3.10
-    #define DEFAULT_Kd  75.84
+    #define DEFAULT_Kp  18.69 // Captured M301; retune after installation
+    #define DEFAULT_Ki   1.34
+    #define DEFAULT_Kd  65.00
   #endif
 #else
   #define BANG_MAX 255    // Limit hotend current while in bang-bang mode; 255=full current
@@ -815,9 +815,9 @@
 
   // 120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   // from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-  #define DEFAULT_bedKp  327.11
-  #define DEFAULT_bedKi   19.20
-  #define DEFAULT_bedKd 1393.45
+  #define DEFAULT_bedKp  690.34 // Captured M304 from insulated bed; retune
+  #define DEFAULT_bedKi   111.47
+  #define DEFAULT_bedKd 1068.83
 
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #else
@@ -1305,7 +1305,7 @@
  * Override with M92 (when enabled below)
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 95 } // Provisional E: verify gearing and calibrate
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 140 } // Captured via M503; re-verify extrusion
 
 /**
  * Enable support for M92. Disable to save at least ~530 bytes of flash.
@@ -1330,7 +1330,7 @@
  * Override with M201
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_ACCELERATION      { 7000, 7000, 100, 1000 }
+#define DEFAULT_MAX_ACCELERATION      { 7000, 7000, 100, 75 } // Captured via M503
 
 //#define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2
 #if ENABLED(LIMITED_MAX_ACCEL_EDITING)
@@ -1346,7 +1346,7 @@
  *   M204 T    Travel Acceleration
  */
 #define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration for retracts
+#define DEFAULT_RETRACT_ACCELERATION  1000 // Preserve running M503 value    // E acceleration for retracts
 #define DEFAULT_TRAVEL_ACCELERATION   5000    // X, Y, Z acceleration for travel (non printing) moves
 
 /**
@@ -2297,7 +2297,7 @@
   //===========================================================================
 
   #define MESH_INSET 10          // Set Mesh bounds as an inset region of the bed
-  #define GRID_MAX_POINTS_X 3
+  #define GRID_MAX_POINTS_X 5 // Preserve running 5x5 manual mesh dimensions
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
   //#define MESH_G28_REST_ORIGIN // After homing all axes ('G28' or 'G28 XYZ') rest Z at Z_MIN_POS

@@ -60,6 +60,9 @@ static i2s_dma_t dma;
 // output value
 uint32_t i2s_port_data = 0;
 
+// Samples pushed so far, for timing the stepper events
+static uint32_t sample_count = 0;
+
 #define I2S_ENTER_CRITICAL()  portENTER_CRITICAL(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL()   portEXIT_CRITICAL(&i2s_spinlock[i2s_num])
 
@@ -134,46 +137,25 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg) {
 
   if (high_priority_task_awoken == pdTRUE) portYIELD_FROM_ISR();
 
-  // clear interrupt
-  I2S0.int_clr.val = I2S0.int_st.val; //clear pending interrupt
+  // Clear pending interrupt
+  I2S0.int_clr.val = I2S0.int_st.val;
 }
 
+static void i2s_push_idle(hal_timer_t n);
+
+/**
+ * Feed the I2S stream with the stepper scheduler shared with the stepper timer ISR.
+ * One sample is one stepper timer tick. Step pulses push their own samples, so
+ * those are taken off the time to wait for the next stepper event.
+ */
 void stepperTask(void *parameter) {
-  uint32_t nextMainISR = 0;
-  #if ENABLED(LIN_ADVANCE)
-    uint32_t nextAdvanceISR = Stepper::LA_ADV_NEVER;
-  #endif
-
   for (;;) {
-    xQueueReceive(dma.queue, &dma.current, portMAX_DELAY);
-    dma.rw_pos = 0;
+    const uint32_t start = sample_count;
+    const hal_timer_t interval = stepper.isr_events(),
+                      used = sample_count - start;
 
-    while (dma.rw_pos < DMA_SAMPLE_COUNT) {
-      // Fill with the port data post pulse_phase until the next step
-      if (nextMainISR && TERN1(LIN_ADVANCE, nextAdvanceISR))
-        i2s_push_sample();
-
-      // i2s_push_sample() is also called from Stepper::pulse_phase_isr() and Stepper::advance_isr()
-      // in a rare case where both are called, we need to double decrement the counters
-      const uint8_t push_count = 1 + (!nextMainISR && TERN0(LIN_ADVANCE, !nextAdvanceISR));
-
-      #if ENABLED(LIN_ADVANCE)
-        if (!nextAdvanceISR) {
-          Stepper::advance_isr();
-          nextAdvanceISR = Stepper::la_interval;
-        }
-        else if (nextAdvanceISR == Stepper::LA_ADV_NEVER)
-          nextAdvanceISR = Stepper::la_interval;
-      #endif
-
-      if (!nextMainISR) {
-        Stepper::pulse_phase_isr();
-        nextMainISR = Stepper::block_phase_isr();
-      }
-
-      nextMainISR -= push_count;
-      TERN_(LIN_ADVANCE, nextAdvanceISR -= push_count);
-    }
+    // Wait out the rest of the interval. Never run the events again without letting time pass.
+    i2s_push_idle(interval > used ? interval - used : used ? 0 : 1); // Blocks while all DMA buffers are full
   }
 }
 
@@ -354,11 +336,21 @@ uint8_t i2s_state(uint8_t pin) {
   return TEST(i2s_port_data, pin);
 }
 
+// Make sure the current DMA buffer has room, taking the next free one when it's full
+static void i2s_buffer_ready() {
+  if (!dma.current || dma.rw_pos >= DMA_SAMPLE_COUNT) {
+    xQueueReceive(dma.queue, &dma.current, portMAX_DELAY);
+    dma.rw_pos = 0;
+  }
+}
+
 void i2s_push_sample() {
+  i2s_buffer_ready();
+
   // Every 4µs (when space in DMA buffer) toggle each expander PWM output using
   // the current duty cycle/frequency so they sync with any steps (once
   // through the DMA/FIFO buffers).  PWM signal inversion handled by other functions
-  LOOP_L_N(p, MAX_EXPANDER_BITS) {
+  for (uint8_t p = 0; p < MAX_EXPANDER_BITS; ++p) {
     if (hal.pwm_pin_data[p].pwm_duty_ticks > 0) { // pin has active pwm?
       if (hal.pwm_pin_data[p].pwm_tick_count == 0) {
         if (TEST32(i2s_port_data, p)) {  // hi->lo
@@ -376,6 +368,38 @@ void i2s_push_sample() {
   }
 
   dma.current[dma.rw_pos++] = i2s_port_data;
+  sample_count++;
+}
+
+/**
+ * Push the idle samples between stepper events. The output only changes where an
+ * expander PWM pin toggles, so the samples up to the next toggle are written as one run.
+ */
+static void i2s_push_idle(hal_timer_t n) {
+  while (n) {
+    i2s_buffer_ready();
+
+    // Samples until the buffer is full, the idle time ends, or a PWM pin toggles
+    uint32_t run = _MIN(n, hal_timer_t(DMA_SAMPLE_COUNT - dma.rw_pos)), pwm_pins = 0;
+    for (uint8_t p = 0; p < MAX_EXPANDER_BITS; ++p)
+      if (hal.pwm_pin_data[p].pwm_duty_ticks > 0) {
+        SBI32(pwm_pins, p);
+        NOMORE(run, hal.pwm_pin_data[p].pwm_tick_count);
+      }
+
+    if (!run) { i2s_push_sample(); --n; continue; } // A PWM pin toggles in this sample
+
+    for (uint8_t p = 0; p < MAX_EXPANDER_BITS; ++p)
+      if (TEST32(pwm_pins, p)) hal.pwm_pin_data[p].pwm_tick_count -= run;
+
+    const uint32_t data = i2s_port_data;
+    uint32_t * const out = &dma.current[dma.rw_pos];
+    for (uint32_t i = 0; i < run; ++i) out[i] = data;
+
+    dma.rw_pos += run;
+    sample_count += run;
+    n -= run;
+  }
 }
 
 #endif // !USE_ESP32_EXIO

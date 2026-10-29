@@ -56,9 +56,9 @@ typedef struct _hd44780_charmap_t {
 } hd44780_charmap_t;
 
 #ifdef __AVR__
-  #define IV(a) U##a
+  #define IV(a) lchar_t(U##a)
 #else
-  #define IV(a) L##a
+  #define IV(a) lchar_t(L##a)
 #endif
 
 static const hd44780_charmap_t g_hd44780_charmap_device[] PROGMEM = {
@@ -438,7 +438,9 @@ static const hd44780_charmap_t g_hd44780_charmap_device[] PROGMEM = {
     {IV('⎲'), 0x12, 0},
     {IV('⎳'), 0x13, 0},
 
-    {IV('⏱'), 0x07, 0}, // Marlin special: '🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛🕜🕝🕞🕟🕠🕡🕢🕣🕤🕥🕦🕧 ⌚⌛⏰⏱⏳⧖⧗'  LCD_STR_CLOCK (0x05)
+    #if NEED_CLOCK_GLYPH
+      {IV('⏱'), 0x07, 0}, // Marlin special: '🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛🕜🕝🕞🕟🕠🕡🕢🕣🕤🕥🕦🕧 ⌚⌛⏰⏱⏳⧖⧗'  LCD_STR_CLOCK (0x05)
+    #endif
     {IV('┌'), 0xC9, 0},
     {IV('┐'), 0xCA, 0},
     {IV('└'), 0xCB, 0},
@@ -448,7 +450,6 @@ static const hd44780_charmap_t g_hd44780_charmap_device[] PROGMEM = {
     {IV('⭡'), 0xC5, 0},
     {IV('⭢'), 0xC7, 0},
     {IV('⭣'), 0xC6, 0},
-
 
     {IV('⯆'), 0xF5, 0},
     {IV('⯇'), 0xF7, 0}, // ⯅
@@ -499,7 +500,6 @@ static const hd44780_charmap_t g_hd44780_charmap_device[] PROGMEM = {
     //{IV(''), 0x9D, 0},
     //{IV(''), 0x9E, 0},
     //{IV(''), 0x9F, 0},
-
 
     {IV('¼'), 0xF0, 0}, // 00BC
     {IV('⅓'), 0xF1, 0},
@@ -962,7 +962,10 @@ static const hd44780_charmap_t g_hd44780_charmap_common[] PROGMEM = {
   {IV('≡'), '=', 0}, // 2261
   {IV('≤'), '<', '='},// 2264, ≤≥ ⩽⩾
   {IV('≥'), '>', '='}, // 2265
-  {IV('⏱'), 0x07, 0}, // 23F1, Marlin special: '🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛🕜🕝🕞🕟🕠🕡🕢🕣🕤🕥🕦🕧 ⌚⌛⏰⏱⏳⧖⧗'  LCD_STR_CLOCK (0x05)
+
+  #if NEED_CLOCK_GLYPH
+    {IV('⏱'), 0x07, 0}, // 23F1, Marlin special: '🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛🕜🕝🕞🕟🕠🕡🕢🕣🕤🕥🕦🕧 ⌚⌛⏰⏱⏳⧖⧗'  LCD_STR_CLOCK (0x05)
+  #endif
 
   {IV('゠'), '=', 0}, // 30A0
 
@@ -1043,7 +1046,7 @@ int lcd_put_lchar_max(const lchar_t &c, const pixel_len_t max_length) {
  * @param cb_read_byte : the callback function to read one byte from the utf8_str (from RAM or ROM)
  * @param max_length : the pixel length of the string allowed (or number of slots in HD44780)
  *
- * @return the number of pixels advanced
+ * @return the number of characters emitted
  *
  * Draw a UTF-8 string
  */

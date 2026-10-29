@@ -73,7 +73,6 @@
 #if ENABLED(LIGHTWEIGHT_UI)
 
 #include "../marlinui.h"
-#include "../fontutils.h"
 #include "../lcdprint.h"
 #include "../../libs/duration_t.h"
 #include "../../module/motion.h"
@@ -81,7 +80,7 @@
 #include "../../module/temperature.h"
 #include "../../libs/numtostr.h"
 
-#if ENABLED(SDSUPPORT)
+#if HAS_MEDIA
   #include "../../sd/cardreader.h"
 #endif
 
@@ -238,7 +237,7 @@ void ST7920_Lite_Status_Screen::clear_ddram() {
 
 /* This fills the entire graphics buffer with zeros */
 void ST7920_Lite_Status_Screen::clear_gdram() {
-  LOOP_L_N(y, BUFFER_HEIGHT) {
+  for (uint8_t y = 0; y < BUFFER_HEIGHT; ++y) {
     set_gdram_address(0, y);
     begin_data();
     for (uint8_t i = (BUFFER_WIDTH) / 16; i--;) write_word(0);
@@ -436,7 +435,7 @@ void ST7920_Lite_Status_Screen::draw_degree_symbol(uint8_t x, uint8_t y, const b
     const uint8_t x_word  = x >> 1,
                   y_top   = degree_symbol_y_top,
                   y_bot   = y_top + COUNT(degree_symbol);
-    LOOP_S_L_N(i, y_top, y_bot) {
+    for (uint8_t i = y_top; i < y_bot; ++i) {
       uint8_t byte = pgm_read_byte(p_bytes++);
       set_gdram_address(x_word, i + y * 16);
       begin_data();
@@ -479,13 +478,7 @@ void ST7920_Lite_Status_Screen::draw_fan_icon(const bool whichIcon) {
 }
 
 void ST7920_Lite_Status_Screen::draw_heat_icon(const bool whichIcon, const bool heating) {
-  set_ddram_address(
-    #if HOTENDS == 1
-      DDRAM_LINE_2
-    #else
-      DDRAM_LINE_3
-    #endif
-  );
+  set_ddram_address((HOTENDS < 2) ? DDRAM_LINE_2 : DDRAM_LINE_3);
   begin_data();
   if (heating)
     write_word(whichIcon ? CGRAM_ICON_1_WORD : CGRAM_ICON_2_WORD);
@@ -569,16 +562,14 @@ void ST7920_Lite_Status_Screen::draw_feedrate_percentage(const uint16_t percenta
 }
 
 void ST7920_Lite_Status_Screen::draw_status_message() {
-  const char *str = ui.status_message;
-
   set_ddram_address(DDRAM_LINE_4);
   begin_data();
   #if ENABLED(STATUS_MESSAGE_SCROLLING)
-    uint8_t slen = utf8_strlen(str);
+    uint8_t slen = ui.status_message.glyphs();
 
     if (slen <= TEXT_MODE_LCD_WIDTH) {
       // String fits the LCD, so just print it
-      write_str(str);
+      write_str(ui.status_message);
       while (slen < TEXT_MODE_LCD_WIDTH) { write_byte(' '); ++slen; }
     }
     else {  // String is larger than the available space in ST7920_Lite_Status_Screen::
@@ -596,7 +587,7 @@ void ST7920_Lite_Status_Screen::draw_status_message() {
           write_byte(' ');
           if (--chars) {                            // Draw a third space if there's room
             write_byte(' ');
-            if (--chars) write_str(str, chars);     // Print a second copy of the message
+            if (--chars) write_str(ui.status_message, chars);  // Print a second copy of the message
           }
         }
       }
@@ -605,8 +596,8 @@ void ST7920_Lite_Status_Screen::draw_status_message() {
 
   #else
 
-    uint8_t slen = utf8_strlen(str);
-    write_str(str, TEXT_MODE_LCD_WIDTH);
+    uint8_t slen = ui.status_message.glyphs();
+    write_str(ui.status_message, TEXT_MODE_LCD_WIDTH);
     for (; slen < TEXT_MODE_LCD_WIDTH; ++slen) write_byte(' ');
 
   #endif
@@ -620,23 +611,23 @@ void ST7920_Lite_Status_Screen::draw_position(const xyze_pos_t &pos, const bool 
   // If position is unknown, flash the labels.
   const unsigned char alt_label = position_trusted ? 0 : (ui.get_blink() ? ' ' : 0);
 
-  if (TERN0(LCD_SHOW_E_TOTAL, printingIsActive())) {
+  if (TERN0(LCD_SHOW_E_TOTAL, marlin.printingIsActive())) {
     #if ENABLED(LCD_SHOW_E_TOTAL)
       char tmp[15];
-      const uint8_t escale = e_move_accumulator >= 100000.0f ? 10 : 1; // After 100m switch to cm
-      sprintf_P(tmp, PSTR("E%-7ld%cm "), uint32_t(_MAX(e_move_accumulator, 0.0f)) / escale, escale == 10 ? 'c' : 'm'); // 1234567mm
+      const uint8_t escale = motion.e_move_accumulator >= 100000.0f ? 10 : 1; // After 100m switch to cm
+      sprintf_P(tmp, PSTR("E%-7" PRIu32 "%cm "), uint32_t(_MAX(motion.e_move_accumulator, 0.0f)) / escale, escale == 10 ? 'c' : 'm'); // 1234567mm
       write_str(tmp);
     #endif
   }
   else {
-    write_byte(alt_label ? alt_label : 'X');
+    write_byte(alt_label ?: 'X');
     write_str(dtostrf(pos.x, -4, 0, str), 4);
 
-    write_byte(alt_label ? alt_label : 'Y');
+    write_byte(alt_label ?: 'Y');
     write_str(dtostrf(pos.y, -4, 0, str), 4);
   }
 
-  write_byte(alt_label ? alt_label : 'Z');
+  write_byte(alt_label ?: 'Z');
   write_str(dtostrf(pos.z, -5, 1, str), 5);
 }
 
@@ -645,8 +636,8 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
   // because the actual temps fluctuate so by updating
   // them only during blinks we gain a bit of stability.
   const bool blink = ui.get_blink();
-  const uint16_t feedrate_perc = feedrate_percentage;
-  const uint16_t fs = thermalManager.scaledFanSpeed(0);
+  const uint16_t feedrate_perc = motion.feedrate_percentage;
+  const uint16_t fs = fans[0].scaled_speed();
   const celsius_t extruder_1_target = thermalManager.degTargetHotend(0);
   #if HAS_MULTI_HOTEND
     const celsius_t extruder_2_target = thermalManager.degTargetHotend(1);
@@ -665,37 +656,36 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
 
 // Process progress strings
 #if HAS_PRINT_PROGRESS
-  static char screenstr[8];
+  static MString<8> screenstr;
 
-  char * ST7920_Lite_Status_Screen::prepare_time_string(const duration_t &time, char prefix) {
-    static char str[6];
-    memset(&screenstr, 0x20, 8); // fill with spaces to avoid artifacts, not doing right-justification to save cycles
-    screenstr[0] = prefix;
-    TERN_(HOTENDS == 1, screenstr[1] = 0x07;)  // add bullet • separator when there is space
-    int str_length = time.toDigital(str);
-    memcpy(&screenstr[TERN(HOTENDS == 1, 2, 1)], str, str_length); //memcpy because we can't have terminator
-    return screenstr;
-  }
+  #if HAS_TIME_DISPLAY
+    char * ST7920_Lite_Status_Screen::prepare_time_string(const duration_t &time, char prefix) {
+      static char time_str[6];
+      (void)time.toDigital(time_str);   // Up to 5 chars
+      screenstr = prefix;
+      if (HOTENDS == 1) screenstr += char(0x07);  // Add bullet • separator when there is space
+      screenstr += time_str;
+      screenstr += Spaces(3);
+      return &screenstr;
+    }
+  #endif
 
   void ST7920_Lite_Status_Screen::draw_progress_string(uint8_t addr, const char *str) {
     set_ddram_address(addr);
     begin_data();
-    write_str(str, TERN(HOTENDS == 1, 8, 6));
+    write_str(str, HOTENDS == 1 ? 8 : 6);
   }
 
-  #define PPOS (DDRAM_LINE_3 + TERN(HOTENDS == 1, 4, 5)) // progress string position, in 16-bit words
+  constexpr uint8_t PPOS = (DDRAM_LINE_3 + (HOTENDS == 1 ? 4 : 5)); // Progress string position, in 16-bit words
 
   #if ENABLED(SHOW_PROGRESS_PERCENT)
     void MarlinUI::drawPercent() { lightUI.drawPercent(); }
     void ST7920_Lite_Status_Screen::drawPercent() {
-      #define LSHIFT TERN(HOTENDS == 1, 0, 1)
       const uint8_t progress = ui.get_progress_percent();
-      memset(&screenstr, 0x20, 8); // fill with spaces to avoid artifacts
-      if (progress){
-        memcpy(&screenstr[2 - LSHIFT], \
-                  TERN(PRINT_PROGRESS_SHOW_DECIMALS, permyriadtostr4(ui.get_progress_permyriad()), ui8tostr3rj(progress)), \
-                  TERN(PRINT_PROGRESS_SHOW_DECIMALS, 4, 3));
-        screenstr[(TERN(PRINT_PROGRESS_SHOW_DECIMALS, 6, 5) - LSHIFT)] = '%';
+      if (progress) {
+        screenstr += Spaces(1 + (HOTENDS == 1));
+        screenstr += TERN(PRINT_PROGRESS_SHOW_DECIMALS, permyriadtostr4(ui.get_progress_permyriad()), ui8tostr3rj(progress));
+        screenstr += "%   ";
         draw_progress_string(PPOS, screenstr);
       }
     }
@@ -703,9 +693,9 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
   #if ENABLED(SHOW_REMAINING_TIME)
     void MarlinUI::drawRemain() { lightUI.drawRemain(); }
     void ST7920_Lite_Status_Screen::drawRemain() {
-      const duration_t remaint = TERN0(SET_REMAINING_TIME, ui.get_remaining_time());
-      if (printJobOngoing() && remaint.value) {
-        draw_progress_string( PPOS, prepare_time_string(remaint, 'R'));
+      const duration_t remaint = ui.get_remaining_time();
+      if (marlin.printJobOngoing() && remaint.value) {
+        draw_progress_string(PPOS, prepare_time_string(remaint, 'R'));
       }
     }
   #endif
@@ -713,17 +703,17 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
     void MarlinUI::drawInter() { lightUI.drawInter(); }
     void ST7920_Lite_Status_Screen::drawInter() {
       const duration_t interactt = ui.interaction_time;
-      if (printingIsActive() && interactt.value) {
-        draw_progress_string( PPOS, prepare_time_string(interactt, 'C'));
+      if (marlin.printingIsActive() && interactt.value) {
+        draw_progress_string(PPOS, prepare_time_string(interactt, 'C'));
       }
     }
   #endif
   #if ENABLED(SHOW_ELAPSED_TIME)
     void MarlinUI::drawElapsed() { lightUI.drawElapsed(); }
     void ST7920_Lite_Status_Screen::drawElapsed() {
-      if (printJobOngoing()) {
+      if (marlin.printJobOngoing()) {
         const duration_t elapsedt = print_job_timer.duration();
-        draw_progress_string( PPOS, prepare_time_string(elapsedt, 'E'));
+        draw_progress_string(PPOS, prepare_time_string(elapsedt, 'E'));
       }
     }
   #endif
@@ -755,10 +745,10 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
     // This drawing is a mess and only produce readable result around 25% steps
     // i.e. 74-76% look fine [||||||||||||||||||||||||        ], but 73% look like this: [||||||||||||||||       |        ]
     // meaning partially filled bytes produce only single vertical line, and i bet they're not supposed to!
-    LOOP_S_LE_N(y, top, bottom) {
+    for (uint8_t y = top; y <= bottom; ++y) {
       set_gdram_address(left, y);
       begin_data();
-      LOOP_L_N(x, width) {
+      for (uint8_t x = 0; x < width; ++x) {
         uint16_t gfx_word = 0x0000;
         if ((x + 1) * char_pcnt <= value)
           gfx_word = 0xFFFF;                                              // Draw completely filled bytes
@@ -812,7 +802,7 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
 void ST7920_Lite_Status_Screen::update_indicators(const bool forceUpdate) {
   if (forceUpdate || indicators_changed()) {
     const bool       blink              = ui.get_blink();
-    const uint16_t   feedrate_perc      = feedrate_percentage;
+    const uint16_t   feedrate_perc      = motion.feedrate_percentage;
     const celsius_t  extruder_1_temp    = thermalManager.wholeDegHotend(0),
                      extruder_1_target  = thermalManager.degTargetHotend(0);
     #if HAS_MULTI_HOTEND
@@ -829,12 +819,12 @@ void ST7920_Lite_Status_Screen::update_indicators(const bool forceUpdate) {
     TERN_(HAS_HEATED_BED, draw_bed_temp(bed_temp, bed_target, forceUpdate));
 
     // Update the fan and bed animations
-    uint8_t spd = thermalManager.fan_speed[0];
+    uint8_t spd = fans[0].speed;
     #if ENABLED(ADAPTIVE_FAN_SLOWING)
-      if (!blink && thermalManager.fan_speed_scaler[0] < 128)
-        spd = thermalManager.scaledFanSpeed(0, spd);
+      if (!blink && fans[0].speed_scaler < 128)
+        spd = fans[0].scaled_speed(spd);
     #endif
-    draw_fan_speed(thermalManager.pwmToPercent(spd));
+    draw_fan_speed(Fan::pwmToPercent(spd));
     if (spd) draw_fan_icon(blink);
     TERN_(HAS_HEATED_BED, draw_heat_icon(bed_target > 0 && blink, bed_target > 0));
 
@@ -846,7 +836,7 @@ void ST7920_Lite_Status_Screen::update_indicators(const bool forceUpdate) {
 }
 
 bool ST7920_Lite_Status_Screen::position_changed() {
-  const xyz_pos_t pos = current_position;
+  const xyz_pos_t pos = motion.position;
   const uint8_t checksum = uint8_t(pos.x) ^ uint8_t(pos.y) ^ uint8_t(pos.z);
   static uint8_t last_checksum = 0, changed = last_checksum != checksum;
   if (changed) last_checksum = checksum;
@@ -854,11 +844,10 @@ bool ST7920_Lite_Status_Screen::position_changed() {
 }
 
 bool ST7920_Lite_Status_Screen::status_changed() {
-  uint8_t checksum = 0;
-  for (const char *p = ui.status_message; *p; p++) checksum ^= *p;
-  static uint8_t last_checksum = 0;
-  bool changed = last_checksum != checksum;
-  if (changed) last_checksum = checksum;
+  static MString<>::hash_t last_hash = 0;
+  const MString<>::hash_t hash = ui.status_message.hash();
+  const bool changed = last_hash != hash;
+  if (changed) last_hash = hash;
   return changed;
 }
 
@@ -891,9 +880,9 @@ void ST7920_Lite_Status_Screen::update_status_or_position(bool forceUpdate) {
    * If STATUS_EXPIRE_SECONDS is zero, only the status is shown.
    */
   if (forceUpdate || status_changed()) {
-    TERN_(STATUS_MESSAGE_SCROLLING, ui.status_scroll_offset = 0);
+    TERN_(STATUS_MESSAGE_SCROLLING, ui.reset_status_scroll());
     #if STATUS_EXPIRE_SECONDS
-      countdown = ui.status_message[0] ? STATUS_EXPIRE_SECONDS : 0;
+      countdown = !ui.status_message.empty() ? STATUS_EXPIRE_SECONDS : 0;
     #endif
     draw_status_message();
     blink_changed(); // Clear changed flag
@@ -917,7 +906,7 @@ void ST7920_Lite_Status_Screen::update_status_or_position(bool forceUpdate) {
     }
 
     if (countdown == 0 && (forceUpdate || position_changed() || TERN(DISABLE_REDUCED_ACCURACY_WARNING, 0, blink_changed())))
-      draw_position(current_position, TERN(DISABLE_REDUCED_ACCURACY_WARNING, 1, all_axes_trusted()));
+      draw_position(motion.position, TERN(DISABLE_REDUCED_ACCURACY_WARNING, 1, motion.all_axes_trusted()));
   #endif
 }
 
@@ -925,7 +914,7 @@ void ST7920_Lite_Status_Screen::update(const bool forceUpdate) {
   cs();
   update_indicators(forceUpdate);
   update_status_or_position(forceUpdate);
-  update_progress(forceUpdate);
+  TERN_(HAS_PRINT_PROGRESS, update_progress(forceUpdate));
   ncs();
 }
 

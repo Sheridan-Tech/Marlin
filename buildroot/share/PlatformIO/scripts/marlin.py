@@ -2,6 +2,7 @@
 # marlin.py
 # Helper module with some commonly-used functions
 #
+
 import shutil
 from pathlib import Path
 
@@ -16,7 +17,8 @@ def copytree(src, dst, symlinks=False, ignore=None):
             shutil.copy2(item, dst / item.name)
 
 def replace_define(field, value):
-    for define in env['CPPDEFINES']:
+    envdefs = env['CPPDEFINES'].copy()
+    for define in envdefs:
         if define[0] == field:
             env['CPPDEFINES'].remove(define)
     env['CPPDEFINES'].append((field, value))
@@ -69,4 +71,4 @@ def encrypt_mks(source, target, env, new_name):
         fwpath.unlink()
 
 def add_post_action(action):
-    env.AddPostAction(str(Path("$BUILD_DIR", "${PROGNAME}.bin")), action);
+    env.AddPostAction(str(Path("$BUILD_DIR", "${PROGNAME}.bin")), action)

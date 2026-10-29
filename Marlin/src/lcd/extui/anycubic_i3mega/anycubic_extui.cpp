@@ -35,90 +35,41 @@
 
 namespace ExtUI {
 
-  void onStartup()        { AnycubicTFT.OnSetup(); }
-  void onIdle()           { AnycubicTFT.OnCommandScan(); }
-  void onPrinterKilled(FSTR_P const error, FSTR_P const component) { AnycubicTFT.OnKillTFT(); }
-  void onMediaInserted()  { AnycubicTFT.OnSDCardStateChange(true); }
-  void onMediaError()     { AnycubicTFT.OnSDCardError(); }
-  void onMediaRemoved()   { AnycubicTFT.OnSDCardStateChange(false); }
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {
+  void onStartup()        { anycubicTFT.onSetup(); }
+  void onIdle()           { anycubicTFT.onCommandScan(); }
+  void onPrinterKilled(FSTR_P const error, FSTR_P const component) { anycubicTFT.onKillTFT(); }
+
+  void onMediaMounted()   { anycubicTFT.onSDCardStateChange(true); }
+  void onMediaError()     { anycubicTFT.onSDCardError(); }
+  void onMediaRemoved()   { anycubicTFT.onSDCardStateChange(false); }
+
+  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {
     TERN_(SPEAKER, ::tone(BEEPER_PIN, frequency, duration));
   }
-  void onPrintTimerStarted()  { AnycubicTFT.OnPrintTimerStarted(); }
-  void onPrintTimerPaused()   { AnycubicTFT.OnPrintTimerPaused(); }
-  void onPrintTimerStopped()  { AnycubicTFT.OnPrintTimerStopped(); }
-  void onFilamentRunout(const extruder_t extruder)   { AnycubicTFT.OnFilamentRunout(); }
-  void onUserConfirmRequired(const char * const msg) { AnycubicTFT.OnUserConfirmRequired(msg); }
-  void onStatusChanged(const char * const msg) {}
+  void onPrintTimerStarted()  { anycubicTFT.onPrintTimerStarted(); }
+  void onPrintTimerPaused()   { anycubicTFT.onPrintTimerPaused(); }
+  void onPrintTimerStopped()  { anycubicTFT.onPrintTimerStopped(); }
 
-  void onHomingStart() {}
-  void onHomingDone() {}
-  void onPrintDone() {}
+  void onFilamentRunout(const extruder_t extruder)   { anycubicTFT.onFilamentRunout(); }
+  void onUserConfirmRequired(const char * const msg) { anycubicTFT.onUserConfirmRequired(msg); }
 
-  void onFactoryReset() {}
-
-  void onStoreSettings(char *buff) {
-    // Called when saving to EEPROM (i.e. M500). If the ExtUI needs
-    // permanent data to be stored, it can write up to eeprom_data_size bytes
-    // into buff.
-
-    // Example:
-    //  static_assert(sizeof(myDataStruct) <= eeprom_data_size);
-    //  memcpy(buff, &myDataStruct, sizeof(myDataStruct));
+  // For fancy LCDs include an icon ID, message, and translated button title
+  void onUserConfirmRequired(const int, const char * const cstr, FSTR_P const) {
+    onUserConfirmRequired(cstr);
+  }
+  void onUserConfirmRequired(const int, FSTR_P const fstr, FSTR_P const) {
+    onUserConfirmRequired(fstr);
   }
 
-  void onLoadSettings(const char *buff) {
-    // Called while loading settings from EEPROM. If the ExtUI
-    // needs to retrieve data, it should copy up to eeprom_data_size bytes
-    // from buff
-
-    // Example:
-    //  static_assert(sizeof(myDataStruct) <= eeprom_data_size);
-    //  memcpy(&myDataStruct, buff, sizeof(myDataStruct));
-  }
-
-  void onPostprocessSettings() {
-    // Called after loading or resetting stored settings
-  }
-
-  void onSettingsStored(bool success) {
-    // Called after the entire EEPROM has been written,
-    // whether successful or not.
-  }
-
-  void onSettingsLoaded(bool success) {
-    // Called after the entire EEPROM has been read,
-    // whether successful or not.
-  }
-
-  #if HAS_MESH
-
-    void onLevelingStart() {}
-    void onLevelingDone() {}
-
-    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval) {
-      // Called when any mesh points are updated
-    }
-
-    void onMeshUpdate(const int8_t xpos, const int8_t ypos, probe_state_t state) {
-      // Called when any mesh points are updated
+  #if ENABLED(ADVANCED_PAUSE_FEATURE)
+    void onPauseMode(
+      const PauseMessage message,
+      const PauseMode mode/*=PAUSE_MODE_SAME*/,
+      const uint8_t extruder/*=motion.extruder*/
+    ) {
+      stdOnPauseMode(message, mode, extruder);
     }
   #endif
-
-  #if ENABLED(POWER_LOSS_RECOVERY)
-    void onPowerLossResume() {
-      // Called on resume from power-loss
-    }
-  #endif
-
-  #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
-      // Called for temperature PID tuning result
-    }
-  #endif
-
-  void onSteppersDisabled() {}
-  void onSteppersEnabled()  {}
 }
 
 #endif // ANYCUBIC_LCD_I3MEGA

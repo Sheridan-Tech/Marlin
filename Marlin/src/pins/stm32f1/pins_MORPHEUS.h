@@ -82,12 +82,12 @@
 #define HEATER_0_PIN                        PA2   // HOTEND MOSFET
 #define HEATER_BED_PIN                      PA0   // BED MOSFET
 
-#define FAN_PIN                             PA1   // FAN1 header on board - PRINT FAN
+#define FAN0_PIN                            PA1   // FAN1 header on board - PRINT FAN
 
 //
 // Misc.
 //
 #define LED_PIN                             PC13
-#define SDSS                                PA3
+#define SD_SS_PIN                           PA3
 #define TFTGLCD_CS                          PA4
 #define SD_DETECT_PIN                       PC14

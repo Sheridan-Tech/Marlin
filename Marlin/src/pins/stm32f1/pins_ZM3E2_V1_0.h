@@ -28,10 +28,10 @@
 #define DISABLE_DEBUG
 //#define DISABLE_JTAG
 
-#if NO_EEPROM_SELECTED
+#if SHALL_USE_EEPROM(FLASH_EEPROM_EMULATION)
   #define FLASH_EEPROM_EMULATION
-  #define EEPROM_PAGE_SIZE      (0x800) // 2K
-  #define EEPROM_START_ADDRESS  (0x08000000 + (STM32_FLASH_SIZE) * 1024 - 2 * EEPROM_PAGE_SIZE)
+  #define EEPROM_PAGE_SIZE                0x800U  // 2K
+  #define EEPROM_START_ADDRESS (0x8000000UL + (STM32_FLASH_SIZE) * 1024UL - (EEPROM_PAGE_SIZE) * 2UL)
   #define MARLIN_EEPROM_SIZE    EEPROM_PAGE_SIZE  // 2K
 #endif
 
@@ -39,7 +39,7 @@
 // Zonestar ZM3E2 V1.0 (STM32F103RCT6) board pin assignments
 //=============================================================================
 //  PA0     PWR_HOLD    |  PB0     BEEP            |  PC0     HEATER_0
-//  PA1     FAN_PIN     |  PB1     KILL            |  PC1     HEATER_BED
+//  PA1     FAN0_PIN    |  PB1     KILL            |  PC1     HEATER_BED
 //  PA2     TX2         |  PB2     LCD_SDA         |  PC2     TEMP_BED
 //  PA3     RX2         |  PB3     E1_EN           |  PC3     TEMP_E0
 //  PA4     SD_CS       |  PB4     Z_STOP          |  PC4     SD_DETECT
@@ -149,7 +149,7 @@
 #define HEATER_BED_PIN                      PC1   // BED
 
 #define FAN1_PIN                            PC6
-#define FAN_PIN                             PA1
+#define FAN0_PIN                            PA1
 
 //
 // Temperature Sensors
@@ -186,15 +186,14 @@
   //   8 TX1      PA9     LCD_PINS_RS
   //   7 RX1      PA10    LCD_PINS_D4
   //   6 ENA      PC5     BTN_EN2
-  //   5 DAT      PB2     LCD_PINS_ENABLE
+  //   5 DAT      PB2     LCD_PINS_EN
   //   4 TX3      PB10    BTN_ENC
   //   3 RX3      PB11    BTN_EN1
   //   2 +5V
   //   1 GND
 
-  #define LCDSCREEN_NAME "ZONESTAR LCD12864"
   #define LCD_PINS_RS                EXP1_03_PIN
-  #define LCD_PINS_ENABLE            EXP1_06_PIN
+  #define LCD_PINS_EN                EXP1_06_PIN
   #define LCD_PINS_D4                EXP1_04_PIN
   //#define KILL_PIN                 EXP1_01_PIN
   #define BEEPER_PIN                 EXP1_02_PIN
@@ -205,7 +204,7 @@
   #define BOARD_ST7920_DELAY_2               200
   #define BOARD_ST7920_DELAY_3               125
 
-#elif EITHER(ZONESTAR_12864OLED, ZONESTAR_12864OLED_SSD1306)
+#elif ANY(ZONESTAR_12864OLED, ZONESTAR_12864OLED_SSD1306)
 
   //================================================================================
   // OLED 128x64
@@ -220,7 +219,6 @@
   //   3 RX3    PB11  KNOB_ENB
 
   #define FORCE_SOFT_SPI
-  #define LCDSCREEN_NAME "ZONESTAR 12864OLED"
   #define LCD_PINS_RS                EXP1_06_PIN  // = LCD_RESET_PIN
   #define LCD_PINS_DC                EXP1_04_PIN  // DC
   #define DOGLCD_CS                  EXP1_03_PIN  // CS

@@ -67,7 +67,6 @@
 //
 // Misc. Functions
 //
-#define SDSS                                -1
 #define LED_PIN                             -1
 
 #ifndef CASE_LIGHT_PIN
@@ -83,8 +82,8 @@
 #define HEATER_0_PIN                        PD12  // HOT-END
 #define HEATER_BED_PIN                      PG11  // HOT-BED
 
-#ifndef FAN_PIN
-  #define FAN_PIN                           PG14  // MAIN BOARD FAN
+#ifndef FAN0_PIN
+  #define FAN0_PIN                          PG14  // MAIN BOARD FAN
 #endif
 
 #define FAN_SOFT_PWM_REQUIRED
@@ -102,18 +101,18 @@
 
   #if ENABLED(REPRAPWORLD_GRAPHICAL_LCD)
     #define LCD_PINS_RS                     PD1   // 49  // CS chip select /SS chip slave select
-    #define LCD_PINS_ENABLE                 PD3   // 51  // SID (MOSI)
+    #define LCD_PINS_EN                     PD3   // 51  // SID (MOSI)
     #define LCD_PINS_D4                     PD4   // 52  // SCK (CLK) clock
-  #elif BOTH(IS_NEWPANEL, PANEL_ONE)
+  #elif ALL(IS_NEWPANEL, PANEL_ONE)
     #define LCD_PINS_RS                     PB8
-    #define LCD_PINS_ENABLE                 PD2
+    #define LCD_PINS_EN                     PD2
     #define LCD_PINS_D4                     PB12
     #define LCD_PINS_D5                     PB13
     #define LCD_PINS_D6                     PB14
     #define LCD_PINS_D7                     PB15
   #else
     #define LCD_PINS_RS                     PB8
-    #define LCD_PINS_ENABLE                 PD2
+    #define LCD_PINS_EN                     PD2
     #define LCD_PINS_D4                     PB12
     #define LCD_PINS_D5                     PB13
     #define LCD_PINS_D6                     PB14
@@ -158,9 +157,10 @@
       #define BTN_EN1                       PC15  // 47
       #define BTN_EN2                       PC11  // 43
       #define BTN_ENC                       PC0   // 32
-      #define LCD_SDSS                      PD5   // 53
+      #define LCD_SDSS_PIN                  PD5   // 53
       #define SD_DETECT_PIN                 -1
       #define KILL_PIN                      PC9   // 41
+      #undef LCD_PINS_EN                          // not used, causes false pin conflict report
 
     #elif ENABLED(LCD_I2C_VIKI)
 
@@ -168,10 +168,10 @@
       #define BTN_EN2                       PA7   //  7   // 22/7 are unused on RAMPS_14. 22 is unused and 7 the SERVO0_PIN on RAMPS_13.
 
       #define BTN_ENC                       -1
-      #define LCD_SDSS                      PD5   // 53
+      #define LCD_SDSS_PIN                  PD5   // 53
       #define SD_DETECT_PIN                 PD1   // 49
 
-    #elif EITHER(VIKI2, miniVIKI)
+    #elif ANY(VIKI2, miniVIKI)
 
       #define BEEPER_PIN                    PC1   // 33
 
@@ -183,7 +183,7 @@
       #define BTN_EN2                       PA7   //  7
       #define BTN_ENC                       PC7   // 39
 
-      #define SDSS                          PD5   // 53
+      #define SD_SS_PIN                     PD5   // 53
       #define SD_DETECT_PIN                 -1    // Pin 49 for display sd interface, 72 for easy adapter board
 
       #define KILL_PIN                      PB15  // 31
@@ -198,7 +198,7 @@
       #define BTN_EN2                       PC5   // 37
       #define BTN_ENC                       PB15  // 31
       #define SD_DETECT_PIN                 PD1   // 49
-      #define LCD_SDSS                      PD5   // 53
+      #define LCD_SDSS_PIN                  PD5   // 53
       #define KILL_PIN                      PC9   // 41
       #define BEEPER_PIN                    PB7   // 23
       #define DOGLCD_CS                     PB13  // 29
@@ -212,7 +212,7 @@
       #define DOGLCD_A0                     PC12  // 44
       #define DOGLCD_CS                     PE2   // 66
       #define LCD_BACKLIGHT_PIN             PE1   // 65   // backlight LED on A11/D65
-      #define SDSS                          PD5   // 53
+      #define SD_SS_PIN                     PD5   // 53
 
       #define KILL_PIN                      PE0   // 64
 

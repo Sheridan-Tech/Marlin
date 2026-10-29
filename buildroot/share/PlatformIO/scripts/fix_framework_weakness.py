@@ -1,6 +1,7 @@
 #
 # fix_framework_weakness.py
 #
+
 import pioutil
 if pioutil.is_pio_build():
 
@@ -8,13 +9,12 @@ if pioutil.is_pio_build():
     from os.path import join, isfile
     from pprint import pprint
 
-    Import("env")
-
+    env = pioutil.env
     if env.MarlinHas("POSTMORTEM_DEBUGGING"):
         FRAMEWORK_DIR = env.PioPlatform().get_package_dir("framework-arduinoststm32-maple")
         patchflag_path = join(FRAMEWORK_DIR, ".exc-patching-done")
 
-        # patch file only if we didn't do it before
+        # Patch file only if we didn't do it before
         if not isfile(patchflag_path):
             print("Patching libmaple exception handlers")
             original_file = join(FRAMEWORK_DIR, "STM32F1", "cores", "maple", "libmaple", "exc.S")
@@ -23,7 +23,7 @@ if pioutil.is_pio_build():
 
             assert isfile(original_file) and isfile(src_file)
             shutil.copyfile(original_file, backup_file)
-            shutil.copyfile(src_file, original_file);
+            shutil.copyfile(src_file, original_file)
 
             def _touch(path):
                 with open(path, "w") as fp:

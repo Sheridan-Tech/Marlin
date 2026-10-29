@@ -1,9 +1,9 @@
 /**
  * Marlin 3D Printer Firmware
- *
  * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
- * Copyright (c) 2016 Bob Cousins bobcousins42@googlemail.com
- * Copyright (c) 2015-2016 Nico Tonnhofer wurstnase.reprap@gmail.com
+ *
+ * Based on Sprinter and grbl.
+ * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,72 +38,15 @@ extern "C" volatile uint32_t _millis;
 #include "../shared/math_32bit.h"
 #include "../shared/HAL_SPI.h"
 #include "fastio.h"
-#include "MarlinSerial.h"
 
 #include <adc.h>
 #include <pinmapping.h>
-#include <CDCSerial.h>
 
-// ------------------------
-// Serial ports
-// ------------------------
+//
+// Serial Ports
+//
 
-typedef ForwardSerial1Class< decltype(UsbSerial) > DefaultSerial1;
-extern DefaultSerial1 USBSerial;
-
-#define _MSERIAL(X) MSerial##X
-#define MSERIAL(X) _MSERIAL(X)
-
-#if SERIAL_PORT == -1
-  #define MYSERIAL1 USBSerial
-#elif WITHIN(SERIAL_PORT, 0, 3)
-  #define MYSERIAL1 MSERIAL(SERIAL_PORT)
-#else
-  #error "SERIAL_PORT must be from 0 to 3. You can also use -1 if the board supports Native USB."
-#endif
-
-#ifdef SERIAL_PORT_2
-  #if SERIAL_PORT_2 == -1
-    #define MYSERIAL2 USBSerial
-  #elif WITHIN(SERIAL_PORT_2, 0, 3)
-    #define MYSERIAL2 MSERIAL(SERIAL_PORT_2)
-  #else
-    #error "SERIAL_PORT_2 must be from 0 to 3. You can also use -1 if the board supports Native USB."
-  #endif
-#endif
-
-#ifdef SERIAL_PORT_3
-  #if SERIAL_PORT_3 == -1
-    #define MYSERIAL3 USBSerial
-  #elif WITHIN(SERIAL_PORT_3, 0, 3)
-    #define MYSERIAL3 MSERIAL(SERIAL_PORT_3)
-  #else
-    #error "SERIAL_PORT_3 must be from 0 to 3. You can also use -1 if the board supports Native USB."
-  #endif
-#endif
-
-#ifdef MMU2_SERIAL_PORT
-  #if MMU2_SERIAL_PORT == -1
-    #define MMU2_SERIAL USBSerial
-  #elif WITHIN(MMU2_SERIAL_PORT, 0, 3)
-    #define MMU2_SERIAL MSERIAL(MMU2_SERIAL_PORT)
-  #else
-    #error "MMU2_SERIAL_PORT must be from 0 to 3. You can also use -1 if the board supports Native USB."
-  #endif
-#endif
-
-#ifdef LCD_SERIAL_PORT
-  #if LCD_SERIAL_PORT == -1
-    #define LCD_SERIAL USBSerial
-  #elif WITHIN(LCD_SERIAL_PORT, 0, 3)
-    #define LCD_SERIAL MSERIAL(LCD_SERIAL_PORT)
-  #else
-    #error "LCD_SERIAL_PORT must be from 0 to 3. You can also use -1 if the board supports Native USB."
-  #endif
-  #if HAS_DGUS_LCD
-    #define SERIAL_GET_TX_BUFFER_FREE() LCD_SERIAL.available()
-  #endif
-#endif
+#include "MarlinSerial.h"
 
 //
 // Interrupts
@@ -127,7 +70,7 @@ extern DefaultSerial1 USBSerial;
                                     // K = 6, 565 samples, 500Hz sample rate, 1.13s convergence on full range step
                                     // Memory usage per ADC channel (bytes): 4 (32 Bytes for 8 channels)
 
-#define HAL_ADC_VREF            3.3 // ADC voltage reference
+#define HAL_ADC_VREF_MV      3300   // ADC voltage reference
 
 #define HAL_ADC_RESOLUTION     12   // 15 bit maximum, raw temperature is stored as int16_t
 #define HAL_ADC_FILTERED            // Disable oversampling done in Marlin as ADC values already filtered in HAL
@@ -137,12 +80,12 @@ extern DefaultSerial1 USBSerial;
 //
 
 // Test whether the pin is valid
-constexpr bool VALID_PIN(const pin_t pin) {
+constexpr bool isValidPin(const pin_t pin) {
   return LPC176x::pin_is_valid(pin);
 }
 
 // Get the analog index for a digital pin
-constexpr int8_t DIGITAL_PIN_TO_ANALOG_PIN(const pin_t pin) {
+constexpr int8_t digitalPinToAnalogIndex(const pin_t pin) {
   return (LPC176x::pin_is_valid(pin) && LPC176x::pin_has_adc(pin)) ? pin : -1;
 }
 
@@ -159,13 +102,15 @@ constexpr pin_t GET_PIN_MAP_PIN(const int16_t index) {
 // Parse a G-code word into a pin index
 int16_t PARSED_PIN_INDEX(const char code, const int16_t dval);
 // P0.6 thru P0.9 are for the onboard SD card
-#define HAL_SENSITIVE_PINS P0_06, P0_07, P0_08, P0_09,
+#define HAL_SENSITIVE_PINS P0_06, P0_07, P0_08, P0_09
 
 // ------------------------
 // Defines
 // ------------------------
 
-#define PLATFORM_M997_SUPPORT
+#ifndef PLATFORM_M997_SUPPORT
+  #define PLATFORM_M997_SUPPORT
+#endif
 void flashFirmware(const int16_t);
 
 #define HAL_CAN_SET_PWM_FREQ   // This HAL supports PWM Frequency adjustment
@@ -215,7 +160,7 @@ public:
   static bool watchdog_timed_out() IF_DISABLED(USE_WATCHDOG, { return false; });
   static void watchdog_clear_timeout_flag() IF_DISABLED(USE_WATCHDOG, {});
 
-  // Tasks, called from idle()
+  // Tasks, called from marlin.idle()
   static void idletask();
 
   // Reset
@@ -241,15 +186,18 @@ public:
 
   // Begin ADC sampling on the given pin. Called from Temperature::isr!
   static uint32_t adc_result;
-  static void adc_start(const pin_t pin) {
-    adc_result = FilteredADC::read(pin) >> (16 - HAL_ADC_RESOLUTION); // returns 16bit value, reduce to required bits
-  }
+  static pin_t adc_pin;
+
+  static void adc_start(const pin_t pin) { adc_pin = pin; }
 
   // Is the ADC ready for reading?
-  static bool adc_ready() { return true; }
+  static bool adc_ready() { return LPC176x::adc_hardware.done(LPC176x::pin_get_adc_channel(adc_pin)); }
 
   // The current value of the ADC register
-  static uint16_t adc_value() { return uint16_t(adc_result); }
+  static uint16_t adc_value() {
+    adc_result = FilteredADC::read(adc_pin) >> (16 - HAL_ADC_RESOLUTION); // returns 16bit value, reduce to required bits
+    return uint16_t(adc_result);
+  }
 
   /**
    * Set the PWM duty cycle for the pin to the given value.

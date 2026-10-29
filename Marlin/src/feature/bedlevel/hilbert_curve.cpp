@@ -28,8 +28,8 @@
 
 constexpr int8_t  to_fix(int8_t  v) { return v * 2; }
 constexpr int8_t  to_int(int8_t  v) { return v / 2; }
-constexpr uint8_t   log2(uint8_t n) { return (n > 1) ? 1 + log2(n >> 1) : 0; }
-constexpr uint8_t  order(uint8_t n) { return uint8_t(log2(n - 1)) + 1; }
+constexpr uint8_t   log2(uint8_t n) { return (n > 1) ? 1 + log2(uint8_t(n >> 1)) : 0; }
+constexpr uint8_t  order(uint8_t n) { return uint8_t(log2(uint8_t(n - 1))) + 1; }
 constexpr uint8_t ord = order(_MAX(GRID_MAX_POINTS_X, GRID_MAX_POINTS_Y));
 constexpr uint8_t dim = _BV(ord);
 
@@ -102,8 +102,8 @@ bool hilbert_curve::search_from(uint8_t x, uint8_t y, hilbert_curve::callback_pt
  */
 bool hilbert_curve::search_from_closest(const xy_pos_t &pos, hilbert_curve::callback_ptr func, void *data) {
   // Find closest grid intersection
-  const uint8_t grid_x = LROUND(constrain(float(pos.x - (MESH_MIN_X)) / (MESH_X_DIST), 0, (GRID_MAX_POINTS_X) - 1));
-  const uint8_t grid_y = LROUND(constrain(float(pos.y - (MESH_MIN_Y)) / (MESH_Y_DIST), 0, (GRID_MAX_POINTS_Y) - 1));
+  const uint8_t grid_x = LROUND(constrain((pos.x - mesh_min.x) / (MESH_X_DIST), 0, (GRID_MAX_POINTS_X) - 1));
+  const uint8_t grid_y = LROUND(constrain((pos.y - mesh_min.y) / (MESH_Y_DIST), 0, (GRID_MAX_POINTS_Y) - 1));
   return search_from(grid_x, grid_y, func, data);
 }
 

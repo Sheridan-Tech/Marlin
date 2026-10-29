@@ -58,7 +58,7 @@ void GcodeSuite::D(const int16_t dcode) {
       break;
 
     case 10:
-      kill(F("D10"), F("KILL TEST"), parser.seen_test('P'));
+      marlin.kill(F("D10"), F("KILL TEST"), parser.seen_test('P'));
       break;
 
     case 1: {
@@ -99,6 +99,7 @@ void GcodeSuite::D(const int16_t dcode) {
     } break;
 
     #if ENABLED(EEPROM_SETTINGS)
+
       case 3: { // D3 Read / Write EEPROM
         uint8_t *pointer = parser.hex_adr_val('A');
         uint16_t len = parser.ushortval('C', 1);
@@ -107,35 +108,27 @@ void GcodeSuite::D(const int16_t dcode) {
         NOMORE(len, persistentStore.capacity() - addr);
         if (parser.seenval('X')) {
           uint16_t val = parser.hex_val('X');
-          #if ENABLED(EEPROM_SETTINGS)
-            persistentStore.access_start();
-            while (len--) {
-              int pos = 0;
-              persistentStore.write_data(pos, (uint8_t *)&val, sizeof(val));
-            }
-            SERIAL_EOL();
-            persistentStore.access_finish();
-          #else
-            SERIAL_ECHOLNPGM("NO EEPROM");
-          #endif
+          persistentStore.access_start();
+          while (len--) {
+            int pos = 0;
+            persistentStore.write_data(pos, (uint8_t *)&val, sizeof(val));
+          }
+          SERIAL_EOL();
+          persistentStore.access_finish();
         }
         else {
           // Read bytes from EEPROM
-          #if ENABLED(EEPROM_SETTINGS)
-            persistentStore.access_start();
-            int pos = 0;
-            uint8_t val;
-            while (len--) if (!persistentStore.read_data(pos, &val, 1)) print_hex_byte(val);
-            SERIAL_EOL();
-            persistentStore.access_finish();
-          #else
-            SERIAL_ECHOLNPGM("NO EEPROM");
-            len = 0;
-          #endif
+          persistentStore.access_start();
+          int pos = 0;
+          uint8_t val;
+          while (len--) if (!persistentStore.read_data(pos, &val, 1)) print_hex_byte(val);
+          SERIAL_EOL();
+          persistentStore.access_finish();
           SERIAL_EOL();
         }
       } break;
-    #endif
+
+    #endif // EEPROM_SETTINGS
 
     case 4: { // D4 Read / Write PIN
       //const bool is_out = parser.boolval('F');
@@ -156,20 +149,21 @@ void GcodeSuite::D(const int16_t dcode) {
     } break;
 
     case 5: { // D5 Read / Write onboard Flash
-      #define FLASH_SIZE 1024
+              // This will overwrite program and data, so don't use it.
+      #define ONBOARD_FLASH_SIZE 1024 // 0x400
       uint8_t *pointer = parser.hex_adr_val('A');
       uint16_t len = parser.ushortval('C', 1);
       uintptr_t addr = (uintptr_t)pointer;
-      NOMORE(addr, size_t(FLASH_SIZE - 1));
-      NOMORE(len, FLASH_SIZE - addr);
+      NOMORE(addr, size_t(ONBOARD_FLASH_SIZE - 1));
+      NOMORE(len, ONBOARD_FLASH_SIZE - addr);
       if (parser.seenval('X')) {
         // TODO: Write the hex bytes after the X
         //while (len--) {}
       }
       else {
         //while (len--) {
-        //// TODO: Read bytes from EEPROM
-        //  print_hex_byte(eeprom_read_byte(adr++));
+        //// TODO: Read bytes from FLASH
+        //  print_hex_byte(flash_read_byte(adr++));
         //}
         SERIAL_EOL();
       }
@@ -185,20 +179,46 @@ void GcodeSuite::D(const int16_t dcode) {
       break;
 
     case 100: { // D100 Disable heaters and attempt a hard hang (Watchdog Test)
+
+      #ifdef __PLAT_RP2040__
+        const uint8_t core = parser.byteval('C', 0); // C parameter: which core to freeze (0=Core 0, 1=Core 1)
+      #else
+        constexpr uint8_t core = 0;
+      #endif
+
       SERIAL_ECHOLNPGM("Disabling heaters and attempting to trigger Watchdog");
       SERIAL_ECHOLNPGM("(USE_WATCHDOG " TERN(USE_WATCHDOG, "ENABLED", "DISABLED") ")");
+      #ifdef __PLAT_RP2040__
+        SERIAL_ECHOLNPGM("Freezing Core ", core);
+      #endif
+
       thermalManager.disable_all_heaters();
       delay(1000); // Allow time to print
-      hal.isr_off();
-      // Use a low-level delay that does not rely on interrupts to function
-      // Do not spin forever, to avoid thermal risks if heaters are enabled and
-      // watchdog does not work.
-      for (int i = 10000; i--;) DELAY_US(1000UL);
-      hal.isr_on();
+
+      if (core == 1) {
+        #ifdef __PLAT_RP2040__
+          // Freeze Core 1 by setting a flag it will check
+          extern volatile bool core1_freeze_test;
+          core1_freeze_test = true;
+          delay(10000); // Wait 10 seconds for watchdog to trigger
+          core1_freeze_test = false;
+        #endif
+      }
+      else {
+        // Freeze Core 0 (original behavior)
+        hal.isr_off();
+        // Use a low-level delay that does not rely on interrupts to function
+        // Do not spin forever, to avoid thermal risks if heaters are enabled and
+        // watchdog does not work.
+        for (int i = 10000; i--;) DELAY_US(1000UL);
+        hal.isr_on();
+      }
+
       SERIAL_ECHOLNPGM("FAILURE: Watchdog did not trigger board reset.");
+
     } break;
 
-    #if ENABLED(SDSUPPORT)
+    #if HAS_MEDIA
 
       case 101: { // D101 Test SD Write
         card.openFileWrite("test.gco");
@@ -249,7 +269,7 @@ void GcodeSuite::D(const int16_t dcode) {
         card.closefile();
       } break;
 
-    #endif // SDSUPPORT
+    #endif // HAS_MEDIA
 
     #if ENABLED(POSTMORTEM_DEBUGGING)
 

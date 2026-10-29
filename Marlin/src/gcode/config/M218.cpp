@@ -46,26 +46,34 @@ void GcodeSuite::M218() {
   const int8_t target_extruder = get_target_extruder_from_command();
   if (target_extruder < 0) return;
 
-  if (parser.seenval('X')) hotend_offset[target_extruder].x = parser.value_linear_units();
-  if (parser.seenval('Y')) hotend_offset[target_extruder].y = parser.value_linear_units();
-  if (parser.seenval('Z')) hotend_offset[target_extruder].z = parser.value_linear_units();
+  #if HAS_X_AXIS
+    if (parser.seenval('X')) motion.hotend_offset[target_extruder].x = parser.value_linear_units();
+  #endif
+  #if HAS_Y_AXIS
+    if (parser.seenval('Y')) motion.hotend_offset[target_extruder].y = parser.value_linear_units();
+  #endif
+  #if HAS_Z_AXIS
+    if (parser.seenval('Z')) motion.hotend_offset[target_extruder].z = parser.value_linear_units();
+  #endif
 
   #if ENABLED(DELTA)
-    if (target_extruder == active_extruder)
-      do_blocking_move_to_xy(current_position, planner.settings.max_feedrate_mm_s[X_AXIS]);
+    if (target_extruder == motion.extruder)
+      motion.blocking_move_xy(motion.position, planner.settings.max_feedrate_mm_s[X_AXIS]);
   #endif
 }
 
 void GcodeSuite::M218_report(const bool forReplay/*=true*/) {
-  report_heading_etc(forReplay, F(STR_HOTEND_OFFSETS));
-  LOOP_S_L_N(e, 1, HOTENDS) {
+  TERN_(MARLIN_SMALL_BUILD, return);
+
+  report_heading(forReplay, F(STR_HOTEND_OFFSETS));
+  for (uint8_t e = 1; e < HOTENDS; ++e) {
     report_echo_start(forReplay);
-    SERIAL_ECHOPGM_P(
+    SERIAL_ECHOLNPGM_P(
       PSTR("  M218 T"), e,
-      SP_X_STR, LINEAR_UNIT(hotend_offset[e].x),
-      SP_Y_STR, LINEAR_UNIT(hotend_offset[e].y)
+      SP_X_STR, LINEAR_UNIT(motion.hotend_offset[e].x),
+      SP_Y_STR, LINEAR_UNIT(motion.hotend_offset[e].y),
+      SP_Z_STR, p_float_t(LINEAR_UNIT(motion.hotend_offset[e].z), 3)
     );
-    SERIAL_ECHOLNPAIR_F_P(SP_Z_STR, LINEAR_UNIT(hotend_offset[e].z), 3);
   }
 }
 

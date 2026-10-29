@@ -30,9 +30,7 @@
 
 #include "env_validate.h"
 
-#if EXTRUDERS > 1 || E_STEPPERS > 1
-  #error "E4d@box only supports 1 E stepper."
-#elif HAS_MULTI_HOTEND
+#if HAS_MULTI_HOTEND || E_STEPPERS > 1
   #error "E4d@box only supports 1 hotend / E stepper."
 #endif
 
@@ -90,14 +88,14 @@
 // Heaters / Fans
 //
 #define HEATER_0_PIN                           2
-#define FAN_PIN                                0
+#define FAN0_PIN                               0
 #define HEATER_BED_PIN                        15
 
 //
-// MicroSD card on SPI
+// MicroSD card on VSPI (bus 3)
 //
 #define SD_MOSI_PIN                           23
 #define SD_MISO_PIN                           19
 #define SD_SCK_PIN                            18
-#define SDSS                                   5
+#define SD_SS_PIN                              5
 #define USES_SHARED_SPI                           // SPI is shared by SD card with TMC SPI drivers

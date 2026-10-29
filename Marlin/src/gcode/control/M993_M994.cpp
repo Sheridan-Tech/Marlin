@@ -22,7 +22,7 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if ALL(SPI_FLASH, SDSUPPORT, MARLIN_DEV_MODE)
+#if SPI_FLASH_BACKUP
 
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
@@ -49,7 +49,8 @@ void GcodeSuite::M993() {
     W25QXX.SPI_FLASH_BufferRead(buf, addr, COUNT(buf));
     addr += COUNT(buf);
     card.write(buf, COUNT(buf));
-    if (addr % (COUNT(buf) * 10) == 0) SERIAL_CHAR('.');
+    if (!(addr % (COUNT(buf) * 10))) SERIAL_CHAR('.');
+    if (!(addr % (COUNT(buf) * 32))) hal.watchdog_refresh();
   }
   SERIAL_ECHOLNPGM(" done");
 
@@ -78,11 +79,12 @@ void GcodeSuite::M994() {
     card.read(buf, COUNT(buf));
     W25QXX.SPI_FLASH_BufferWrite(buf, addr, COUNT(buf));
     addr += COUNT(buf);
-    if (addr % (COUNT(buf) * 10) == 0) SERIAL_CHAR('.');
+    if (!(addr % (COUNT(buf) * 10))) SERIAL_CHAR('.');
+    if (!(addr % (COUNT(buf) * 32))) hal.watchdog_refresh();
   }
   SERIAL_ECHOLNPGM(" done");
 
   card.closefile();
 }
 
-#endif // SPI_FLASH && SDSUPPORT && MARLIN_DEV_MODE
+#endif // SPI_FLASH_BACKUP

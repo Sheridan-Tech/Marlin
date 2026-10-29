@@ -30,18 +30,29 @@
 #include "../../../lcd/marlinui.h"
 
 /**
- * M413: Enable / Disable power-loss recovery
+ * M413: Power-loss Recovery
+ *
+ * Enable/Disable power-loss recovery
  *
  * Parameters
- *   S[bool] - Flag to enable / disable.
- *             If omitted, report current state.
+ *   None     Report power-loss recovery state
+ *   S<bool>  Flag to enable/disable
+ *            If omitted, report current state.
+ *
+ * With PLR_BED_THRESHOLD:
+ *   B<temp>  Bed Temperature above which recovery will proceed without asking permission.
  */
 void GcodeSuite::M413() {
 
+  if (!parser.seen_any()) return M413_report();
+
   if (parser.seen('S'))
     recovery.enable(parser.value_bool());
-  else
-    M413_report();
+
+  #if HAS_PLR_BED_THRESHOLD
+    if (parser.seenval('B'))
+      recovery.bed_temp_threshold = parser.value_celsius();
+  #endif
 
   #if ENABLED(DEBUG_POWER_LOSS_RECOVERY)
     if (parser.seen("RL")) recovery.load();
@@ -50,15 +61,21 @@ void GcodeSuite::M413() {
     if (parser.seen_test('D')) recovery.debug(F("M413"));
     if (parser.seen_test('O')) recovery._outage(true);
     if (parser.seen_test('C')) (void)recovery.check();
-    if (parser.seen_test('E')) SERIAL_ECHOF(recovery.exists() ? F("PLR Exists\n") : F("No PLR\n"));
-    if (parser.seen_test('V')) SERIAL_ECHOF(recovery.valid() ? F("Valid\n") : F("Invalid\n"));
+    if (parser.seen_test('E')) SERIAL_ECHO(recovery.exists() ? F("PLR Exists\n") : F("No PLR\n"));
+    if (parser.seen_test('V')) SERIAL_ECHO(recovery.valid() ? F("Valid\n") : F("Invalid\n"));
   #endif
 }
 
 void GcodeSuite::M413_report(const bool forReplay/*=true*/) {
+  TERN_(MARLIN_SMALL_BUILD, return);
+
   report_heading_etc(forReplay, F(STR_POWER_LOSS_RECOVERY));
-  SERIAL_ECHOPGM("  M413 S", AS_DIGIT(recovery.enabled), " ; ");
-  serialprintln_onoff(recovery.enabled);
+  SERIAL_ECHOLNPGM("  M413 S", AS_DIGIT(recovery.enabled)
+    #if HAS_PLR_BED_THRESHOLD
+      , " B", recovery.bed_temp_threshold
+    #endif
+    , " ; ", ON_OFF(recovery.enabled)
+  );
 }
 
 #endif // POWER_LOSS_RECOVERY

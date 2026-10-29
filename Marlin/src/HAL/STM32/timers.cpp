@@ -1,9 +1,9 @@
 /**
  * Marlin 3D Printer Firmware
- *
  * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
- * Copyright (c) 2016 Bob Cousins bobcousins42@googlemail.com
- * Copyright (c) 2015-2016 Nico Tonnhofer wurstnase.reprap@gmail.com
+ *
+ * Based on Sprinter and grbl.
+ * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,10 +81,6 @@
   #define MCU_TEMP_TIMER 14           // TIM7 is consumed by Software Serial if used.
 #endif
 
-#ifndef HAL_TIMER_RATE
-  #define HAL_TIMER_RATE GetStepperTimerClkFreq()
-#endif
-
 #ifndef STEP_TIMER
   #define STEP_TIMER MCU_STEP_TIMER
 #endif
@@ -141,7 +137,7 @@ void HAL_timer_start(const uint8_t timer_num, const uint32_t frequency) {
          */
 
         timer_instance[timer_num]->setPrescaleFactor(STEPPER_TIMER_PRESCALE); //the -1 is done internally
-        timer_instance[timer_num]->setOverflow(_MIN(hal_timer_t(HAL_TIMER_TYPE_MAX), (HAL_TIMER_RATE) / (STEPPER_TIMER_PRESCALE) /* /frequency */), TICK_FORMAT);
+        timer_instance[timer_num]->setOverflow(_MIN(HAL_TIMER_TYPE_MAX, hal_timer_t((HAL_TIMER_RATE) / (STEPPER_TIMER_PRESCALE) /* / frequency */)), TICK_FORMAT);
         break;
       case MF_TIMER_TEMP: // TEMP TIMER - any available 16bit timer
         timer_instance[timer_num] = new HardwareTimer(TEMP_TIMER_DEV);
@@ -292,9 +288,9 @@ static constexpr int get_timer_num_from_base_address(uintptr_t base_address) {
 // constexpr doesn't like using the base address pointers that timers evaluate to.
 // We can get away with casting them to uintptr_t, if we do so inside an array.
 // GCC will not currently do it directly to a uintptr_t.
-IF_ENABLED(HAS_TMC_SW_SERIAL, static constexpr uintptr_t timer_serial[] = {uintptr_t(TIMER_SERIAL)});
-IF_ENABLED(SPEAKER,           static constexpr uintptr_t timer_tone[]   = {uintptr_t(TIMER_TONE)});
-IF_ENABLED(HAS_SERVOS,        static constexpr uintptr_t timer_servo[]  = {uintptr_t(TIMER_SERVO)});
+TERN_(HAS_TMC_SW_SERIAL, static constexpr uintptr_t timer_serial[] = {uintptr_t(TIMER_SERIAL)});
+TERN_(SPEAKER,           static constexpr uintptr_t timer_tone[]   = {uintptr_t(TIMER_TONE)});
+TERN_(HAS_SERVOS,        static constexpr uintptr_t timer_servo[]  = {uintptr_t(TIMER_SERVO)});
 
 enum TimerPurpose { TP_SERIAL, TP_TONE, TP_SERVO, TP_STEP, TP_TEMP };
 
@@ -316,8 +312,8 @@ static constexpr struct { TimerPurpose p; int t; } timers_in_use[] = {
 };
 
 static constexpr bool verify_no_timer_conflicts() {
-  LOOP_L_N(i, COUNT(timers_in_use))
-    LOOP_S_L_N(j, i + 1, COUNT(timers_in_use))
+  for (uint8_t i = 0; i < COUNT(timers_in_use); ++i)
+    for (uint8_t j = i + 1; j < COUNT(timers_in_use); ++j)
       if (timers_in_use[i].t == timers_in_use[j].t) return false;
   return true;
 }

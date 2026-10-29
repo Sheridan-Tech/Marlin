@@ -23,6 +23,7 @@
 
 /**
  * Leapfrog Xeed Driver board pin assignments
+ * ATmega2560
  *
  * This board is used by other Leapfrog printers in addition to the Xeed,
  * such as the Creatr HS and Bolt. The pin assignments vary wildly between
@@ -103,11 +104,11 @@
 #define HEATER_1_PIN                           9  // Misc Connector, pins 5 and 6 (Out3)
 #define HEATER_BED_PIN                         6  // Misc Connector, pins 9(-) and 10(+) (OutA)
 
-#define FAN_PIN                               10  // Misc Connector, pins 7(-) and 8 (+) (Out4)
+#define FAN0_PIN                              10  // Misc Connector, pins 7(-) and 8 (+) (Out4)
 
 #define LED_PIN                               13
 
-#define SOL1_PIN                               7  // Misc Connector, pins 1(-) and 2(+) (Out1)
+#define SOL0_PIN                               7  // Misc Connector, pins 1(-) and 2(+) (Out1)
 
 // Door Closed Sensor
 //#define DOOR_PIN                            45  // HM1 Connector

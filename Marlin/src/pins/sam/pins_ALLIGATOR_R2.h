@@ -92,7 +92,7 @@
   #define MICROSTEP32 HIGH,HIGH,LOW
 #endif
 
-//#define MOTOR_FAULT_PIN                     22  // PB26 , motor X-Y-Z-E0 motor FAULT
+//#define MOTOR_FAULT_PIN                     22  // PB26, motor X-Y-Z-E0 motor FAULT
 
 //
 // Temperature Sensors
@@ -113,15 +113,15 @@
 #define HEATER_3_PIN                          97  // PC20 on piggy
 #define HEATER_BED_PIN                        69  // PA0
 
-#ifndef FAN_PIN
-  #define FAN_PIN                             92  // PA5
+#ifndef FAN0_PIN
+  #define FAN0_PIN                            92  // PA5
 #endif
 #define FAN1_PIN                              31  // PA7
 
 //
 // Misc. Functions
 //
-#define SDSS                                  77  // PA28
+#define SD_SS_PIN                             77  // PA28
 #define SD_DETECT_PIN                         87  // PA29
 #define LED_RED_PIN                           40  // PC8
 #define LED_GREEN_PIN                         41  // PC9
@@ -148,12 +148,12 @@
 //
 // LCD / Controller
 //
+
 #if IS_RRD_FG_SC
   #define LCD_PINS_RS                         18
-  #define LCD_PINS_ENABLE                     15
+  #define LCD_PINS_EN                         15
   #define LCD_PINS_D4                         19
   #define BEEPER_PIN                          64
-  #undef UI_VOLTAGE_LEVEL
   #define UI_VOLTAGE_LEVEL                     1
 #endif
 

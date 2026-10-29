@@ -39,11 +39,12 @@
 
 #if ENABLED(MAX7219_DEBUG)
 
-#define MAX7219_ERRORS // Disable to save 406 bytes of Program Memory
+#define MAX7219_ERRORS // Requires ~400 bytes of flash
 
 #include "max7219.h"
 
 #include "../module/planner.h"
+#include "../module/stepper.h"
 #include "../MarlinCore.h"
 #include "../HAL/shared/Delay.h"
 
@@ -69,6 +70,26 @@
   uint8_t CodeProfiler::time_fraction = 0;
   uint32_t CodeProfiler::total_time = 0;
   uint16_t CodeProfiler::call_count = 0;
+#endif
+
+#if defined(MAX7219_DEBUG_PLANNER_HEAD) && defined(MAX7219_DEBUG_PLANNER_TAIL) && MAX7219_DEBUG_PLANNER_HEAD == MAX7219_DEBUG_PLANNER_TAIL
+  static int16_t last_head_cnt = 0xF, last_tail_cnt = 0xF;
+#else
+  #ifdef MAX7219_DEBUG_PLANNER_HEAD
+    static int16_t last_head_cnt = 0x1;
+  #endif
+  #ifdef MAX7219_DEBUG_PLANNER_TAIL
+    static int16_t last_tail_cnt = 0x1;
+  #endif
+#endif
+#ifdef MAX7219_DEBUG_PLANNER_QUEUE
+  static int16_t last_depth = 0;
+#endif
+#ifdef MAX7219_DEBUG_PROFILE
+  static uint8_t last_time_fraction = 0;
+#endif
+#ifdef MAX7219_DEBUG_MULTISTEPPING
+  static uint8_t last_multistepping = 0;
 #endif
 
 Max7219 max7219;
@@ -135,9 +156,7 @@ uint8_t Max7219::suspended; // = 0;
 
 void Max7219::error(FSTR_P const func, const int32_t v1, const int32_t v2/*=-1*/) {
   #if ENABLED(MAX7219_ERRORS)
-    SERIAL_ECHOPGM("??? Max7219::");
-    SERIAL_ECHOF(func, AS_CHAR('('));
-    SERIAL_ECHO(v1);
+    SERIAL_ECHO(F("??? Max7219::"), func, C('('), v1);
     if (v2 > 0) SERIAL_ECHOPGM(", ", v2);
     SERIAL_CHAR(')');
     SERIAL_EOL();
@@ -155,7 +174,7 @@ void Max7219::error(FSTR_P const func, const int32_t v1, const int32_t v2/*=-1*/
  */
 inline uint32_t flipped(const uint32_t bits, const uint8_t n_bytes) {
   uint32_t mask = 1, outbits = 0;
-  LOOP_L_N(b, n_bytes * 8) {
+  for (uint8_t b = 0; b < n_bytes * 8; ++b) {
     outbits <<= 1;
     if (bits & mask) outbits |= 1;
     mask <<= 1;
@@ -264,7 +283,7 @@ void Max7219::set(const uint8_t line, const uint8_t bits) {
   }
 
   // Draw a float with a decimal point and optional digits
-  void Max7219::print(const uint8_t start, const_float_t value, const uint8_t pre_size, const uint8_t post_size, const bool leadzero=false) {
+  void Max7219::print(const uint8_t start, const float value, const uint8_t pre_size, const uint8_t post_size, const bool leadzero=false) {
     if (pre_size) print(start, value, pre_size, leadzero, !!post_size);
     if (post_size) {
       const int16_t after = ABS(value) * (10 ^ post_size);
@@ -338,13 +357,13 @@ void Max7219::fill() {
 
 void Max7219::clear_row(const uint8_t row) {
   if (row >= MAX7219_Y_LEDS) return error(F("clear_row"), row);
-  LOOP_L_N(x, MAX7219_X_LEDS) CLR_7219(x, row);
+  for (uint8_t x = 0; x < MAX7219_X_LEDS; ++x) CLR_7219(x, row);
   send_row(row);
 }
 
 void Max7219::clear_column(const uint8_t col) {
   if (col >= MAX7219_X_LEDS) return error(F("set_column"), col);
-  LOOP_L_N(y, MAX7219_Y_LEDS) CLR_7219(col, y);
+  for (uint8_t y = 0; y < MAX7219_Y_LEDS; ++y) CLR_7219(col, y);
   send_column(col);
 }
 
@@ -356,7 +375,7 @@ void Max7219::clear_column(const uint8_t col) {
 void Max7219::set_row(const uint8_t row, const uint32_t val) {
   if (row >= MAX7219_Y_LEDS) return error(F("set_row"), row);
   uint32_t mask = _BV32(MAX7219_X_LEDS - 1);
-  LOOP_L_N(x, MAX7219_X_LEDS) {
+  for (uint8_t x = 0; x < MAX7219_X_LEDS; ++x) {
     if (val & mask) SET_7219(x, row); else CLR_7219(x, row);
     mask >>= 1;
   }
@@ -371,7 +390,7 @@ void Max7219::set_row(const uint8_t row, const uint32_t val) {
 void Max7219::set_column(const uint8_t col, const uint32_t val) {
   if (col >= MAX7219_X_LEDS) return error(F("set_column"), col);
   uint32_t mask = _BV32(MAX7219_Y_LEDS - 1);
-  LOOP_L_N(y, MAX7219_Y_LEDS) {
+  for (uint8_t y = 0; y < MAX7219_Y_LEDS; ++y) {
     if (val & mask) SET_7219(col, y); else CLR_7219(col, y);
     mask >>= 1;
   }
@@ -436,23 +455,23 @@ void Max7219::set_columns_32bits(const uint8_t x, uint32_t val) {
 
 // Initialize the Max7219
 void Max7219::register_setup() {
-  LOOP_L_N(i, MAX7219_NUMBER_UNITS)
+  for (uint8_t i = 0; i < MAX7219_NUMBER_UNITS; ++i)
     send(max7219_reg_scanLimit, 0x07);
   pulse_load();                               // Tell the chips to load the clocked out data
 
-  LOOP_L_N(i, MAX7219_NUMBER_UNITS)
+  for (uint8_t i = 0; i < MAX7219_NUMBER_UNITS; ++i)
     send(max7219_reg_decodeMode, 0x00);       // Using an led matrix (not digits)
   pulse_load();                               // Tell the chips to load the clocked out data
 
-  LOOP_L_N(i, MAX7219_NUMBER_UNITS)
+  for (uint8_t i = 0; i < MAX7219_NUMBER_UNITS; ++i)
     send(max7219_reg_shutdown, 0x01);         // Not in shutdown mode
   pulse_load();                               // Tell the chips to load the clocked out data
 
-  LOOP_L_N(i, MAX7219_NUMBER_UNITS)
+  for (uint8_t i = 0; i < MAX7219_NUMBER_UNITS; ++i)
     send(max7219_reg_displayTest, 0x00);      // No display test
   pulse_load();                               // Tell the chips to load the clocked out data
 
-  LOOP_L_N(i, MAX7219_NUMBER_UNITS)
+  for (uint8_t i = 0; i < MAX7219_NUMBER_UNITS; ++i)
     send(max7219_reg_intensity, 0x01 & 0x0F); // The first 0x0F is the value you can set
                                               // Range: 0x00 to 0x0F
   pulse_load();                               // Tell the chips to load the clocked out data
@@ -461,32 +480,30 @@ void Max7219::register_setup() {
 #if MAX7219_INIT_TEST
 
   uint8_t test_mode = 0;
-  millis_t next_patt_ms;
   bool patt_on;
 
   #if MAX7219_INIT_TEST == 2
 
     #define MAX7219_LEDS (MAX7219_X_LEDS * MAX7219_Y_LEDS)
 
-    constexpr millis_t pattern_delay = 4;
+    xy_int8_t spiral;
+    int8_t spiral_dir;
+    uvalue_t(MAX7219_LEDS) spiral_count;
 
-    int8_t spiralx, spiraly, spiral_dir;
-    IF<(MAX7219_LEDS > 255), uint16_t, uint8_t>::type spiral_count;
-
-    void Max7219::test_pattern() {
-      constexpr int8_t way[][2] = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } };
-      led_set(spiralx, spiraly, patt_on);
-      const int8_t x = spiralx + way[spiral_dir][0], y = spiraly + way[spiral_dir][1];
-      if (!WITHIN(x, 0, MAX7219_X_LEDS - 1) || !WITHIN(y, 0, MAX7219_Y_LEDS - 1) || BIT_7219(x, y) == patt_on)
+    void Max7219::run_test_pattern() {
+      constexpr xy_int8_t way[] = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } };
+      led_set(spiral.x, spiral.y, patt_on);
+      const xy_int8_t xy = spiral + way[spiral_dir];
+      if (!WITHIN(xy.x, 0, MAX7219_X_LEDS - 1) || !WITHIN(xy.y, 0, MAX7219_Y_LEDS - 1) || BIT_7219(xy.x, xy.y) == patt_on)
         spiral_dir = (spiral_dir + 1) & 0x3;
-      spiralx += way[spiral_dir][0];
-      spiraly += way[spiral_dir][1];
+      spiral += way[spiral_dir];
       if (!spiral_count--) {
         if (!patt_on)
           test_mode = 0;
         else {
           spiral_count = MAX7219_LEDS;
-          spiralx = spiraly = spiral_dir = 0;
+          spiral.reset();
+          spiral_dir = 0;
           patt_on = false;
         }
       }
@@ -497,7 +514,11 @@ void Max7219::register_setup() {
     constexpr millis_t pattern_delay = 20;
     int8_t sweep_count, sweepx, sweep_dir;
 
-    void Max7219::test_pattern() {
+    void Max7219::run_test_pattern() {
+      static millis_t next_pattern_ms = 0;
+      const millis_t ms = millis();
+      if (PENDING(ms, next_pattern_ms)) return;
+      next_pattern_ms = ms + pattern_delay;
       set_column(sweepx, patt_on ? 0xFFFFFFFF : 0x00000000);
       sweepx += sweep_dir;
       if (!WITHIN(sweepx, 0, MAX7219_X_LEDS - 1)) {
@@ -507,27 +528,21 @@ void Max7219::register_setup() {
         }
         else
           sweepx -= MAX7219_X_LEDS * sweep_dir;
-        patt_on ^= true;
-        next_patt_ms += 100;
+        FLIP(patt_on);
+        next_pattern_ms += 100;
         if (++test_mode > 4) test_mode = 0;
       }
     }
 
   #endif
 
-  void Max7219::run_test_pattern() {
-    const millis_t ms = millis();
-    if (PENDING(ms, next_patt_ms)) return;
-    next_patt_ms = ms + pattern_delay;
-    test_pattern();
-  }
-
   void Max7219::start_test_pattern() {
     clear();
     test_mode = 1;
     patt_on = true;
     #if MAX7219_INIT_TEST == 2
-      spiralx = spiraly = spiral_dir = 0;
+      spiral.reset();
+      spiral_dir = 0;
       spiral_count = MAX7219_LEDS;
     #else
       sweep_dir = 1;
@@ -550,6 +565,29 @@ void Max7219::init() {
 
   #if MAX7219_INIT_TEST
     start_test_pattern();
+  #endif
+
+  #ifdef MAX7219_REINIT_ON_POWERUP
+    #if defined(MAX7219_DEBUG_PLANNER_HEAD) && defined(MAX7219_DEBUG_PLANNER_TAIL) && MAX7219_DEBUG_PLANNER_HEAD == MAX7219_DEBUG_PLANNER_TAIL
+      last_head_cnt = 0xF;
+      last_tail_cnt = 0xF;
+    #else
+      #ifdef MAX7219_DEBUG_PLANNER_HEAD
+        last_head_cnt = 0x1;
+      #endif
+      #ifdef MAX7219_DEBUG_PLANNER_TAIL
+        last_tail_cnt = 0x1;
+      #endif
+    #endif
+    #ifdef MAX7219_DEBUG_PLANNER_QUEUE
+      last_depth = 0;
+    #endif
+    #ifdef MAX7219_DEBUG_PROFILE
+      last_time_fraction = 0;
+    #endif
+    #ifdef MAX7219_DEBUG_MULTISTEPPING
+      last_multistepping = 0;
+    #endif
   #endif
 }
 
@@ -677,8 +715,6 @@ void Max7219::idle_tasks() {
 
   #if defined(MAX7219_DEBUG_PLANNER_HEAD) && defined(MAX7219_DEBUG_PLANNER_TAIL) && MAX7219_DEBUG_PLANNER_HEAD == MAX7219_DEBUG_PLANNER_TAIL
 
-    static int16_t last_head_cnt = 0xF, last_tail_cnt = 0xF;
-
     if (last_head_cnt != head || last_tail_cnt != tail) {
       range16(MAX7219_DEBUG_PLANNER_HEAD, last_tail_cnt, tail, last_head_cnt, head, &row_change_mask);
       last_head_cnt = head;
@@ -688,7 +724,6 @@ void Max7219::idle_tasks() {
   #else
 
     #ifdef MAX7219_DEBUG_PLANNER_HEAD
-      static int16_t last_head_cnt = 0x1;
       if (last_head_cnt != head) {
         mark16(MAX7219_DEBUG_PLANNER_HEAD, last_head_cnt, head, &row_change_mask);
         last_head_cnt = head;
@@ -696,7 +731,6 @@ void Max7219::idle_tasks() {
     #endif
 
     #ifdef MAX7219_DEBUG_PLANNER_TAIL
-      static int16_t last_tail_cnt = 0x1;
       if (last_tail_cnt != tail) {
         mark16(MAX7219_DEBUG_PLANNER_TAIL, last_tail_cnt, tail, &row_change_mask);
         last_tail_cnt = tail;
@@ -706,8 +740,7 @@ void Max7219::idle_tasks() {
   #endif
 
   #ifdef MAX7219_DEBUG_PLANNER_QUEUE
-    static int16_t last_depth = 0;
-    const int16_t current_depth = (head - tail + BLOCK_BUFFER_SIZE) & (BLOCK_BUFFER_SIZE - 1) & 0xF;
+    const int16_t current_depth = BLOCK_MOD(head - tail + (BLOCK_BUFFER_SIZE)) & 0xF;
     if (current_depth != last_depth) {
       quantity16(MAX7219_DEBUG_PLANNER_QUEUE, last_depth, current_depth, &row_change_mask);
       last_depth = current_depth;
@@ -715,7 +748,6 @@ void Max7219::idle_tasks() {
   #endif
 
   #ifdef MAX7219_DEBUG_PROFILE
-    static uint8_t last_time_fraction = 0;
     const uint8_t current_time_fraction = (uint16_t(CodeProfiler::get_time_fraction()) * MAX7219_NUMBER_UNITS + 8) / 16;
     if (current_time_fraction != last_time_fraction) {
       quantity(MAX7219_DEBUG_PROFILE, last_time_fraction, current_time_fraction, &row_change_mask);
@@ -723,10 +755,32 @@ void Max7219::idle_tasks() {
     }
   #endif
 
+  #ifdef MAX7219_DEBUG_MULTISTEPPING
+    static uint8_t last_multistepping = 0;
+    const uint8_t multistepping = stepper.steps_per_isr;
+    if (multistepping != last_multistepping) {
+      static uint8_t log2_old = 0;
+      uint8_t log2_new = 0;
+      for (uint8_t val = multistepping; val > 1; val >>= 1) log2_new++;
+      mark16(MAX7219_DEBUG_MULTISTEPPING, log2_old, log2_new, &row_change_mask);
+      last_multistepping = multistepping;
+      log2_old = log2_new;
+    }
+  #endif
+
+  #ifdef MAX7219_DEBUG_SLOWDOWN
+    static uint8_t last_slowdown_count = 0;
+    const uint8_t slowdown_count = planner.slowdown_count;
+    if (slowdown_count != last_slowdown_count) {
+      mark16(MAX7219_DEBUG_SLOWDOWN, last_slowdown_count, slowdown_count, &row_change_mask);
+      last_slowdown_count = slowdown_count;
+    }
+  #endif
+
   // batch line updates
   suspended--;
   if (!suspended)
-    LOOP_L_N(i, 8) if (row_change_mask & _BV(i))
+    for (uint8_t i = 0; i < 8; ++i) if (row_change_mask & _BV(i))
       refresh_line(i);
 
   // After resume() automatically do a refresh()

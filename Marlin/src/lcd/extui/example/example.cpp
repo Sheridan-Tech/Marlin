@@ -21,13 +21,17 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#if BOTH(EXTUI_EXAMPLE, EXTENSIBLE_UI)
+#if ALL(EXTUI_EXAMPLE, EXTENSIBLE_UI)
 
 #include "../ui_api.h"
 
 // To implement a new UI, complete the functions below and
 // read or update Marlin's state using the methods in the
 // ExtUI methods in "../ui_api.h"
+//
+// Event handlers not defined here fall back to the no-op
+// defaults in "../ui_api.cpp". See "../ui_api.h" for the
+// full list of handlers that a UI may define.
 //
 // Although it may be possible to access other state
 // variables from Marlin, using the API here possibly
@@ -45,24 +49,6 @@ namespace ExtUI {
      *   READ(pin)
      */
   }
-  void onIdle() {}
-  void onPrinterKilled(FSTR_P const error, FSTR_P const component) {}
-  void onMediaInserted() {}
-  void onMediaError() {}
-  void onMediaRemoved() {}
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {}
-  void onPrintTimerStarted() {}
-  void onPrintTimerPaused() {}
-  void onPrintTimerStopped() {}
-  void onFilamentRunout(const extruder_t extruder) {}
-  void onUserConfirmRequired(const char * const msg) {}
-  void onStatusChanged(const char * const msg) {}
-
-  void onHomingStart() {}
-  void onHomingDone() {}
-  void onPrintDone() {}
-
-  void onFactoryReset() {}
 
   void onStoreSettings(char *buff) {
     // Called when saving to EEPROM (i.e. M500). If the ExtUI needs
@@ -84,54 +70,42 @@ namespace ExtUI {
     //  memcpy(&myDataStruct, buff, sizeof(myDataStruct));
   }
 
-  void onPostprocessSettings() {
-    // Called after loading or resetting stored settings
-  }
-
-  void onSettingsStored(bool success) {
-    // Called after the entire EEPROM has been written,
-    // whether successful or not.
-  }
-
-  void onSettingsLoaded(bool success) {
-    // Called after the entire EEPROM has been read,
-    // whether successful or not.
-  }
-
-  #if HAS_MESH
-    void onLevelingStart() {}
-    void onLevelingDone() {}
-
-    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval) {
-      // Called when any mesh points are updated
-    }
-
-    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const probe_state_t state) {
-      // Called to indicate a special condition
-    }
-  #endif
-
-  #if ENABLED(POWER_LOSS_RECOVERY)
-    void onPowerLossResume() {
-      // Called on resume from power-loss
+  #if ENABLED(ADVANCED_PAUSE_FEATURE)
+    void onPauseMode(
+      const PauseMessage message,
+      const PauseMode mode/*=PAUSE_MODE_SAME*/,
+      const uint8_t extruder/*=motion.extruder*/
+    ) {
+      stdOnPauseMode(message, mode, extruder);
     }
   #endif
 
   #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
+    void onPIDTuning(const pidresult_t rst) {
       // Called for temperature PID tuning result
       switch (rst) {
-        case PID_STARTED:          break;
-        case PID_BAD_EXTRUDER_NUM: break;
-        case PID_TEMP_TOO_HIGH:    break;
-        case PID_TUNING_TIMEOUT:   break;
-        case PID_DONE:             break;
+        case PID_STARTED:
+        case PID_BED_STARTED:
+        case PID_CHAMBER_STARTED: break;
+        case PID_BAD_HEATER_ID:   break;
+        case PID_TEMP_TOO_HIGH:   break;
+        case PID_TUNING_TIMEOUT:  break;
+        case PID_DONE:            break;
       }
     }
   #endif
 
-  void onSteppersDisabled() {}
-  void onSteppersEnabled()  {}
+  #if ENABLED(MPC_AUTOTUNE)
+    void onMPCTuning(const mpcresult_t rst) {
+      // Called for temperature MPC tuning result
+      switch (rst) {
+        case MPC_STARTED:     break;
+        case MPC_TEMP_ERROR:  break;
+        case MPC_INTERRUPTED: break;
+        case MPC_DONE:        break;
+      }
+    }
+  #endif
 }
 
 #endif // EXTUI_EXAMPLE && EXTENSIBLE_UI

@@ -26,14 +26,14 @@
 
 #include "../../../inc/MarlinConfigPre.h"
 
-#if ENABLED(DGUS_LCD_UI_RELOADED)
+#if DGUS_LCD_UI_RELOADED
 
 #include "../ui_api.h"
 #include "DGUSScreenHandler.h"
 
 namespace ExtUI {
 
-  void onStartup() { dgus_screen_handler.Init(); }
+  void onStartup() { screen.init(); }
 
   void onIdle() {
     static bool processing = false;
@@ -41,103 +41,113 @@ namespace ExtUI {
     // Prevent recursion
     if (!processing) {
       processing = true;
-      dgus_screen_handler.Loop();
+      screen.loop();
       processing = false;
     }
   }
 
   void onPrinterKilled(FSTR_P const error, FSTR_P const component) {
-    dgus_screen_handler.PrinterKilled(error, component);
+    screen.printerKilled(error, component);
   }
 
-  void onMediaInserted() { TERN_(SDSUPPORT, dgus_screen_handler.SDCardInserted()); }
-  void onMediaError()    { TERN_(SDSUPPORT, dgus_screen_handler.SDCardError()); }
-  void onMediaRemoved()  { TERN_(SDSUPPORT, dgus_screen_handler.SDCardRemoved()); }
+  void onMediaMounted()  { TERN_(HAS_MEDIA, screen.sdCardInserted()); }
+  void onMediaError()    { TERN_(HAS_MEDIA, screen.sdCardError()); }
+  void onMediaRemoved()  { TERN_(HAS_MEDIA, screen.sdCardRemoved()); }
 
-  void onPlayTone(const uint16_t frequency, const uint16_t duration) {
-    dgus_screen_handler.PlayTone(frequency, duration);
+  void onPlayTone(const uint16_t frequency, const uint16_t duration/*=0*/) {
+    screen.playTone(frequency, duration);
   }
 
   void onPrintTimerStarted() {
-    dgus_screen_handler.PrintTimerStarted();
+    screen.printTimerStarted();
   }
 
   void onPrintTimerPaused() {
-    dgus_screen_handler.PrintTimerPaused();
+    screen.printTimerPaused();
   }
 
   void onPrintTimerStopped() {
-    dgus_screen_handler.PrintTimerStopped();
+    screen.printTimerStopped();
   }
 
   void onFilamentRunout(const extruder_t extruder) {
-    dgus_screen_handler.FilamentRunout(extruder);
+    screen.filamentRunout(extruder);
   }
 
   void onUserConfirmRequired(const char * const msg) {
-    dgus_screen_handler.UserConfirmRequired(msg);
+    screen.userConfirmRequired(msg);
   }
+
+  // For fancy LCDs include an icon ID, message, and translated button title
+  void onUserConfirmRequired(const int, const char * const cstr, FSTR_P const) {
+    onUserConfirmRequired(cstr);
+  }
+  void onUserConfirmRequired(const int, FSTR_P const fstr, FSTR_P const) {
+    onUserConfirmRequired(fstr);
+  }
+
+  #if ENABLED(ADVANCED_PAUSE_FEATURE)
+    void onPauseMode(
+      const PauseMessage message,
+      const PauseMode mode/*=PAUSE_MODE_SAME*/,
+      const uint8_t extruder/*=motion.extruder*/
+    ) {
+      // This UI has no "Purge More / Resume" choice, so don't wait for one
+      if (message == PAUSE_MESSAGE_OPTION)
+        setPauseMenuResponse(PAUSE_RESPONSE_RESUME_PRINT);
+      else
+        stdOnPauseMode(message, mode, extruder);
+    }
+  #endif
 
   void onStatusChanged(const char * const msg) {
-    dgus_screen_handler.SetStatusMessage(msg);
+    screen.setStandingStatus(msg);
   }
 
-  void onHomingStart() {}
-  void onHomingDone() {}
-  void onPrintDone() {}
-
   void onFactoryReset() {
-    dgus_screen_handler.SettingsReset();
+    screen.settingsReset();
   }
 
   void onStoreSettings(char *buff) {
-    dgus_screen_handler.StoreSettings(buff);
+    screen.storeSettings(buff);
   }
 
   void onLoadSettings(const char *buff) {
-    dgus_screen_handler.LoadSettings(buff);
+    screen.loadSettings(buff);
   }
 
-  void onPostprocessSettings() {}
-
-  void onSettingsStored(bool success) {
-    dgus_screen_handler.ConfigurationStoreWritten(success);
+  void onSettingsStored(const bool success) {
+    screen.configurationStoreWritten(success);
   }
 
-  void onSettingsLoaded(bool success) {
-    dgus_screen_handler.ConfigurationStoreRead(success);
+  void onSettingsLoaded(const bool success) {
+    screen.configurationStoreRead(success);
   }
 
   #if HAS_MESH
-    void onLevelingStart() {}
-    void onLevelingDone() {}
-
-    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const_float_t zval) {
-      dgus_screen_handler.MeshUpdate(xpos, ypos);
+    void onMeshUpdate(const int8_t xpos, const int8_t ypos, const float zval) {
+      screen.meshUpdate(xpos, ypos);
     }
 
     void onMeshUpdate(const int8_t xpos, const int8_t ypos, const probe_state_t state) {
       if (state == G29_POINT_FINISH)
-        dgus_screen_handler.MeshUpdate(xpos, ypos);
+        screen.meshUpdate(xpos, ypos);
     }
   #endif
 
   #if ENABLED(POWER_LOSS_RECOVERY)
     void onPowerLossResume() {
       // Called on resume from power-loss
-      dgus_screen_handler.PowerLossResume();
+      screen.powerLossResume();
     }
   #endif
 
   #if HAS_PID_HEATING
-    void onPidTuning(const result_t rst) {
+    void onPIDTuning(const pidresult_t rst) {
       // Called for temperature PID tuning result
-      dgus_screen_handler.PidTuning(rst);
+      screen.pidTuning(rst);
     }
   #endif
-
-  void onSteppersDisabled() {}
-  void onSteppersEnabled()  {}
 }
 
 #endif // DGUS_LCD_UI_RELOADED

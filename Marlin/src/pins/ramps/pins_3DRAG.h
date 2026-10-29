@@ -23,6 +23,9 @@
 
 /**
  * 3DRAG (and K8200 / K8400) Arduino Mega with RAMPS v1.4 pin assignments
+ * This may be compatible with the standalone Controller variant.
+ * Schematic: https://reprap.org/wiki/File:Schema_base.jpg
+ * ATmega2560, ATmega1280
  */
 
 #ifndef BOARD_INFO_NAME
@@ -66,10 +69,12 @@
 #define MOSFET_C_PIN                           9
 #define MOSFET_D_PIN                          12
 
+#define HEATER_2_PIN                           6
+
 //
 // Misc. Functions
 //
-#define SDSS                                  25
+#define SD_SS_PIN                             25
 
 #ifndef CASE_LIGHT_PIN
   #define CASE_LIGHT_PIN                      -1  // Hardware PWM but one is not available on expansion header
@@ -79,13 +84,13 @@
  *  M3/M4/M5 - Spindle/Laser Control
  *
  *  If you want to control the speed of your spindle then you'll have
- *  have to sacrifce the Extruder and pull some signals off the Z stepper
+ *  to sacrifce the Extruder and pull some signals off the Z stepper
  *  driver socket.
  *
  *  The following assumes:
  *   - the Z stepper driver socket is empty
  *   - the extruder driver socket has a driver board plugged into it
- *   - the Z stepper wires are attached the the extruder connector
+ *   - the Z stepper wires are attached the extruder connector
  *
  *  If you want to keep the extruder AND don't have a LCD display then
  *  you can still control the power on/off and spindle direction.
@@ -111,7 +116,7 @@
     #define SPINDLE_LASER_PWM_PIN             46  // Hardware PWM
     #define SPINDLE_LASER_ENA_PIN             62  // Pullup!
     #define SPINDLE_DIR_PIN                   48
-  #elif !BOTH(HAS_WIRED_LCD, IS_NEWPANEL)          // Use expansion header if no LCD in use
+  #elif !ALL(HAS_WIRED_LCD, IS_NEWPANEL)          // Use expansion header if no LCD in use
     #define SPINDLE_LASER_ENA_PIN             16  // Pullup or pulldown!
     #define SPINDLE_DIR_PIN                   17
     #if !NUM_SERVOS                               // Use servo connector if possible
@@ -122,43 +127,27 @@
   #endif
 #endif
 
-#include "pins_RAMPS.h"
-
-//
-// Heaters / Fans
-//
-#define HEATER_2_PIN                           6
-
-#undef SD_DETECT_PIN
-#define SD_DETECT_PIN                         53
-
 //
 // LCD / Controller
 //
+
 #if HAS_WIRED_LCD && IS_NEWPANEL
   #undef BEEPER_PIN
 
   // TODO: Remap EXP1/2 based on adapter
-  #undef LCD_PINS_RS
-  #undef LCD_PINS_ENABLE
-  #undef LCD_PINS_D4
-  #undef LCD_PINS_D5
-  #undef LCD_PINS_D6
-  #undef LCD_PINS_D7
   #define LCD_PINS_RS                         27
-  #define LCD_PINS_ENABLE                     29
+  #define LCD_PINS_EN                         29
   #define LCD_PINS_D4                         37
   #define LCD_PINS_D5                         35
   #define LCD_PINS_D6                         33
   #define LCD_PINS_D7                         31
 
   // Buttons
-  #undef BTN_EN1
-  #undef BTN_EN2
-  #undef BTN_ENC
   #define BTN_EN1                             16
   #define BTN_EN2                             17
   #define BTN_ENC                             23
+
+  #define LCD_PINS_DEFINED
 
 #else
 
@@ -171,3 +160,7 @@
   #define BOARD_ST7920_DELAY_2               188
   #define BOARD_ST7920_DELAY_3                 0
 #endif
+
+#define SD_DETECT_PIN                         53
+
+#include "pins_RAMPS.h"

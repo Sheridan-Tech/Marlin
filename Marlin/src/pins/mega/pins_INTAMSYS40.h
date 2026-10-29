@@ -23,6 +23,7 @@
 
 /**
  * Intamsys Funmat HT V4.0 Mainboard
+ * ATmega2560
  * 4988 Drivers Tested
  * 2208 version exists and may or may not work
  */
@@ -98,12 +99,12 @@
 #define HEATER_0_PIN                           2  // PWM
 #define HEATER_BED_PIN                         4  // PWM
 #define HEATER_CHAMBER_PIN                     3  // PWM
-#define FAN_PIN                                7  // PWM
+#define FAN0_PIN                               7  // PWM
 
 //
 // Misc. Functions
 //
-#define SDSS                                  53
+#define SD_SS_PIN                             53
 #define SD_DETECT_PIN                         39
 
 #if ENABLED(CASE_LIGHT_ENABLE)
@@ -115,14 +116,14 @@
 #endif
 
 //
-// LCD Controller
+// LCD / Controller
 //
 
 #define BEEPER_PIN                            18
 
 #if HAS_WIRED_LCD
   #define LCD_PINS_RS                         20
-  #define LCD_PINS_ENABLE                     30
+  #define LCD_PINS_EN                         30
   #define LCD_PINS_D4                         14
   #define LCD_PINS_D5                         21
   #define LCD_PINS_D6                          5

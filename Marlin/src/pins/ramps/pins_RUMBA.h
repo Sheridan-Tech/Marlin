@@ -23,6 +23,8 @@
 
 /**
  * RUMBA pin assignments
+ * Schematic: https://reprap.org/wiki/File:RRD-RUMBA_SCHEMATICS.png
+ * ATmega2560
  */
 
 #define REQUIRE_MEGA2560
@@ -47,9 +49,6 @@
 //
 // Limit Switches
 //
-#ifndef X_MIN_PIN
-  #define X_MIN_PIN                           37
-#endif
 #ifndef X_MIN_PIN
   #define X_MIN_PIN                           37
 #endif
@@ -113,7 +112,7 @@
 // Temperature Sensors
 //
 #ifndef TEMP_0_PIN
-  #if TEMP_SENSOR_0 == -1
+  #if TEMP_SENSOR_0_IS_AD595
     #define TEMP_0_PIN                         6  // Analog Input (connector *K1* on RUMBA thermocouple ADD ON is used)
   #else
     #define TEMP_0_PIN                        15  // Analog Input (default connector for thermistor *T0* on rumba board is used)
@@ -121,14 +120,14 @@
 #endif
 
 #ifndef TEMP_1_PIN
-  #if TEMP_SENSOR_1 == -1
+  #if TEMP_SENSOR_1_IS_AD595
     #define TEMP_1_PIN                         5  // Analog Input (connector *K2* on RUMBA thermocouple ADD ON is used)
   #else
     #define TEMP_1_PIN                        14  // Analog Input (default connector for thermistor *T1* on rumba board is used)
   #endif
 #endif
 
-#if TEMP_SENSOR_2 == -1
+#if TEMP_SENSOR_2_IS_AD595
   #define TEMP_2_PIN                           7  // Analog Input (connector *K3* on RUMBA thermocouple ADD ON is used <-- this can't be used when TEMP_SENSOR_BED is defined as thermocouple)
 #else
   #define TEMP_2_PIN                          13  // Analog Input (default connector for thermistor *T2* on rumba board is used)
@@ -141,7 +140,7 @@
   //#define TEMP_CHAMBER_PIN                  12  // Analog Input (default connector for thermistor *T3* on rumba board is used)
 #endif
 
-#if TEMP_SENSOR_BED == -1
+#if TEMP_SENSOR_BED_IS_AD595
   #define TEMP_BED_PIN                         7  // Analog Input (connector *K3* on RUMBA thermocouple ADD ON is used <-- this can't be used when TEMP_SENSOR_2 is defined as thermocouple)
 #else
   #define TEMP_BED_PIN                        11  // Analog Input (default connector for thermistor *THB* on rumba board is used)
@@ -156,8 +155,8 @@
 #define HEATER_3_PIN                           8
 #define HEATER_BED_PIN                         9
 
-#ifndef FAN_PIN
-  #define FAN_PIN                              7
+#ifndef FAN0_PIN
+  #define FAN0_PIN                             7
 #endif
 #ifndef FAN1_PIN
   #define FAN1_PIN                             8
@@ -190,7 +189,8 @@
 //
 // LCD / Controller
 //
-#if EITHER(MKS_12864OLED, MKS_12864OLED_SSD1306)
+
+#if ANY(MKS_12864OLED, MKS_12864OLED_SSD1306)
   #define LCD_PINS_DC                         38  // Set as output on init
   #define LCD_PINS_RS                         41  // Pull low for 1s to init
   // DOGM SPI LCD Support
@@ -209,7 +209,7 @@
 
   #define LCD_RESET_PIN                       18  // Must be high or open for LCD to operate normally.
 
-  #if EITHER(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
+  #if ANY(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
     #ifndef RGB_LED_R_PIN
       #define RGB_LED_R_PIN                   41
     #endif
@@ -225,7 +225,7 @@
 
 #else
   #define LCD_PINS_RS                         19
-  #define LCD_PINS_ENABLE                     42
+  #define LCD_PINS_EN                         42
   #define LCD_PINS_D4                         18
   #define LCD_PINS_D5                         38
   #define LCD_PINS_D6                         41
@@ -238,8 +238,8 @@
 //
 #define BEEPER_PIN                            44
 
-#if ENABLED(SDSUPPORT)
-  #define SDSS                                53
+#if HAS_MEDIA
+  #define SD_SS_PIN                           53
   #define SD_DETECT_PIN                       49
 #endif
 

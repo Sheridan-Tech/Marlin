@@ -28,12 +28,16 @@
 #include "../../module/planner.h"
 
 /**
- * M852: Get or set the machine skew factors. Reports current values with no arguments.
+ * M852: Bed Skew Compensation
  *
- *  S[xy_factor] - Alias for 'I'
- *  I[xy_factor] - New XY skew factor
- *  J[xz_factor] - New XZ skew factor
- *  K[yz_factor] - New YZ skew factor
+ * Get or set the machine skew factors; correct for misalignment
+ *
+ * Parameters:
+ *   None          Report current values
+ *   S<xy_factor>  Alias for 'I'
+ *   I<xy_factor>  New XY skew factor
+ *   J<xz_factor>  New XZ skew factor
+ *   K<yz_factor>  New YZ skew factor
  */
 void GcodeSuite::M852() {
   if (!parser.seen("SIJK")) return M852_report();
@@ -85,19 +89,19 @@ void GcodeSuite::M852() {
 
   // When skew is changed the current position changes
   if (setval) {
-    set_current_from_steppers_for_axis(ALL_AXES_ENUM);
-    sync_plan_position();
-    report_current_position();
+    motion.set_current_from_steppers_for_axis(ALL_AXES_ENUM);
+    motion.sync_plan_position();
+    motion.report_position();
   }
 }
 
 void GcodeSuite::M852_report(const bool forReplay/*=true*/) {
+  TERN_(MARLIN_SMALL_BUILD, return);
+
   report_heading_etc(forReplay, F(STR_SKEW_FACTOR));
-  SERIAL_ECHOPAIR_F("  M852 I", planner.skew_factor.xy, 6);
+  SERIAL_ECHOPGM("  M852 I", p_float_t(planner.skew_factor.xy, 6));
   #if ENABLED(SKEW_CORRECTION_FOR_Z)
-    SERIAL_ECHOPAIR_F(" J", planner.skew_factor.xz, 6);
-    SERIAL_ECHOPAIR_F(" K", planner.skew_factor.yz, 6);
-    SERIAL_ECHOLNPGM(" ; XY, XZ, YZ");
+    SERIAL_ECHOLNPGM(" J", p_float_t(planner.skew_factor.xz, 6), " K", p_float_t(planner.skew_factor.yz, 6), " ; XY, XZ, YZ");
   #else
     SERIAL_ECHOLNPGM(" ; XY");
   #endif

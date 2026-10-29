@@ -23,35 +23,35 @@
 
 #include "../DGUSDisplayDef.h"
 
-enum DGUSLCD_Screens : uint8_t {
-  DGUSLCD_SCREEN_BOOT                =   0,
-  DGUSLCD_SCREEN_MAIN                =   1,
-  DGUSLCD_SCREEN_STATUS              =   1,
-  DGUSLCD_SCREEN_STATUS2             =   1,
-  DGUSLCD_SCREEN_TEMPERATURE         =  10,
-  DGUSLCD_SCREEN_PREHEAT             =  18,
-  DGUSLCD_SCREEN_POWER_LOSS          = 100,
-  DGUSLCD_SCREEN_MANUALMOVE          = 192,
-  DGUSLCD_SCREEN_UTILITY             = 120,
-  DGUSLCD_SCREEN_FILAMENT_HEATING    = 146,
-  DGUSLCD_SCREEN_FILAMENT_LOADING    = 148,
-  DGUSLCD_SCREEN_FILAMENT_UNLOADING  = 158,
-  DGUSLCD_SCREEN_MANUALEXTRUDE       = 160,
-  DGUSLCD_SCREEN_SDFILELIST          =  71,
-  DGUSLCD_SCREEN_SDPRINTMANIPULATION =  73,
-  DGUSLCD_SCREEN_SDPRINTTUNE         =  75,
-  DGUSLCD_SCREEN_FLC_PREHEAT         =  94,
-  DGUSLCD_SCREEN_FLC_PRINTING        =  96,
-  DGUSLCD_SCREEN_STEPPERMM           = 212,
-  DGUSLCD_SCREEN_PID_E               = 214,
-  DGUSLCD_SCREEN_PID_BED             = 218,
-  DGUSLCD_SCREEN_Z_OFFSET            = 222,
-  DGUSLCD_SCREEN_INFOS               =  36,
-  DGUSLCD_SCREEN_CONFIRM             = 240,
-  DGUSLCD_SCREEN_KILL                = 250, ///< Kill Screen. Must always be 250 (to be able to display "Error wrong LCD Version")
-  DGUSLCD_SCREEN_WAITING             = 251,
-  DGUSLCD_SCREEN_POPUP               = 252, ///< special target, popup screen will also return this code to say "return to previous screen"
-  DGUSLCD_SCREEN_UNUSED              = 255
+enum DGUS_ScreenID : uint8_t {
+  DGUS_SCREEN_BOOT                =   0,
+  DGUS_SCREEN_MAIN                =   1,
+  DGUS_SCREEN_STATUS              =   1,
+  DGUS_SCREEN_STATUS2             =   1,
+  DGUS_SCREEN_TEMPERATURE         =  10,
+  DGUS_SCREEN_PREHEAT             =  18,
+  DGUS_SCREEN_POWER_LOSS          = 100,
+  DGUS_SCREEN_MANUALMOVE          = 192,
+  DGUS_SCREEN_UTILITY             = 120,
+  DGUS_SCREEN_FILAMENT_HEATING    = 146,
+  DGUS_SCREEN_FILAMENT_LOADING    = 148,
+  DGUS_SCREEN_FILAMENT_UNLOADING  = 158,
+  DGUS_SCREEN_MANUALEXTRUDE       = 160,
+  DGUS_SCREEN_SDFILELIST          =  71,
+  DGUS_SCREEN_SDPRINTMANIPULATION =  73,
+  DGUS_SCREEN_SDPRINTTUNE         =  75,
+  DGUS_SCREEN_FLC_PREHEAT         =  94,
+  DGUS_SCREEN_FLC_PRINTING        =  96,
+  DGUS_SCREEN_STEPPERMM           = 212,
+  DGUS_SCREEN_PID_E               = 214,
+  DGUS_SCREEN_PID_BED             = 218,
+  DGUS_SCREEN_Z_OFFSET            = 222,
+  DGUS_SCREEN_INFOS               =  36,
+  DGUS_SCREEN_CONFIRM             = 240,
+  DGUS_SCREEN_KILL                = 250, //!< Kill Screen. Must always be 250 (to be able to display "Error wrong LCD Version")
+  DGUS_SCREEN_WAITING             = 251,
+  DGUS_SCREEN_POPUP               = 252, //!< special target, popup screen will also return this code to say "return to previous screen"
+  DGUS_SCREEN_UNUSED              = 255
 };
 
 // Display Memory layout used (T5UID)
@@ -116,18 +116,18 @@ constexpr uint16_t VP_MOVE_E1 = 0x2112;
 //constexpr uint16_t VP_MOVE_E4 = 0x2118;
 //constexpr uint16_t VP_MOVE_E5 = 0x211A;
 constexpr uint16_t VP_HOME_ALL = 0x2120;
-constexpr uint16_t VP_MOTOR_LOCK_UNLOK = 0x2130;
+constexpr uint16_t VP_MOTOR_LOCK_UNLOCK = 0x2130;
 
 // Power loss recovery
 constexpr uint16_t VP_POWER_LOSS_RECOVERY = 0x2180;
 
-// Fan Control Buttons , switch between "off" and "on"
+// Fan Control Buttons, switch between "off" and "on"
 constexpr uint16_t VP_FAN0_CONTROL = 0x2200;
 constexpr uint16_t VP_FAN1_CONTROL = 0x2202;
 constexpr uint16_t VP_FAN2_CONTROL = 0x2204;
 constexpr uint16_t VP_FAN3_CONTROL = 0x2206;
 
-// Heater Control Buttons , triged between "cool down" and "heat PLA" state
+// Heater Control Buttons, triged between "cool down" and "heat PLA" state
 constexpr uint16_t VP_E0_CONTROL = 0x2210;
 constexpr uint16_t VP_E1_CONTROL = 0x2212;
 //constexpr uint16_t VP_E2_CONTROL = 0x2214;
@@ -148,7 +148,7 @@ constexpr uint16_t VP_E1_BED_PREHEAT = 0x2222;
 constexpr uint16_t VP_E0_FILAMENT_LOAD_UNLOAD = 0x2300;
 constexpr uint16_t VP_E1_FILAMENT_LOAD_UNLOAD = 0x2302;
 
-// Settings store , reset
+// Settings store, reset
 constexpr uint16_t VP_SETTINGS = 0x2400;
 
 // PID autotune
@@ -258,7 +258,7 @@ constexpr uint16_t VP_BED_STATUS = 0x331C;
 constexpr uint16_t VP_MOVE_OPTION = 0x3400;
 
 // Step per mm
-constexpr uint16_t VP_X_STEP_PER_MM = 0x3600; // at the moment , 2 byte unsigned int , 0~1638.4
+constexpr uint16_t VP_X_STEP_PER_MM = 0x3600; // at the moment, uint16_t, 0~1638.4
 //constexpr uint16_t VP_X2_STEP_PER_MM = 0x3602;
 constexpr uint16_t VP_Y_STEP_PER_MM = 0x3604;
 //constexpr uint16_t VP_Y2_STEP_PER_MM = 0x3606;
@@ -272,10 +272,10 @@ constexpr uint16_t VP_E1_STEP_PER_MM = 0x3612;
 //constexpr uint16_t VP_E5_STEP_PER_MM = 0x361A;
 
 // PIDs
-constexpr uint16_t VP_E0_PID_P = 0x3700; // at the moment , 2 byte unsigned int , 0~1638.4
+constexpr uint16_t VP_E0_PID_P = 0x3700; // at the moment, uint16_t, 0~1638.4
 constexpr uint16_t VP_E0_PID_I = 0x3702;
 constexpr uint16_t VP_E0_PID_D = 0x3704;
-constexpr uint16_t VP_E1_PID_P = 0x3706; // at the moment , 2 byte unsigned int , 0~1638.4
+constexpr uint16_t VP_E1_PID_P = 0x3706; // at the moment, uint16_t, 0~1638.4
 constexpr uint16_t VP_E1_PID_I = 0x3708;
 constexpr uint16_t VP_E1_PID_D = 0x370A;
 constexpr uint16_t VP_BED_PID_P = 0x3710;

@@ -42,7 +42,7 @@
 
 //#define I2C_EEPROM
 #define SRAM_EEPROM_EMULATION
-#define MARLIN_EEPROM_SIZE                0x2000  // 8K
+#define MARLIN_EEPROM_SIZE               0x2000U  // 8K
 
 //
 // Servos
@@ -101,7 +101,7 @@
 #define HEATER_1_PIN                        PA3   // Heater1
 #define HEATER_BED_PIN                      PA1   // Hotbed
 
-#define FAN_PIN                             PE9   // Fan0
+#define FAN0_PIN                            PE9   // Fan0
 #define FAN1_PIN                            PE11  // Fan1
 #define FAN2_PIN                            PE13  // Fan2
 #define FAN3_PIN                            PE14  // Fan3
@@ -121,7 +121,7 @@
 
 #define BEEPER_PIN                          PD10
 #define LCD_PINS_RS                         PE15
-#define LCD_PINS_ENABLE                     PD8
+#define LCD_PINS_EN                         PD8
 #define LCD_PINS_D4                         PE10
 #define LCD_PINS_D5                         PE12
 #define LCD_PINS_D6                         PD1
@@ -145,10 +145,10 @@
 #endif
 
 #if SD_CONNECTION_IS(ONBOARD)
-  #define SDIO_SUPPORT                            // Use SDIO for onboard SD
-  #if DISABLED(SDIO_SUPPORT)
+  #define ONBOARD_SDIO                            // Use SDIO for onboard SD
+  #if DISABLED(ONBOARD_SDIO)
     #define SOFTWARE_SPI                          // Use soft SPI for onboard SD
-    #define SDSS                            PC11
+    #define SD_SS_PIN                       PC11
     #define SD_SCK_PIN                      PC12
     #define SD_MISO_PIN                     PC8
     #define SD_MOSI_PIN                     PD2

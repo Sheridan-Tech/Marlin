@@ -22,7 +22,7 @@
 
 #include "../../../../inc/MarlinConfigPre.h"
 
-#if ENABLED(DGUS_LCD_UI_MKS)
+#if DGUS_LCD_UI_MKS
 
 #include "DGUSDisplayDef.h"
 #include "../DGUSDisplay.h"
@@ -33,7 +33,7 @@
 #include "../../../../module/planner.h"
 
 #include "../../ui_api.h"
-#include "../../../marlinui.h"
+#include "../../../marlinui.h" // For material presets
 
 #if HAS_STEALTHCHOP
   #include "../../../../module/stepper/trinamic.h"
@@ -59,9 +59,9 @@ float Z_distance = 0.1;
 //
 // Persistent settings
 //
-xy_int_t mks_corner_offsets[5];   // Initialized by settings.load()
-xyz_int_t mks_park_pos;           // Initialized by settings.load()
-celsius_t mks_min_extrusion_temp; // Initialized by settings.load()
+xy_int_t mks_corner_offsets[5];   // Initialized by settings.load
+xyz_int_t mks_park_pos;           // Initialized by settings.load
+celsius_t mks_min_extrusion_temp; // Initialized by settings.load
 
 void MKS_reset_settings() {
   constexpr xy_int_t init_dgus_level_offsets[5] = {
@@ -69,7 +69,7 @@ void MKS_reset_settings() {
     { 20, 20 }, { 20, 20 },
     { X_CENTER, Y_CENTER }
   };
-  mks_language_index = MKS_SimpleChinese;
+  mks_language_index = MKS_English;
   COPY(mks_corner_offsets, init_dgus_level_offsets);
   mks_park_pos.set(20, 20, 10);
   mks_min_extrusion_temp = 0;
@@ -81,29 +81,29 @@ constexpr feedRate_t park_speed_xy = TERN(NOZZLE_PARK_FEATURE, NOZZLE_PARK_XY_FE
 
 void MKS_pause_print_move() {
   queue.exhaust();
-  position_before_pause = current_position;
+  position_before_pause = motion.position;
 
   // Save the current position, the raise amount, and 'already raised'
   TERN_(POWER_LOSS_RECOVERY, if (recovery.enabled) recovery.save(true, mks_park_pos.z, true));
 
-  destination.z = _MIN(current_position.z + mks_park_pos.z, Z_MAX_POS);
-  prepare_internal_move_to_destination(park_speed_z);
+  motion.destination.z = _MIN(motion.position.z + mks_park_pos.z, Z_MAX_POS);
+  motion.prepare_internal_move_to_destination(park_speed_z);
 
-  destination.set(X_MIN_POS + mks_park_pos.x, Y_MIN_POS + mks_park_pos.y);
-  prepare_internal_move_to_destination(park_speed_xy);
+  motion.destination.set(X_MIN_POS + mks_park_pos.x, Y_MIN_POS + mks_park_pos.y);
+  motion.prepare_internal_move_to_destination(park_speed_xy);
 }
 
 void MKS_resume_print_move() {
-  destination.set(position_before_pause.x, position_before_pause.y);
-  prepare_internal_move_to_destination(park_speed_xy);
-  destination.z = position_before_pause.z;
-  prepare_internal_move_to_destination(park_speed_z);
+  motion.destination.set(position_before_pause.x, position_before_pause.y);
+  motion.prepare_internal_move_to_destination(park_speed_xy);
+  motion.destination.z = position_before_pause.z;
+  motion.prepare_internal_move_to_destination(park_speed_z);
   TERN_(POWER_LOSS_RECOVERY, if (recovery.enabled) recovery.save(true));
 }
 
 float z_offset_add = 0;
 
-xyz_int_t tmc_step; // = { 0, 0, 0 }
+xyz_int_t tmc_stall_sens; // = { 0, 0, 0 }
 
 uint16_t lcd_default_light = 50;
 
@@ -117,7 +117,10 @@ const uint16_t VPList_Boot[] PROGMEM = {
 };
 
 #define MKSLIST_E_ITEM(N) VP_T_E##N##_Is, VP_T_E##N##_Set,
+#define INFO_BAR REPEAT(EXTRUDERS, MKSLIST_E_ITEM) VP_T_Bed_Is, VP_T_Bed_Set, VP_Fan0_Percentage,
 
+// Not defined in firmware 1.30 or 1.31
+/*
 const uint16_t VPList_Main[] PROGMEM = {
   // VP_M117, for completeness, but it cannot be auto-uploaded.
   #if HAS_HOTEND
@@ -140,53 +143,31 @@ const uint16_t VPList_Main[] PROGMEM = {
   #endif
   0x0000
 };
+*/
 
 const uint16_t MKSList_Home[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
-  // Language
-  // VP_HOME_Dis,
+  INFO_BAR
 
   0x0000
 };
 
 const uint16_t MKSList_Setting[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
-  // Language
-  VP_Setting_Dis,
+  INFO_BAR
+
   0x0000
 };
 
 const uint16_t MKSList_Tool[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
-  // Language
-  VP_Tool_Dis,
-  // LCD BLK
+  INFO_BAR
+
+  // LCD BackLight
   VP_LCD_BLK,
+
   0x0000
 };
 
-const uint16_t MKSList_EXTRUE[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+const uint16_t MKSList_EXTRUDE[] PROGMEM = {
+  INFO_BAR
 
   VP_Filament_distance,
   VP_Filament_speed,
@@ -195,34 +176,19 @@ const uint16_t MKSList_EXTRUE[] PROGMEM = {
 };
 
 const uint16_t MKSList_LEVEL[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+  INFO_BAR
 
   0x0000
 };
 
 const uint16_t MKSList_MOVE[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+  INFO_BAR
 
   0x0000
 };
 
 const uint16_t MKSList_Print[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+  INFO_BAR
   // Print Percent
   VP_PrintProgress_Percentage,
 
@@ -254,26 +220,15 @@ const uint16_t MKSList_SD_File[] PROGMEM = {
 };
 
 const uint16_t MKSList_TempOnly[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
-  // LCD BLK
-  VP_LCD_BLK,
+  INFO_BAR
+
   0x0000
 };
 
-const uint16_t MKSList_Pluse[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+const uint16_t MKSList_Steps_mm[] PROGMEM = {
+  INFO_BAR
 
-  // Pluse
+  // Steps/mm
   VP_X_STEP_PER_MM,
   VP_Y_STEP_PER_MM,
   VP_Z_STEP_PER_MM,
@@ -284,14 +239,9 @@ const uint16_t MKSList_Pluse[] PROGMEM = {
 };
 
 const uint16_t MKSList_MaxSpeed[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+  INFO_BAR
 
-  // Pluse
+  // Max Speed
   VP_X_MAX_SPEED,
   VP_Y_MAX_SPEED,
   VP_Z_MAX_SPEED,
@@ -302,31 +252,20 @@ const uint16_t MKSList_MaxSpeed[] PROGMEM = {
 };
 
 const uint16_t MKSList_MaxAcc[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+  INFO_BAR
 
-  // ACC
-  VP_ACC_SPEED,
-  VP_X_ACC_MAX_SPEED,
-  VP_Y_ACC_MAX_SPEED,
-  VP_Z_ACC_MAX_SPEED,
-  VP_E0_ACC_MAX_SPEED,
-  VP_E1_ACC_MAX_SPEED,
+  // Acceleration
+  VP_X_MAX_ACC,
+  VP_Y_MAX_ACC,
+  VP_Z_MAX_ACC,
+  VP_E0_MAX_ACC,
+  VP_E1_MAX_ACC,
 
   0x0000
 };
 
 const uint16_t MKSList_PID[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+  INFO_BAR
 
   // PID
   VP_E0_PID_P,
@@ -337,12 +276,7 @@ const uint16_t MKSList_PID[] PROGMEM = {
 };
 
 const uint16_t MKSList_Level_Point[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  // FAN
-  VP_Fan0_Percentage,
+  INFO_BAR
 
   // Level Point
   VP_Level_Point_One_X,
@@ -372,10 +306,7 @@ const uint16_t MKSList_Level_PrintConfig[] PROGMEM = {
 };
 
 const uint16_t MKSList_PrintPauseConfig[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
+  INFO_BAR
 
   VP_X_PARK_POS,
   VP_Y_PARK_POS,
@@ -384,11 +315,8 @@ const uint16_t MKSList_PrintPauseConfig[] PROGMEM = {
   0x0000
 };
 
-const uint16_t MKSList_MotoConfig[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
+const uint16_t MKSList_MotionConfig[] PROGMEM = {
+  INFO_BAR
 
   VP_TRAVEL_SPEED,
   VP_FEEDRATE_MIN_SPEED,
@@ -398,24 +326,18 @@ const uint16_t MKSList_MotoConfig[] PROGMEM = {
 };
 
 const uint16_t MKSList_EX_Config[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  VP_MIN_EX_T,VP_Min_EX_T_E,
+  INFO_BAR
+  VP_MIN_EX_T, VP_Min_EX_T_E,
+
   0x0000
 };
 
 const uint16_t MKSTMC_Config[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
-  // HB Temp
-  VP_T_Bed_Is, VP_T_Bed_Set,
-  VP_MIN_EX_T,
+  INFO_BAR
 
-  VP_TMC_X_STEP,
-  VP_TMC_Y_STEP,
-  VP_TMC_Z_STEP,
+  VP_TMC_X_SENS,
+  VP_TMC_Y_SENS,
+  VP_TMC_Z_SENS,
   VP_TMC_X1_Current,
   VP_TMC_Y1_Current,
   VP_TMC_X_Current,
@@ -431,20 +353,23 @@ const uint16_t MKSTMC_Config[] PROGMEM = {
 const uint16_t MKSAuto_Level[] PROGMEM = {
   VP_MESH_LEVEL_POINT_DIS,
   VP_ZPos,
+
   0x0000
 };
 
 const uint16_t MKSOffset_Config[] PROGMEM = {
-  // E Temp
-  REPEAT(EXTRUDERS, MKSLIST_E_ITEM)
+  INFO_BAR
+
   VP_OFFSET_X,
   VP_OFFSET_Y,
   VP_OFFSET_Z,
+
   0x0000
 };
 
 const uint16_t MKSBabyStep[] PROGMEM = {
   VP_ZOffset_DE_DIS,
+
   0x0000
 };
 
@@ -463,23 +388,23 @@ const struct VPMapping VPMap[] PROGMEM = {
   { MKSLCD_SCREEN_HOME, MKSList_Home },                       // Home, Page 1
   { MKSLCD_SCREEN_SETTING, MKSList_Setting },                 // Setting, Page 2
   { MKSLCD_SCREEM_TOOL, MKSList_Tool },                       // Page 3
-  { MKSLCD_SCREEN_EXTRUDE_P1, MKSList_EXTRUE },               // Page 4
-  { MKSLCD_SCREEN_EXTRUDE_P2, MKSList_EXTRUE },               // Page 11
-  { MKSLCD_PAUSE_SETTING_EX, MKSList_EXTRUE },                // Page 57
-  { MKSLCD_PAUSE_SETTING_EX2, MKSList_EXTRUE },               // Page 61
+  { MKSLCD_SCREEN_EXTRUDE_P1, MKSList_EXTRUDE },              // Page 4
+  { MKSLCD_SCREEN_EXTRUDE_P2, MKSList_EXTRUDE },              // Page 11
+  { MKSLCD_PAUSE_SETTING_EX, MKSList_EXTRUDE },               // Page 57
+  { MKSLCD_PAUSE_SETTING_EX2, MKSList_EXTRUDE },              // Page 61
   { MKSLCD_SCREEN_LEVEL, MKSList_LEVEL },                     // Page 5
   { MKSLCD_SCREEN_MOVE, MKSList_MOVE },                       // Page 6
   { MKSLCD_SCREEN_PRINT, MKSList_Print },                     // Page 7
   { MKSLCD_SCREEN_PAUSE, MKSList_Print },                     // Page 26
   { MKSLCD_SCREEN_CHOOSE_FILE, MKSList_SD_File },             // Page 15
-  { MKSLCD_SCREEN_MOTOR_PLUSE, MKSList_Pluse },               // Page 51
-  { MKSLCD_SCREEN_MOTOR_SPEED, MKSList_MaxSpeed },            // Page 55
-  { MKSLCD_SCREEN_MOTOR_ACC_MAX, MKSList_MaxAcc },            // Page 53
+  { MKSLCD_SCREEN_STEPS_MM, MKSList_Steps_mm },               // Page 51
+  { MKSLCD_SCREEN_AXIS_SPEED, MKSList_MaxSpeed },             // Page 55
+  { MKSLCD_SCREEN_AXIS_ACC_MAX, MKSList_MaxAcc },             // Page 53
   { MKSLCD_SCREEN_LEVEL_DATA, MKSList_Level_Point },          // Page 48
   { MKSLCD_PrintPause_SET, MKSList_PrintPauseConfig },        // Page 49
-  { MKSLCD_FILAMENT_DATA, MKSList_SD_File },                  // Page 50
+  //{ MKSLCD_FILAMENT_DATA, MKSList_SD_File },                // Page 50
   { MKSLCD_SCREEN_Config, MKSList_TempOnly },                 // Page 46
-  { MKSLCD_SCREEN_Config_MOTOR, MKSList_MotoConfig },         // Page 47
+  { MKSLCD_SCREEN_Config_MOTOR, MKSList_MotionConfig },       // Page 47
   { MKSLCD_PID, MKSList_PID },                                // Page 56
   { MKSLCD_ABOUT, MKSList_About },                            // Page 36
   { MKSLCD_SCREEN_PRINT_CONFIG, MKSList_Level_PrintConfig },  // Page 60
@@ -495,306 +420,317 @@ const struct VPMapping VPMap[] PROGMEM = {
 };
 
 const char MarlinVersion[] PROGMEM = SHORT_BUILD_VERSION;
-const char H43Version[] PROGMEM = "MKS H43_V1.30";
+const char H43Version[] PROGMEM = "MKS H43_V1.31";
 const char Updata_Time[] PROGMEM = STRING_DISTRIBUTION_DATE;
 
 const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
   // Helper to detect touch events
-  VPHELPER(VP_SCREENCHANGE, nullptr, ScreenHandler.ScreenChangeHook, nullptr),
-  VPHELPER(VP_SCREENCHANGE_ASK, nullptr, ScreenHandler.ScreenChangeHookIfIdle, nullptr),
-  #if ENABLED(SDSUPPORT)
-    VPHELPER(VP_SCREENCHANGE_WHENSD, nullptr, ScreenHandler.ScreenChangeHookIfSD, nullptr),
+  VPHELPER(VP_SCREENCHANGE, nullptr, screen.screenChangeHook, nullptr),
+  VPHELPER(VP_SCREENCHANGE_ASK, nullptr, screen.screenChangeHookIfIdle, nullptr),
+  #if HAS_MEDIA
+    VPHELPER(VP_SCREENCHANGE_WHENSD, nullptr, screen.screenChangeHookIfSD, nullptr),
   #endif
-  VPHELPER(VP_CONFIRMED, nullptr, ScreenHandler.ScreenConfirmedOK, nullptr),
+  VPHELPER(VP_CONFIRMED, nullptr, screen.screenConfirmedOK, nullptr),
 
   // Back Button
-  VPHELPER(VP_BACK_PAGE, nullptr, ScreenHandler.ScreenBackChange, nullptr),
-  VPHELPER(VP_TEMP_ALL_OFF, nullptr, ScreenHandler.HandleAllHeatersOff, nullptr),
+  VPHELPER(VP_BACK_PAGE, nullptr, screen.screenBackChange, nullptr),
+  VPHELPER(VP_TEMP_ALL_OFF, nullptr, screen.handleAllHeatersOff, nullptr),
 
-  VPHELPER(VP_MOVE_X, nullptr, ScreenHandler.HandleManualMove, nullptr),
-  VPHELPER(VP_MOVE_Y, nullptr, ScreenHandler.HandleManualMove, nullptr),
-  VPHELPER(VP_MOVE_Z, nullptr, ScreenHandler.HandleManualMove, nullptr),
-  VPHELPER(VP_HOME_ALL, nullptr, ScreenHandler.HandleManualMove, nullptr),
+  VPHELPER(VP_MOVE_X, nullptr, screen.handleManualMove, nullptr),
+  VPHELPER(VP_MOVE_Y, nullptr, screen.handleManualMove, nullptr),
+  VPHELPER(VP_MOVE_Z, nullptr, screen.handleManualMove, nullptr),
+  VPHELPER(VP_HOME_ALL, nullptr, screen.handleManualMove, nullptr),
 
-  VPHELPER(VP_X_HOME, nullptr, ScreenHandler.HandleManualMove, nullptr),
-  VPHELPER(VP_Y_HOME, nullptr, ScreenHandler.HandleManualMove, nullptr),
-  VPHELPER(VP_Z_HOME, nullptr, ScreenHandler.HandleManualMove, nullptr),
+  VPHELPER(VP_X_HOME, nullptr, screen.handleManualMove, nullptr),
+  VPHELPER(VP_Y_HOME, nullptr, screen.handleManualMove, nullptr),
+  VPHELPER(VP_Z_HOME, nullptr, screen.handleManualMove, nullptr),
 
-  VPHELPER(VP_MOVE_DISTANCE, &manualMoveStep, ScreenHandler.GetManualMovestep, nullptr),
+  VPHELPER(VP_MOVE_DISTANCE, &manualMoveStep, screen.getManualMovestep, nullptr),
 
-  VPHELPER(VP_MOTOR_LOCK_UNLOK, nullptr, ScreenHandler.HandleManualMove, nullptr),
-  VPHELPER(VP_LEVEL_POINT, nullptr, ScreenHandler.ManualAssistLeveling, nullptr),
+  VPHELPER(VP_MOTOR_LOCK_UNLOCK, nullptr, screen.handleManualMove, nullptr),
+  VPHELPER(VP_LEVEL_POINT, nullptr, screen.manualAssistLeveling, nullptr),
 
   #if ENABLED(POWER_LOSS_RECOVERY)
-    VPHELPER(VP_POWER_LOSS_RECOVERY, nullptr, ScreenHandler.HandlePowerLossRecovery, nullptr),
+    VPHELPER(VP_POWER_LOSS_RECOVERY, nullptr, screen.handlePowerLossRecovery, nullptr),
   #endif
-  VPHELPER(VP_SETTINGS, nullptr, ScreenHandler.HandleSettings, nullptr),
+  VPHELPER(VP_SETTINGS, nullptr, screen.handleSettings, nullptr),
   #if ENABLED(SINGLE_Z_CALIBRATION)
-    VPHELPER(VP_Z_CALIBRATE, nullptr, ScreenHandler.HandleZCalibration, nullptr),
+    VPHELPER(VP_Z_CALIBRATE, nullptr, screen.handleZCalibration, nullptr),
   #endif
   #if ENABLED(FIRST_LAYER_CAL)
-    VPHELPER(VP_Z_FIRST_LAYER_CAL, nullptr, ScreenHandler.HandleFirstLayerCal, nullptr),
+    VPHELPER(VP_Z_FIRST_LAYER_CAL, nullptr, screen.handleFirstLayerCal, nullptr),
   #endif
-  {.VP = VP_MARLIN_VERSION, .memadr = (void *)MarlinVersion, .size = VP_MARLIN_VERSION_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplayPGM},
+  {.VP = VP_MARLIN_VERSION, .memadr = (void *)MarlinVersion, .size = VP_MARLIN_VERSION_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplayPGM},
   // M117 LCD String (We don't need the string in memory but "just" push it to the display on demand, hence the nullptr
-  {.VP = VP_M117, .memadr = nullptr, .size = VP_M117_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplay},
-  {.VP = VP_MKS_H43_VERSION, .memadr = (void *)H43Version, .size = VP_MKS_H43_VERSION_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplayPGM},
-  {.VP = VP_MKS_H43_UpdataVERSION, .memadr = (void *)Updata_Time, .size = VP_MKS_H43_VERSION_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplayPGM},
+  {.VP = VP_M117, .memadr = nullptr, .size = VP_M117_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplay},
+  {.VP = VP_MKS_H43_VERSION, .memadr = (void *)H43Version, .size = VP_MKS_H43_VERSION_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplayPGM},
+  {.VP = VP_MKS_H43_UpdataVERSION, .memadr = (void *)Updata_Time, .size = VP_MKS_H43_VERSION_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplayPGM},
 
   // Temperature Data
   #if HAS_HOTEND
-    VPHELPER(VP_T_E0_Is, &thermalManager.temp_hotend[0].celsius, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<0>),
-    VPHELPER(VP_T_E0_Set, &thermalManager.temp_hotend[0].target, ScreenHandler.HandleTemperatureChanged, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-    VPHELPER(VP_Flowrate_E0, &planner.flow_percentage[ExtUI::extruder_t::E0], ScreenHandler.HandleFlowRateChanged, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-    VPHELPER(VP_EPos, &destination.e, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
-    VPHELPER(VP_MOVE_E0, nullptr, ScreenHandler.HandleManualExtrude, nullptr),
-    VPHELPER(VP_E0_CONTROL, &thermalManager.temp_hotend[0].target, ScreenHandler.HandleHeaterControl, nullptr),
-    VPHELPER(VP_E0_STATUS, &thermalManager.temp_hotend[0].target, nullptr, ScreenHandler.DGUSLCD_SendHeaterStatusToDisplay),
+    VPHELPER(VP_T_E0_Is, &thermalManager.temp_hotend[0].celsius, nullptr, screen.sendFloatAsLongValueToDisplay<0>),
+    VPHELPER(VP_T_E0_Set, &thermalManager.temp_hotend[0].target, screen.handleTemperatureChanged, screen.sendWordValueToDisplay),
+    VPHELPER(VP_Flowrate_E0, &planner.flow_percentage[0], screen.handleFlowRateChanged, screen.sendWordValueToDisplay),
+    VPHELPER(VP_EPos, &motion.destination.e, nullptr, screen.sendFloatAsLongValueToDisplay<2>),
+    VPHELPER(VP_MOVE_E0, nullptr, screen.handleManualExtrude, nullptr),
+    VPHELPER(VP_E0_CONTROL, &thermalManager.temp_hotend[0].target, screen.handleHeaterControl, nullptr),
+    VPHELPER(VP_E0_STATUS, &thermalManager.temp_hotend[0].target, nullptr, screen.sendHeaterStatusToDisplay),
     #if ENABLED(DGUS_PREHEAT_UI)
-      VPHELPER(VP_E0_BED_PREHEAT, nullptr, ScreenHandler.HandlePreheat, nullptr),
+      VPHELPER(VP_E0_BED_PREHEAT, nullptr, screen.handlePreheat, nullptr),
     #endif
     #if ENABLED(PIDTEMP)
-      VPHELPER(VP_E0_PID_P, &thermalManager.temp_hotend[0].pid.Kp, ScreenHandler.HandleTemperaturePIDChanged, ScreenHandler.DGUSLCD_SendTemperaturePID),
-      VPHELPER(VP_E0_PID_I, &thermalManager.temp_hotend[0].pid.Ki, ScreenHandler.HandleTemperaturePIDChanged, ScreenHandler.DGUSLCD_SendTemperaturePID),
-      VPHELPER(VP_E0_PID_D, &thermalManager.temp_hotend[0].pid.Kd, ScreenHandler.HandleTemperaturePIDChanged, ScreenHandler.DGUSLCD_SendTemperaturePID),
-      VPHELPER(VP_PID_AUTOTUNE_E0, nullptr, ScreenHandler.HandlePIDAutotune, nullptr),
+      VPHELPER(VP_E0_PID_P, &thermalManager.temp_hotend[0].pid.Kp, screen.handleTemperaturePIDChanged, screen.sendTemperaturePID),
+      VPHELPER(VP_E0_PID_I, &thermalManager.temp_hotend[0].pid.Ki, screen.handleTemperaturePIDChanged, screen.sendTemperaturePID),
+      VPHELPER(VP_E0_PID_D, &thermalManager.temp_hotend[0].pid.Kd, screen.handleTemperaturePIDChanged, screen.sendTemperaturePID),
+      VPHELPER(VP_PID_AUTOTUNE_E0, nullptr, screen.handlePIDAutotune, nullptr),
     #endif
     #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
-      VPHELPER(VP_LOAD_Filament, nullptr, ScreenHandler.FilamentLoad, nullptr),
-      VPHELPER(VP_UNLOAD_Filament, nullptr, ScreenHandler.FilamentUnLoad, nullptr),
-      VPHELPER(VP_Filament_distance, &distanceFilament, ScreenHandler.GetManualFilament, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-      VPHELPER(VP_Filament_speed, &filamentSpeed_mm_s, ScreenHandler.GetManualFilamentSpeed, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+      VPHELPER(VP_LOAD_Filament, nullptr, screen.filamentLoad, nullptr),
+      VPHELPER(VP_UNLOAD_Filament, nullptr, screen.filamentUnload, nullptr),
+      VPHELPER(VP_Filament_distance, &distanceFilament, screen.getManualFilament, screen.sendWordValueToDisplay),
+      VPHELPER(VP_Filament_speed, &filamentSpeed_mm_s, screen.getManualFilamentSpeed, screen.sendWordValueToDisplay),
     #endif
   #endif
 
   #if HAS_MULTI_HOTEND
-    VPHELPER(VP_T_E1_Is, &thermalManager.temp_hotend[1].celsius, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<0>),
-    VPHELPER(VP_T_E1_Set, &thermalManager.temp_hotend[1].target, ScreenHandler.HandleTemperatureChanged, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-    VPHELPER(VP_Flowrate_E1, &planner.flow_percentage[ExtUI::extruder_t::E1], ScreenHandler.HandleFlowRateChanged, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-    VPHELPER(VP_MOVE_E1, nullptr, ScreenHandler.HandleManualExtrude, nullptr),
-    VPHELPER(VP_E1_CONTROL, &thermalManager.temp_hotend[1].target, ScreenHandler.HandleHeaterControl, nullptr),
-    VPHELPER(VP_E1_STATUS, &thermalManager.temp_hotend[1].target, nullptr, ScreenHandler.DGUSLCD_SendHeaterStatusToDisplay),
+    VPHELPER(VP_T_E1_Is, &thermalManager.temp_hotend[1].celsius, nullptr, screen.sendFloatAsLongValueToDisplay<0>),
+    VPHELPER(VP_T_E1_Set, &thermalManager.temp_hotend[1].target, screen.handleTemperatureChanged, screen.sendWordValueToDisplay),
+    VPHELPER(VP_Flowrate_E1, &planner.flow_percentage[1], screen.handleFlowRateChanged, screen.sendWordValueToDisplay),
+    VPHELPER(VP_MOVE_E1, nullptr, screen.handleManualExtrude, nullptr),
+    VPHELPER(VP_E1_CONTROL, &thermalManager.temp_hotend[1].target, screen.handleHeaterControl, nullptr),
+    VPHELPER(VP_E1_STATUS, &thermalManager.temp_hotend[1].target, nullptr, screen.sendHeaterStatusToDisplay),
 
     #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
-      VPHELPER(VP_Filament_distance, &distanceFilament, ScreenHandler.GetManualFilament, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-      VPHELPER(VP_Filament_speed, &filamentSpeed_mm_s, ScreenHandler.GetManualFilamentSpeed, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+      VPHELPER(VP_Filament_distance, &distanceFilament, screen.getManualFilament, screen.sendFloatAsIntValueToDisplay<0>),
+      VPHELPER(VP_Filament_speed, &filamentSpeed_mm_s, screen.getManualFilamentSpeed, screen.sendWordValueToDisplay),
     #endif
 
     #if ENABLED(PIDTEMP)
-      VPHELPER(VP_PID_AUTOTUNE_E1, nullptr, ScreenHandler.HandlePIDAutotune, nullptr),
+      VPHELPER(VP_PID_AUTOTUNE_E1, nullptr, screen.handlePIDAutotune, nullptr),
     #endif
 
-    VPHELPER(VP_E1_FILAMENT_LOAD_UNLOAD, nullptr, ScreenHandler.HandleFilamentOption, ScreenHandler.HandleFilamentLoadUnload),
+    VPHELPER(VP_E1_FILAMENT_LOAD_UNLOAD, nullptr, screen.handleFilamentOption, screen.handleFilamentLoadUnload),
   #endif
 
   #if HAS_HEATED_BED
-    VPHELPER(VP_T_Bed_Is, &thermalManager.temp_bed.celsius, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<0>),
-    VPHELPER(VP_T_Bed_Set, &thermalManager.temp_bed.target, ScreenHandler.HandleTemperatureChanged, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-    VPHELPER(VP_BED_CONTROL, &thermalManager.temp_bed.target, ScreenHandler.HandleHeaterControl, nullptr),
-    VPHELPER(VP_BED_STATUS, &thermalManager.temp_bed.target, nullptr, ScreenHandler.DGUSLCD_SendHeaterStatusToDisplay),
+    VPHELPER(VP_T_Bed_Is, &thermalManager.temp_bed.celsius, nullptr, screen.sendFloatAsLongValueToDisplay<0>),
+    VPHELPER(VP_T_Bed_Set, &thermalManager.temp_bed.target, screen.handleTemperatureChanged, screen.sendWordValueToDisplay),
+    VPHELPER(VP_BED_CONTROL, &thermalManager.temp_bed.target, screen.handleHeaterControl, nullptr),
+    VPHELPER(VP_BED_STATUS, &thermalManager.temp_bed.target, nullptr, screen.sendHeaterStatusToDisplay),
     #if ENABLED(PIDTEMPBED)
-      VPHELPER(VP_BED_PID_P, &thermalManager.temp_bed.pid.Kp, ScreenHandler.HandleTemperaturePIDChanged, ScreenHandler.DGUSLCD_SendTemperaturePID),
-      VPHELPER(VP_BED_PID_I, &thermalManager.temp_bed.pid.Ki, ScreenHandler.HandleTemperaturePIDChanged, ScreenHandler.DGUSLCD_SendTemperaturePID),
-      VPHELPER(VP_BED_PID_D, &thermalManager.temp_bed.pid.Kd, ScreenHandler.HandleTemperaturePIDChanged, ScreenHandler.DGUSLCD_SendTemperaturePID),
-      VPHELPER(VP_PID_AUTOTUNE_BED, nullptr, ScreenHandler.HandlePIDAutotune, nullptr),
+      VPHELPER(VP_BED_PID_P, &thermalManager.temp_bed.pid.Kp, screen.handleTemperaturePIDChanged, screen.sendTemperaturePID),
+      VPHELPER(VP_BED_PID_I, &thermalManager.temp_bed.pid.Ki, screen.handleTemperaturePIDChanged, screen.sendTemperaturePID),
+      VPHELPER(VP_BED_PID_D, &thermalManager.temp_bed.pid.Kd, screen.handleTemperaturePIDChanged, screen.sendTemperaturePID),
+      VPHELPER(VP_PID_AUTOTUNE_BED, nullptr, screen.handlePIDAutotune, nullptr),
     #endif
   #endif
 
   // Fan Data
   #if HAS_FAN
-    #define FAN_VPHELPER(N)                                                                                                                    \
-      VPHELPER(VP_Fan##N##_Percentage, &thermalManager.fan_speed[N], ScreenHandler.DGUSLCD_SetUint8, ScreenHandler.DGUSLCD_SendFanToDisplay), \
-      VPHELPER(VP_FAN##N##_CONTROL, &thermalManager.fan_speed[N], ScreenHandler.HandleFanControl, nullptr),                               \
-      VPHELPER(VP_FAN##N##_STATUS, &thermalManager.fan_speed[N], nullptr, ScreenHandler.DGUSLCD_SendFanStatusToDisplay),
-    REPEAT(FAN_COUNT, FAN_VPHELPER)
+    #if HOTENDS <= 4
+      #define FAN_CONTROL HOTENDS
+    #elif FAN_COUNT <= 4
+      #define FAN_CONTROL FAN_COUNT
+    #else
+      #define FAN_CONTROL 4
+    #endif
+    #define FAN_VPHELPER(N) \
+      VPHELPER(VP_Fan##N##_Percentage, &fans[N].speed, screen.percentageToUint8, screen.sendFanToDisplay), \
+      VPHELPER(VP_FAN##N##_CONTROL, &fans[N].speed, screen.handleFanControl, nullptr), \
+      VPHELPER(VP_FAN##N##_STATUS, &fans[N].speed, nullptr, screen.sendFanStatusToDisplay),
+    REPEAT(FAN_CONTROL, FAN_VPHELPER)
   #endif
 
   // Feedrate
-  VPHELPER(VP_Feedrate_Percentage, &feedrate_percentage, ScreenHandler.DGUSLCD_SetValueDirectly<int16_t>, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+  VPHELPER(VP_Feedrate_Percentage, &motion.feedrate_percentage, screen.setValueDirectly<int16_t>, screen.sendWordValueToDisplay),
 
   // Position Data
-  VPHELPER(VP_XPos, &current_position.x, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
-  VPHELPER(VP_YPos, &current_position.y, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
-  VPHELPER(VP_ZPos, &current_position.z, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
+  VPHELPER(VP_XPos, &motion.position.x, nullptr, screen.sendFloatAsLongValueToDisplay<2>),
+  VPHELPER(VP_YPos, &motion.position.y, nullptr, screen.sendFloatAsLongValueToDisplay<2>),
+  VPHELPER(VP_ZPos, &motion.position.z, nullptr, screen.sendFloatAsLongValueToDisplay<2>),
 
   // Level Point Set
-  VPHELPER(VP_Level_Point_One_X, &mks_corner_offsets[0].x, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_One_Y, &mks_corner_offsets[0].y, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Two_X, &mks_corner_offsets[1].x, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Two_Y, &mks_corner_offsets[1].y, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Three_X, &mks_corner_offsets[2].x, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Three_Y, &mks_corner_offsets[2].y, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Four_X, &mks_corner_offsets[3].x, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Four_Y, &mks_corner_offsets[3].y, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Five_X, &mks_corner_offsets[4].x, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Level_Point_Five_Y, &mks_corner_offsets[4].y, ScreenHandler.HandleChangeLevelPoint, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_One_X, &mks_corner_offsets[0].x, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_One_Y, &mks_corner_offsets[0].y, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Two_X, &mks_corner_offsets[1].x, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Two_Y, &mks_corner_offsets[1].y, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Three_X, &mks_corner_offsets[2].x, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Three_Y, &mks_corner_offsets[2].y, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Four_X, &mks_corner_offsets[3].x, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Four_Y, &mks_corner_offsets[3].y, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Five_X, &mks_corner_offsets[4].x, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Level_Point_Five_Y, &mks_corner_offsets[4].y, screen.handleChangeLevelPoint, screen.sendWordValueToDisplay),
 
   // Print Progress
-  VPHELPER(VP_PrintProgress_Percentage, nullptr, nullptr, ScreenHandler.DGUSLCD_SendPrintProgressToDisplay),
+  VPHELPER(VP_PrintProgress_Percentage, nullptr, nullptr, screen.sendPrintProgressToDisplay),
 
   // LCD Control
-  VPHELPER(VP_LCD_BLK, &lcd_default_light, ScreenHandler.LCD_BLK_Adjust, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+  VPHELPER(VP_LCD_BLK, &lcd_default_light, screen.lcdBLKAdjust, screen.sendWordValueToDisplay),
 
   // SD File - Back
-  VPHELPER(VP_SD_FileSelect_Back, nullptr, ScreenHandler.SD_FileBack, nullptr),
+  VPHELPER(VP_SD_FileSelect_Back, nullptr, screen.sdFileBack, nullptr),
 
   // Print Time
-  VPHELPER_STR(VP_PrintTime, nullptr, VP_PrintTime_LEN, nullptr, ScreenHandler.DGUSLCD_SendPrintTimeToDisplay),
+  VPHELPER_STR(VP_PrintTime, nullptr, VP_PrintTime_LEN, nullptr, screen.sendPrintTimeToDisplay),
 
   #if ENABLED(PRINTCOUNTER)
-    VPHELPER_STR(VP_PrintAccTime, nullptr, VP_PrintAccTime_LEN, nullptr, ScreenHandler.DGUSLCD_SendPrintAccTimeToDisplay),
-    VPHELPER_STR(VP_PrintsTotal, nullptr, VP_PrintsTotal_LEN, nullptr, ScreenHandler.DGUSLCD_SendPrintsTotalToDisplay),
+    VPHELPER_STR(VP_PrintAccTime, nullptr, VP_PrintAccTime_LEN, nullptr, screen.sendPrintAccTimeToDisplay),
+    VPHELPER_STR(VP_PrintsTotal, nullptr, VP_PrintsTotal_LEN, nullptr, screen.sendPrintsTotalToDisplay),
   #endif
 
-  VPHELPER(VP_X_STEP_PER_MM, &planner.settings.axis_steps_per_mm[X_AXIS], ScreenHandler.HandleStepPerMMChanged, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-  VPHELPER(VP_Y_STEP_PER_MM, &planner.settings.axis_steps_per_mm[Y_AXIS], ScreenHandler.HandleStepPerMMChanged, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-  VPHELPER(VP_Z_STEP_PER_MM, &planner.settings.axis_steps_per_mm[Z_AXIS], ScreenHandler.HandleStepPerMMChanged, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
+  #if ENABLED(EDITABLE_STEPS_PER_UNIT)
+    VPHELPER(VP_X_STEP_PER_MM, &planner.settings.axis_steps_per_mm[X_AXIS], screen.handleStepPerMMChanged, screen.sendFloatAsIntValueToDisplay<0>),
+    VPHELPER(VP_Y_STEP_PER_MM, &planner.settings.axis_steps_per_mm[Y_AXIS], screen.handleStepPerMMChanged, screen.sendFloatAsIntValueToDisplay<0>),
+    VPHELPER(VP_Z_STEP_PER_MM, &planner.settings.axis_steps_per_mm[Z_AXIS], screen.handleStepPerMMChanged, screen.sendFloatAsIntValueToDisplay<0>),
+  #endif
 
-  VPHELPER(VP_X_MAX_SPEED, &planner.settings.max_feedrate_mm_s[X_AXIS], ScreenHandler.HandleMaxSpeedChange, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-  VPHELPER(VP_Y_MAX_SPEED, &planner.settings.max_feedrate_mm_s[Y_AXIS], ScreenHandler.HandleMaxSpeedChange, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-  VPHELPER(VP_Z_MAX_SPEED, &planner.settings.max_feedrate_mm_s[Z_AXIS], ScreenHandler.HandleMaxSpeedChange, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
+  VPHELPER(VP_X_MAX_SPEED, &planner.settings.max_feedrate_mm_s[X_AXIS], screen.handleMaxSpeedChange, screen.sendFloatAsIntValueToDisplay<0>),
+  VPHELPER(VP_Y_MAX_SPEED, &planner.settings.max_feedrate_mm_s[Y_AXIS], screen.handleMaxSpeedChange, screen.sendFloatAsIntValueToDisplay<0>),
+  VPHELPER(VP_Z_MAX_SPEED, &planner.settings.max_feedrate_mm_s[Z_AXIS], screen.handleMaxSpeedChange, screen.sendFloatAsIntValueToDisplay<0>),
 
   #if HAS_HOTEND
-    VPHELPER(VP_E0_MAX_SPEED, &planner.settings.max_feedrate_mm_s[E_AXIS_N(0)], ScreenHandler.HandleExtruderMaxSpeedChange, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
+    VPHELPER(VP_E0_MAX_SPEED, &planner.settings.max_feedrate_mm_s[E_AXIS_N(0)], screen.handleMaxSpeedChange, screen.sendFloatAsIntValueToDisplay<0>),
     #if HAS_MULTI_HOTEND
-      VPHELPER(VP_E1_MAX_SPEED, &planner.settings.max_feedrate_mm_s[E_AXIS_N(1)], ScreenHandler.HandleExtruderMaxSpeedChange, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
+      VPHELPER(VP_E1_MAX_SPEED, &planner.settings.max_feedrate_mm_s[E_AXIS_N(1)], screen.handleMaxSpeedChange, screen.sendFloatAsIntValueToDisplay<0>),
     #endif
   #endif
 
-  VPHELPER(VP_X_ACC_MAX_SPEED, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[X_AXIS], ScreenHandler.HandleMaxAccChange, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Y_ACC_MAX_SPEED, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[Y_AXIS], ScreenHandler.HandleMaxAccChange, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Z_ACC_MAX_SPEED, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[Z_AXIS], ScreenHandler.HandleMaxAccChange, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+  VPHELPER(VP_X_MAX_ACC, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[X_AXIS], screen.handleMaxAccChange, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Y_MAX_ACC, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[Y_AXIS], screen.handleMaxAccChange, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Z_MAX_ACC, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[Z_AXIS], screen.handleMaxAccChange, screen.sendWordValueToDisplay),
 
   #if HAS_HOTEND
-    VPHELPER(VP_E0_ACC_MAX_SPEED, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[E_AXIS_N(0)], ScreenHandler.HandleExtruderAccChange, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    VPHELPER(VP_E0_MAX_ACC, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[E_AXIS_N(0)], screen.handleMaxAccChange, screen.sendWordValueToDisplay),
     #if HAS_MULTI_HOTEND
-      VPHELPER(VP_E1_ACC_MAX_SPEED, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[E_AXIS_N(1)], ScreenHandler.HandleExtruderAccChange, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+      VPHELPER(VP_E1_MAX_ACC, (uint16_t *)&planner.settings.max_acceleration_mm_per_s2[E_AXIS_N(1)], screen.handleMaxAccChange, screen.sendWordValueToDisplay),
     #endif
   #endif
 
-  VPHELPER(VP_TRAVEL_SPEED, (uint16_t *)&planner.settings.travel_acceleration, ScreenHandler.HandleTravelAccChange, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-  VPHELPER(VP_FEEDRATE_MIN_SPEED, (uint16_t *)&planner.settings.min_feedrate_mm_s, ScreenHandler.HandleFeedRateMinChange, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-  VPHELPER(VP_T_F_SPEED, (uint16_t *)&planner.settings.min_travel_feedrate_mm_s, ScreenHandler.HandleMin_T_F, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-  VPHELPER(VP_ACC_SPEED, (uint16_t *)&planner.settings.acceleration, ScreenHandler.HandleAccChange, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+  VPHELPER(VP_TRAVEL_SPEED, (uint16_t *)&planner.settings.travel_acceleration, screen.handleTravelAccChange, screen.sendFloatAsIntValueToDisplay<0>),
+  VPHELPER(VP_FEEDRATE_MIN_SPEED, (uint16_t *)&planner.settings.min_feedrate_mm_s, screen.handleFeedRateMinChange, screen.sendFloatAsIntValueToDisplay<0>),
+  VPHELPER(VP_T_F_SPEED, (uint16_t *)&planner.settings.min_travel_feedrate_mm_s, screen.handleMin_T_F, screen.sendFloatAsIntValueToDisplay<0>),
+  //VPHELPER(VP_DEFAULT_ACC, (uint16_t *)&planner.settings.acceleration, screen.handleAccChange, screen.sendWordValueToDisplay),
 
-  VPHELPER(VP_X_PARK_POS, &mks_park_pos.x, ScreenHandler.GetParkPos, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Y_PARK_POS, &mks_park_pos.y, ScreenHandler.GetParkPos, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-  VPHELPER(VP_Z_PARK_POS, &mks_park_pos.z, ScreenHandler.GetParkPos, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+  VPHELPER(VP_X_PARK_POS, &mks_park_pos.x, screen.getParkPos, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Y_PARK_POS, &mks_park_pos.y, screen.getParkPos, screen.sendWordValueToDisplay),
+  VPHELPER(VP_Z_PARK_POS, &mks_park_pos.z, screen.getParkPos, screen.sendWordValueToDisplay),
 
   #if ENABLED(PREVENT_COLD_EXTRUSION)
-    VPHELPER(VP_MIN_EX_T, &thermalManager.extrude_min_temp, ScreenHandler.HandleGetExMinTemp, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    VPHELPER(VP_MIN_EX_T, &thermalManager.extrude_min_temp, screen.handleGetExMinTemp, screen.sendWordValueToDisplay),
   #endif
 
   #if ENABLED(SENSORLESS_HOMING)  // TMC SENSORLESS Setting
     #if X_HAS_STEALTHCHOP
-      VPHELPER(VP_TMC_X_STEP, &tmc_step.x, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendTMCStepValue),
+      VPHELPER(VP_TMC_X_SENS, &tmc_stall_sens.x, screen.tmcChangeConfig, screen.sendTMCSensValue),
     #endif
     #if Y_HAS_STEALTHCHOP
-      VPHELPER(VP_TMC_Y_STEP, &tmc_step.y, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendTMCStepValue),
+      VPHELPER(VP_TMC_Y_SENS, &tmc_stall_sens.y, screen.tmcChangeConfig, screen.sendTMCSensValue),
     #endif
     #if Z_HAS_STEALTHCHOP
-      VPHELPER(VP_TMC_Z_STEP, &tmc_step.z, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendTMCStepValue),
+      VPHELPER(VP_TMC_Z_SENS, &tmc_stall_sens.z, screen.tmcChangeConfig, screen.sendTMCSensValue),
     #endif
   #endif
 
   #if HAS_TRINAMIC_CONFIG   // TMC Current Setting
-    #if AXIS_IS_TMC(X)
-      VPHELPER(VP_TMC_X_Current, &stepperX.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if X_IS_TRINAMIC
+      VPHELPER(VP_TMC_X_Current, &stepperX.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
-    #if AXIS_IS_TMC(Y)
-      VPHELPER(VP_TMC_Y_Current, &stepperY.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if Y_IS_TRINAMIC
+      VPHELPER(VP_TMC_Y_Current, &stepperY.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
-    #if AXIS_IS_TMC(Z)
-      VPHELPER(VP_TMC_Z_Current, &stepperZ.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if Z_IS_TRINAMIC
+      VPHELPER(VP_TMC_Z_Current, &stepperZ.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
-    #if AXIS_IS_TMC(E0)
-      VPHELPER(VP_TMC_E0_Current, &stepperE0.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if E0_IS_TRINAMIC
+      VPHELPER(VP_TMC_E0_Current, &stepperE0.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
-    #if AXIS_IS_TMC(E1)
-      VPHELPER(VP_TMC_E1_Current, &stepperE1.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if E1_IS_TRINAMIC
+      VPHELPER(VP_TMC_E1_Current, &stepperE1.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
-    #if AXIS_IS_TMC(X2)
-      VPHELPER(VP_TMC_X1_Current, &stepperX2.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if X2_IS_TRINAMIC
+      VPHELPER(VP_TMC_X1_Current, &stepperX2.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
-    #if AXIS_IS_TMC(Y2)
-      VPHELPER(VP_TMC_Y1_Current, &stepperY2.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if Y2_IS_TRINAMIC
+      VPHELPER(VP_TMC_Y1_Current, &stepperY2.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
-    #if AXIS_IS_TMC(Z2)
-      VPHELPER(VP_TMC_Z1_Current, &stepperZ2.val_mA, ScreenHandler.TMC_ChangeConfig, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    #if Z2_IS_TRINAMIC
+      VPHELPER(VP_TMC_Z1_Current, &stepperZ2.val_mA, screen.tmcChangeConfig, screen.sendWordValueToDisplay),
     #endif
   #endif
 
-  VPHELPER(VP_EEPROM_CTRL, nullptr, ScreenHandler.EEPROM_CTRL, nullptr),
-  VPHELPER(VP_LEVEL_BUTTON, nullptr, ScreenHandler.Level_Ctrl, nullptr),
-  VPHELPER(VP_LANGUAGE_CHANGE, nullptr, ScreenHandler.LanguageChange, nullptr),
+  VPHELPER(VP_EEPROM_CTRL, nullptr, screen.eepromControl, nullptr),
+  VPHELPER(VP_LEVEL_BUTTON, nullptr, screen.levelControl, nullptr),
+  VPHELPER(VP_LANGUAGE_CHANGE, nullptr, screen.languageChange, nullptr),
 
-  //VPHELPER(VP_SD_Print_LiveAdjustZ, nullptr, ScreenHandler.HandleLiveAdjustZ, nullptr),
+  //VPHELPER(VP_SD_Print_LiveAdjustZ, nullptr, screen.handleLiveAdjustZ, nullptr),
 
-  VPHELPER(VP_SD_Print_LiveAdjustZ_Confirm, nullptr, ScreenHandler.ZoffsetConfirm, nullptr),
+  VPHELPER(VP_SD_Print_LiveAdjustZ_Confirm, nullptr, screen.zOffsetConfirm, nullptr),
 
-  VPHELPER(VP_ZOffset_Distance,nullptr ,ScreenHandler.GetZoffsetDistance, nullptr),
-  VPHELPER(VP_MESH_LEVEL_ADJUST, nullptr, ScreenHandler.MeshLevelDistanceConfig, nullptr),
-  VPHELPER(VP_MESH_LEVEL_POINT,nullptr, ScreenHandler.MeshLevel,nullptr),
+  VPHELPER(VP_ZOffset_Distance, nullptr, screen.getZoffsetDistance, nullptr),
+  VPHELPER(VP_MESH_LEVEL_ADJUST, nullptr, screen.meshLevelDistanceConfig, nullptr),
+  VPHELPER(VP_MESH_LEVEL_POINT, nullptr, screen.meshLevel, nullptr),
 
   #if ENABLED(PREVENT_COLD_EXTRUSION)
-    VPHELPER(VP_Min_EX_T_E, &thermalManager.extrude_min_temp, ScreenHandler.GetMinExtrudeTemp, ScreenHandler.DGUSLCD_SendWordValueToDisplay),
+    VPHELPER(VP_Min_EX_T_E, &thermalManager.extrude_min_temp, screen.getMinExtrudeTemp, screen.sendWordValueToDisplay),
   #endif
 
-  VPHELPER(VP_AutoTurnOffSw, nullptr, ScreenHandler.GetTurnOffCtrl, nullptr),
+  VPHELPER(VP_AutoTurnOffSw, nullptr, screen.getTurnOffCtrl, nullptr),
 
-  #if HAS_HOTEND
-    VPHELPER(VP_E0_STEP_PER_MM, &planner.settings.axis_steps_per_mm[E_AXIS_N(0)], ScreenHandler.HandleStepPerMMExtruderChanged, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
-    #if HAS_MULTI_HOTEND
-      VPHELPER(VP_E1_STEP_PER_MM, &planner.settings.axis_steps_per_mm[E_AXIS_N(1)], ScreenHandler.HandleStepPerMMExtruderChanged, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<0>),
+  #if ENABLED(EDITABLE_STEPS_PER_UNIT)
+    #if HAS_HOTEND
+      VPHELPER(VP_E0_STEP_PER_MM, &planner.settings.axis_steps_per_mm[E_AXIS_N(0)], screen.handleStepPerMMChanged, screen.sendFloatAsIntValueToDisplay<0>),
+      #if HAS_MULTI_HOTEND
+        VPHELPER(VP_E1_STEP_PER_MM, &planner.settings.axis_steps_per_mm[E_AXIS_N(1)], screen.handleStepPerMMChanged, screen.sendFloatAsIntValueToDisplay<0>),
+      #endif
     #endif
   #endif
 
   // SDCard File listing
 
-  #if ENABLED(SDSUPPORT)
-    VPHELPER(VP_SD_FileSelected, nullptr, ScreenHandler.DGUSLCD_SD_FileSelected, nullptr),
-    VPHELPER(VP_SD_ScrollEvent, nullptr, ScreenHandler.DGUSLCD_SD_ScrollFilelist, nullptr),
-    VPHELPER(VP_SD_FileSelectConfirm, nullptr, ScreenHandler.DGUSLCD_SD_StartPrint, nullptr),
-    VPHELPER_STR(VP_SD_FileName0, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName1, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName2, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName3, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName4, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName5, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName6, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName7, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName8, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER_STR(VP_SD_FileName9, nullptr, VP_SD_FileName_LEN, nullptr, ScreenHandler.DGUSLCD_SD_SendFilename),
-    VPHELPER(VP_SD_ResumePauseAbort, nullptr, ScreenHandler.DGUSLCD_SD_ResumePauseAbort, nullptr),
-    VPHELPER(VP_SD_AbortPrintConfirmed, nullptr, ScreenHandler.DGUSLCD_SD_ReallyAbort, nullptr),
-    VPHELPER(VP_SD_Print_Setting, nullptr, ScreenHandler.DGUSLCD_SD_PrintTune, nullptr),
+  #if HAS_MEDIA
+    VPHELPER(VP_SD_FileSelected, nullptr, screen.sdFileSelected, nullptr),
+    VPHELPER(VP_SD_ScrollEvent, nullptr, screen.sdScrollFilelist, nullptr),
+    VPHELPER(VP_SD_FileSelectConfirm, nullptr, screen.sdStartPrint, nullptr),
+    VPHELPER_STR(VP_SD_FileName0, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName1, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName2, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName3, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName4, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName5, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName6, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName7, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName8, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER_STR(VP_SD_FileName9, nullptr, VP_SD_FileName_LEN, nullptr, screen.sdSendFilename),
+    VPHELPER(VP_SD_ResumePauseAbort, nullptr, screen.sdResumePauseAbort, nullptr),
+    VPHELPER(VP_SD_AbortPrintConfirmed, nullptr, screen.sdReallyAbort, nullptr),
+    VPHELPER(VP_SD_Print_Setting, nullptr, screen.sdPrintTune, nullptr),
     #if ENABLED(BABYSTEPPING)
-      VPHELPER(VP_SD_Print_LiveAdjustZ, nullptr, ScreenHandler.HandleLiveAdjustZ, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<2>),
-      VPHELPER(VP_ZOffset_DE_DIS, &z_offset_add, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
+      VPHELPER(VP_SD_Print_LiveAdjustZ, nullptr, screen.handleLiveAdjustZ, screen.sendFloatAsIntValueToDisplay<2>),
+      VPHELPER(VP_ZOffset_DE_DIS, &z_offset_add, nullptr, screen.sendFloatAsLongValueToDisplay<2>),
     #endif
     #if HAS_BED_PROBE
-      VPHELPER(VP_OFFSET_X, &probe.offset.x, ScreenHandler.GetOffsetValue,ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
-      VPHELPER(VP_OFFSET_Y, &probe.offset.y, ScreenHandler.GetOffsetValue,ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
-      VPHELPER(VP_OFFSET_Z, &probe.offset.z, ScreenHandler.GetOffsetValue,ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
+      VPHELPER(VP_OFFSET_X, &probe.offset.x, screen.getOffsetValue, screen.sendFloatAsLongValueToDisplay<2>),
+      VPHELPER(VP_OFFSET_Y, &probe.offset.y, screen.getOffsetValue, screen.sendFloatAsLongValueToDisplay<2>),
+      VPHELPER(VP_OFFSET_Z, &probe.offset.z, screen.getOffsetValue, screen.sendFloatAsLongValueToDisplay<2>),
     #endif
   #else
-    VPHELPER(VP_SD_FileSelected, nullptr, ScreenHandler.PrintReturn, nullptr),
+    VPHELPER(VP_SD_FileSelected, nullptr, screen.printReturn, nullptr),
   #endif
 
   #if ENABLED(DGUS_UI_WAITING)
-    VPHELPER(VP_WAITING_STATUS, nullptr, nullptr, ScreenHandler.DGUSLCD_SendWaitingStatusToDisplay),
+    VPHELPER(VP_WAITING_STATUS, nullptr, nullptr, screen.sendWaitingStatusToDisplay),
   #endif
 
   // Messages for the User, shared by the popup and the kill screen. They can't be autouploaded as we do not buffer content.
-  //{.VP = VP_MSGSTR1, .memadr = nullptr, .size = VP_MSGSTR1_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplayPGM},
-  //{.VP = VP_MSGSTR2, .memadr = nullptr, .size = VP_MSGSTR2_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplayPGM},
-  //{.VP = VP_MSGSTR3, .memadr = nullptr, .size = VP_MSGSTR3_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplayPGM},
-  //{.VP = VP_MSGSTR4, .memadr = nullptr, .size = VP_MSGSTR4_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplayPGM},
+  //{.VP = VP_MSGSTR1, .memadr = nullptr, .size = VP_MSGSTR1_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplayPGM},
+  //{.VP = VP_MSGSTR2, .memadr = nullptr, .size = VP_MSGSTR2_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplayPGM},
+  //{.VP = VP_MSGSTR3, .memadr = nullptr, .size = VP_MSGSTR3_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplayPGM},
+  //{.VP = VP_MSGSTR4, .memadr = nullptr, .size = VP_MSGSTR4_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplayPGM},
 
-  {.VP = VP_MSGSTR1, .memadr = nullptr, .size = VP_MSGSTR1_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplay_Language},
-  {.VP = VP_MSGSTR2, .memadr = nullptr, .size = VP_MSGSTR2_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplay_Language},
-  {.VP = VP_MSGSTR3, .memadr = nullptr, .size = VP_MSGSTR3_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplay_Language},
-  {.VP = VP_MSGSTR4, .memadr = nullptr, .size = VP_MSGSTR4_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = ScreenHandler.DGUSLCD_SendStringToDisplay_Language},
+  {.VP = VP_MSGSTR1, .memadr = nullptr, .size = VP_MSGSTR1_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplay_Language},
+  {.VP = VP_MSGSTR2, .memadr = nullptr, .size = VP_MSGSTR2_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplay_Language},
+  {.VP = VP_MSGSTR3, .memadr = nullptr, .size = VP_MSGSTR3_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplay_Language},
+  {.VP = VP_MSGSTR4, .memadr = nullptr, .size = VP_MSGSTR4_LEN, .set_by_display_handler = nullptr, .send_to_display_handler = screen.sendStringToDisplay_Language},
 
   VPHELPER(0, 0, 0, 0) // must be last entry.
 };

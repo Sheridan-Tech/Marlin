@@ -26,7 +26,7 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if ENABLED(SDIO_SUPPORT)
+#if ENABLED(ONBOARD_SDIO)
 
 #include "sdio.h"
 
@@ -52,6 +52,9 @@
   #include <stm32h7xx_hal_dma.h>
   #include <stm32h7xx_hal_gpio.h>
   #include <stm32h7xx_hal_sd.h>
+  // Arduino_Core_STM32 2.6.0 split PinMap_SD into per-signal maps and dropped this
+  // declaration from PeripheralPins.h, but Marlin's variants still define the combined map.
+  extern const PinMap PinMap_SD[];
 #else
   #error "SDIO is only supported with STM32F103xE, STM32F103xG, STM32F4xx, STM32F7xx, and STM32H7xx."
 #endif
@@ -238,7 +241,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef *hsd) {
     hdma_sdio.Init.MemInc = DMA_MINC_ENABLE;
     hdma_sdio.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sdio.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    hdma_sdio.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_sdio.Init.Priority = DMA_PRIORITY_MEDIUM;
     __HAL_LINKDMA(&hsd, hdmarx, hdma_sdio);
     __HAL_LINKDMA(&hsd, hdmatx, hdma_sdio);
 
@@ -285,6 +288,9 @@ void HAL_SD_MspInit(SD_HandleTypeDef *hsd) {
     }
 
     go_to_transfer_speed();
+
+    hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_ENABLE;
+    hsd.Init.ClockDiv = 8;
 
     #if PINS_EXIST(SDIO_D1, SDIO_D2, SDIO_D3) // go to 4 bit wide mode if pins are defined
       retry_Cnt = retryCnt;
@@ -433,7 +439,10 @@ bool SDIO_WriteBlock(uint32_t block, const uint8_t *src) {
   #else
 
     uint8_t retries = SDIO_READ_RETRIES;
-    while (retries--) if (SDIO_ReadWriteBlock_DMA(block, src, nullptr)) return true;
+    while (retries--) {
+      if (SDIO_ReadWriteBlock_DMA(block, src, nullptr)) return true;
+      delay(10);
+    }
     return false;
 
   #endif
@@ -444,8 +453,8 @@ bool SDIO_IsReady() {
 }
 
 uint32_t SDIO_GetCardSize() {
-  return (uint32_t)(hsd.SdCard.BlockNbr) * (hsd.SdCard.BlockSize);
+  return hsd.SdCard.LogBlockNbr; // Number of 512-byte blocks, as for the SPI driver
 }
 
-#endif // SDIO_SUPPORT
+#endif // ONBOARD_SDIO
 #endif // HAL_STM32

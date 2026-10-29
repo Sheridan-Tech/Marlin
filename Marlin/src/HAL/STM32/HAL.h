@@ -1,10 +1,9 @@
 /**
  * Marlin 3D Printer Firmware
- *
  * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
- * Copyright (c) 2016 Bob Cousins bobcousins42@googlemail.com
- * Copyright (c) 2015-2016 Nico Tonnhofer wurstnase.reprap@gmail.com
- * Copyright (c) 2017 Victor Perez
+ *
+ * Based on Sprinter and grbl.
+ * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,17 +23,13 @@
 
 #define CPU_32_BIT
 
-#include "../../core/macros.h"
-#include "../shared/Marduino.h"
-#include "../shared/math_32bit.h"
-#include "../shared/HAL_SPI.h"
-#include "fastio.h"
-#include "Servo.h"
-#include "MarlinSerial.h"
-
 #include "../../inc/MarlinConfigPre.h"
 
-#include <stdint.h>
+#include "../shared/math_32bit.h"
+#include "../shared/HAL_SPI.h"
+#include "temp_soc.h"
+#include "fastio.h"
+#include "Servo.h"
 
 //
 // Default graphical display delays
@@ -43,85 +38,17 @@
 #define CPU_ST7920_DELAY_2  40
 #define CPU_ST7920_DELAY_3 340
 
-// ------------------------
-// Serial ports
-// ------------------------
-#ifdef USBCON
-  #include <USBSerial.h>
-  #include "../../core/serial_hook.h"
-  typedef ForwardSerial1Class< decltype(SerialUSB) > DefaultSerial1;
-  extern DefaultSerial1 MSerialUSB;
-#endif
+//
+// Serial Ports
+//
 
-#define _MSERIAL(X) MSerial##X
-#define MSERIAL(X) _MSERIAL(X)
-
-#if WITHIN(SERIAL_PORT, 1, 6)
-  #define MYSERIAL1 MSERIAL(SERIAL_PORT)
-#elif !defined(USBCON)
-  #error "SERIAL_PORT must be from 1 to 6."
-#elif SERIAL_PORT == -1
-  #define MYSERIAL1 MSerialUSB
-#else
-  #error "SERIAL_PORT must be from 1 to 6, or -1 for Native USB."
-#endif
-
-#ifdef SERIAL_PORT_2
-  #if WITHIN(SERIAL_PORT_2, 1, 6)
-    #define MYSERIAL2 MSERIAL(SERIAL_PORT_2)
-  #elif !defined(USBCON)
-    #error "SERIAL_PORT must be from 1 to 6."
-  #elif SERIAL_PORT_2 == -1
-    #define MYSERIAL2 MSerialUSB
-  #else
-    #error "SERIAL_PORT_2 must be from 1 to 6, or -1 for Native USB."
-  #endif
-#endif
-
-#ifdef SERIAL_PORT_3
-  #if WITHIN(SERIAL_PORT_3, 1, 6)
-    #define MYSERIAL3 MSERIAL(SERIAL_PORT_3)
-  #elif !defined(USBCON)
-    #error "SERIAL_PORT must be from 1 to 6."
-  #elif SERIAL_PORT_3 == -1
-    #define MYSERIAL3 MSerialUSB
-  #else
-    #error "SERIAL_PORT_3 must be from 1 to 6, or -1 for Native USB."
-  #endif
-#endif
-
-#ifdef MMU2_SERIAL_PORT
-  #if WITHIN(MMU2_SERIAL_PORT, 1, 6)
-    #define MMU2_SERIAL MSERIAL(MMU2_SERIAL_PORT)
-  #elif !defined(USBCON)
-    #error "SERIAL_PORT must be from 1 to 6."
-  #elif MMU2_SERIAL_PORT == -1
-    #define MMU2_SERIAL MSerialUSB
-  #else
-    #error "MMU2_SERIAL_PORT must be from 1 to 6, or -1 for Native USB."
-  #endif
-#endif
-
-#ifdef LCD_SERIAL_PORT
-  #if WITHIN(LCD_SERIAL_PORT, 1, 6)
-    #define LCD_SERIAL MSERIAL(LCD_SERIAL_PORT)
-  #elif !defined(USBCON)
-    #error "SERIAL_PORT must be from 1 to 6."
-  #elif LCD_SERIAL_PORT == -1
-    #define LCD_SERIAL MSerialUSB
-  #else
-    #error "LCD_SERIAL_PORT must be from 1 to 6, or -1 for Native USB."
-  #endif
-  #if HAS_DGUS_LCD
-    #define SERIAL_GET_TX_BUFFER_FREE() LCD_SERIAL.availableForWrite()
-  #endif
-#endif
+#include "MarlinSerial.h"
 
 /**
  * TODO: review this to return 1 for pins that are not analog input
  */
 #ifndef analogInputToDigitalPin
-  #define analogInputToDigitalPin(p) (p)
+  #define analogInputToDigitalPin(p) pin_t(p)
 #endif
 
 //
@@ -136,13 +63,7 @@
 // Types
 // ------------------------
 
-typedef double isr_float_t;   // FPU ops are used for single-precision, so use double for ISRs.
-
-#ifdef STM32G0B1xx
-  typedef int32_t pin_t;
-#else
-  typedef int16_t pin_t;
-#endif
+typedef int32_t pin_t;        // Parity with platform/ststm32
 
 class libServo;
 typedef libServo hal_servo_t;
@@ -159,7 +80,7 @@ typedef libServo hal_servo_t;
   #define HAL_ADC_RESOLUTION 12
 #endif
 
-#define HAL_ADC_VREF         3.3
+#define HAL_ADC_VREF_MV   3300
 
 //
 // Pin Mapping for M42, M43, M226
@@ -174,7 +95,9 @@ typedef libServo hal_servo_t;
   #define JTAGSWD_RESET() AFIO_DBGAFR_CONFIG(AFIO_MAPR_SWJ_CFG_RESET); // Reset: FULL SWD+JTAG
 #endif
 
-#define PLATFORM_M997_SUPPORT
+#ifndef PLATFORM_M997_SUPPORT
+  #define PLATFORM_M997_SUPPORT
+#endif
 void flashFirmware(const int16_t);
 
 // Maple Compatibility
@@ -232,7 +155,7 @@ public:
 
   static void delay_ms(const int ms) { delay(ms); }
 
-  // Tasks, called from idle()
+  // Tasks, called from marlin.idle()
   static void idletask();
 
   // Reset
@@ -257,7 +180,12 @@ public:
   static void adc_enable(const pin_t pin) { pinMode(pin, INPUT); }
 
   // Begin ADC sampling on the given pin. Called from Temperature::isr!
-  static void adc_start(const pin_t pin) { adc_result = analogRead(pin); }
+  // Find the pin with digitalPinToPinName() instead of analogRead(), which since STM32duino 2.0
+  // only takes Ax numbers and reads nothing from variants that number analog pins as digital pins.
+  static void adc_start(const pin_t pin) {
+    const PinName pn = digitalPinToPinName(pin);
+    adc_result = pn == NC ? 0 : adc_read_value(pn, HAL_ADC_RESOLUTION);
+  }
 
   // Is the ADC ready for reading?
   static bool adc_ready() { return true; }

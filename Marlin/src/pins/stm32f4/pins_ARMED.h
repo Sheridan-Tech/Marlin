@@ -37,9 +37,9 @@
 #define BOARD_INFO_NAME      "Arm'ed"
 #define DEFAULT_MACHINE_NAME BOARD_INFO_NAME
 
-#if NO_EEPROM_SELECTED
+#if SHALL_USE_EEPROM(I2C_EEPROM)
   #define I2C_EEPROM
-  #define MARLIN_EEPROM_SIZE              0x1000  // 4K
+  #define MARLIN_EEPROM_SIZE             0x1000U  // 4K
 #endif
 
 //
@@ -128,14 +128,14 @@
 #define HEATER_1_PIN                        PA2   // Hardware PWM
 #define HEATER_BED_PIN                      PA0   // Hardware PWM
 
-#define FAN_PIN                             PC6   // Hardware PWM, Part cooling fan
+#define FAN0_PIN                            PC6   // Hardware PWM, Part cooling fan
 #define FAN1_PIN                            PC7   // Hardware PWM, Extruder fan
 #define FAN2_PIN                            PC8   // Hardware PWM, Controller fan
 
 //
 // Misc functions
 //
-#define SDSS                                PE7
+#define SD_SS_PIN                           PE7
 #define LED_PIN                             PB7   // Heart beat
 #define PS_ON_PIN                           PA10
 #define KILL_PIN                            PA8
@@ -149,7 +149,7 @@
 
 #if ENABLED(FYSETC_MINI_12864)
   //
-  // See https://wiki.fysetc.com/Mini12864_Panel/
+  // See https://wiki.fysetc.com/docs/Mini12864Panel
   //
   #define DOGLCD_A0                         PE9
   #define DOGLCD_CS                         PE8
@@ -158,7 +158,7 @@
 
   #define LCD_RESET_PIN                     PB12  // Must be high or open for LCD to operate normally.
 
-  #if EITHER(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
+  #if ANY(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
     #ifndef RGB_LED_R_PIN
       #define RGB_LED_R_PIN                 PB13
     #endif
@@ -173,7 +173,7 @@
   #endif
 #else
   #define LCD_PINS_RS                       PE9
-  #define LCD_PINS_ENABLE                   PE8
+  #define LCD_PINS_EN                       PE8
   #define LCD_PINS_D4                       PB12
   #define LCD_PINS_D5                       PB13
   #define LCD_PINS_D6                       PB14
@@ -206,22 +206,14 @@
 #if HAS_TMC_UART
   // TMC2208/TMC2209 stepper drivers
   #define X_SERIAL_TX_PIN               EXT0_PIN
-  #define X_SERIAL_RX_PIN               EXT0_PIN
-
   #define Y_SERIAL_TX_PIN               EXT1_PIN
-  #define Y_SERIAL_RX_PIN               EXT1_PIN
-
   #define Z_SERIAL_TX_PIN               EXT2_PIN
-  #define Z_SERIAL_RX_PIN               EXT2_PIN
-
   #define E0_SERIAL_TX_PIN              EXT3_PIN
-  #define E0_SERIAL_RX_PIN              EXT3_PIN
-
-  #define E1_SERIAL_RX_PIN              EXT4_PIN
   #define E1_SERIAL_TX_PIN              EXT4_PIN
-
-  #define Z2_SERIAL_RX_PIN              EXT4_PIN
   #define Z2_SERIAL_TX_PIN              EXT4_PIN
 
-  #define TMC_BAUD_RATE                    19200
-#endif
+  #ifndef TMC_BAUD_RATE
+    #define TMC_BAUD_RATE                  19200
+  #endif
+
+#endif // HAS_TMC_UART

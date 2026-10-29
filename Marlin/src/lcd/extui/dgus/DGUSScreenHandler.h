@@ -32,10 +32,10 @@
 #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
 
   typedef struct  {
-    ExtUI::extruder_t extruder; // which extruder to operate
-    uint8_t action; // load or unload
-    bool heated; // heating done ?
-    float purge_length; // the length to extrude before unload, prevent filament jam
+    uint8_t extruder;   // Which extruder index to operate
+    uint8_t action;     // Load or unload
+    bool heated;        // Heating done?
+    float purge_length; // The length to extrude before unload, prevent filament jam
   } filament_data_t;
 
   extern filament_data_t filament_data;
@@ -46,17 +46,17 @@
 #define BE16_P(V) ( ((uint8_t*)(V))[0] << 8U | ((uint8_t*)(V))[1] )
 #define BE32_P(V) ( ((uint8_t*)(V))[0] << 24U | ((uint8_t*)(V))[1] << 16U | ((uint8_t*)(V))[2] << 8U | ((uint8_t*)(V))[3] )
 
-#if ENABLED(DGUS_LCD_UI_ORIGIN)
+#if DGUS_LCD_UI_ORIGIN
   #include "origin/DGUSScreenHandler.h"
-#elif ENABLED(DGUS_LCD_UI_MKS)
+#elif DGUS_LCD_UI_MKS
   #include "mks/DGUSScreenHandler.h"
-#elif ENABLED(DGUS_LCD_UI_FYSETC)
+#elif DGUS_LCD_UI_FYSETC
   #include "fysetc/DGUSScreenHandler.h"
-#elif ENABLED(DGUS_LCD_UI_HIPRECY)
+#elif DGUS_LCD_UI_HIPRECY
   #include "hiprecy/DGUSScreenHandler.h"
 #endif
 
-extern DGUSScreenHandlerClass ScreenHandler;
+extern DGUSScreenHandlerClass screen;
 
 // Helper to define a DGUS_VP_Variable for common use-cases.
 #define VPHELPER(VPADR, VPADRVAR, RXFPTR, TXFPTR) { \

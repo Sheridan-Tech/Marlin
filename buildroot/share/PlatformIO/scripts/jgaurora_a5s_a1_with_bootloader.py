@@ -2,6 +2,7 @@
 # jgaurora_a5s_a1_with_bootloader.py
 # Customizations for env:jgaurora_a5s_a1
 #
+
 import pioutil
 if pioutil.is_pio_build():
 
@@ -32,4 +33,4 @@ if pioutil.is_pio_build():
         fw_path.rename(fws_path)
 
     import marlin
-    marlin.add_post_action(addboot);
+    marlin.add_post_action(addboot)

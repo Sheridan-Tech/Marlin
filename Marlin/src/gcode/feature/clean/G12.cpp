@@ -48,7 +48,7 @@ void GcodeSuite::G12() {
 
   // Don't allow nozzle cleaning without homing first
   constexpr main_axes_bits_t clean_axis_mask = main_axes_mask & ~TERN0(NOZZLE_CLEAN_NO_Z, Z_AXIS) & ~TERN0(NOZZLE_CLEAN_NO_Y, Y_AXIS);
-  if (homing_needed_error(clean_axis_mask)) return;
+  if (motion.homing_needed_error(clean_axis_mask)) return;
 
   #ifdef WIPE_SEQUENCE_COMMANDS
     if (!parser.seen_any()) {
@@ -57,10 +57,16 @@ void GcodeSuite::G12() {
     }
   #endif
 
-  const uint8_t pattern = parser.ushortval('P', 0),
-                strokes = parser.ushortval('S', NOZZLE_CLEAN_STROKES),
-                objects = parser.ushortval('T', NOZZLE_CLEAN_TRIANGLES);
-  const float radius = parser.linearval('R', NOZZLE_CLEAN_CIRCLE_RADIUS);
+  const uint8_t pattern = (
+    #if COUNT_ENABLED(NOZZLE_CLEAN_PATTERN_LINE, NOZZLE_CLEAN_PATTERN_ZIGZAG, NOZZLE_CLEAN_PATTERN_CIRCLE) > 1
+      parser.ushortval('P', NOZZLE_CLEAN_DEFAULT_PATTERN)
+    #else
+      NOZZLE_CLEAN_DEFAULT_PATTERN
+    #endif
+  );
+  const uint8_t strokes = parser.ushortval('S', NOZZLE_CLEAN_STROKES),
+                objects = TERN0(NOZZLE_CLEAN_PATTERN_ZIGZAG, parser.ushortval('T', NOZZLE_CLEAN_TRIANGLES));
+  const float radius = TERN0(NOZZLE_CLEAN_PATTERN_CIRCLE, parser.linearval('R', NOZZLE_CLEAN_CIRCLE_RADIUS));
 
   const bool seenxyz = parser.seen("XYZ");
   const uint8_t cleans =  (!seenxyz || parser.boolval('X') ? _BV(X_AXIS) : 0)
@@ -73,11 +79,11 @@ void GcodeSuite::G12() {
     TEMPORARY_BED_LEVELING_STATE(!TEST(cleans, Z_AXIS) && planner.leveling_active);
   #endif
 
-  SET_SOFT_ENDSTOP_LOOSE(!parser.boolval('E'));
+  motion.set_soft_endstop_loose(!parser.boolval('E'));
 
   nozzle.clean(pattern, strokes, radius, objects, cleans);
 
-  SET_SOFT_ENDSTOP_LOOSE(false);
+  motion.set_soft_endstop_loose(false);
 }
 
 #endif // NOZZLE_CLEAN_FEATURE

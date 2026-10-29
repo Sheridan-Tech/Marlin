@@ -49,52 +49,38 @@
 #     11   5  ??? all zeroes
 #
 # Other notes:
-# * The index of each icon corresponds to the Icon number in dwin.h
-# * One exception is number 39: that header entry is blank, and dwin.h
-#   does not define a name for 39. This is specially handled to
-#   prevent reordering stock icons.
+# * The index of each icon corresponds to the Icon number in dwin_set.h
+#   (7.ICO) or marlinui/dwin_lcd.h (3.ICO, 4.ICO).
+# * Entries with zero length are empty slots (e.g., 39 in 7.ICO).
+#   All 256 entries are kept so that indexes never shift.
 
-import os
-import struct
+import os, re, struct
 from PIL import Image
-
-def getJpegResolution(jpegFile):
-    """Returns a 2-tuple containing the jpegFile's (width, height).
-    """
-    img = Image.open(jpegFile)
-    return img.size
 
 class DWIN_ICO_File():
     def __init__(self):
         self.entries = []    # list of header entries
 
-    def splitFile(self, filename, outDir):
+    def splitFile(self, filename, outDir, names=None):
         if not filename[-4:].lower() == '.ico':
             raise RuntimeError('Input file must end in .ico')
 
+        if names is None: names = iconNamesFor(filename)
+
         with open(filename, 'rb') as infile:
             self._parseHeader(infile)
-            self._splitEntryData(infile, outDir)
-
-        return
+            self._splitEntryData(infile, outDir, names)
 
     def _parseHeader(self, infile):
-        maxEntries = 256
-        count = 0
-        validEntries = 0
-        while count < maxEntries:
+        # Keep all 256 entries so each list index is the icon index
+        self.entries = []
+        for count in range(256):
             rawBytes = infile.read(16)
             entry = Entry()
             entry.parseRawData(rawBytes)
-            # check that it is valid: is offset nonzero?
-            # Special case: treat 39 as valid
-            if (entry.offset > 0) or (count == 39):
-                validEntries += 1
-                self.entries.append(entry)
-            count += 1
-        return
+            self.entries.append(entry)
 
-    def _splitEntryData(self, infile, outDir):
+    def _splitEntryData(self, infile, outDir, names):
         print('Splitting Entry Data...')
         if 0 == len(self.entries):
             raise RuntimeError('.ico file is not loaded yet')
@@ -103,63 +89,58 @@ class DWIN_ICO_File():
         if not os.path.exists(outDir):
             os.mkdir(outDir)
 
-        # keep a count
-        count = 0
-        for entry in self.entries:
-            # Skip any empty entries. (Special handling of 39.)
-            if entry.length == 0:
-                count += 1
-                continue
-            # Seek file position, read length bytes, and write to new output file.
-            print('%02d: offset: 0x%06x len: 0x%04x width: %d height: %d' %
-                  (count, entry.offset, entry.length, entry.width, entry.height))
-            outfilename = os.path.join(outDir,
-                                       '%03d-%s.jpg' % (count, _iconNames[count]))
+        for count, entry in enumerate(self.entries):
+            # Skip empty entries
+            if entry.length == 0: continue
+            outfilename = os.path.join(outDir, '%03d-ICON_%s.jpg' % (count, names.get(count, "UNKNOWN")))
             with open(outfilename, 'wb') as outfile:
+                # Seek file position, read length bytes, and write to new output file.
                 infile.seek(entry.offset)
                 blob = infile.read(entry.length)
+                if len(blob) != entry.length:
+                    raise RuntimeError('Icon %d data runs past the end of the file' % count)
                 outfile.write(blob)
-                print('Wrote %d bytes to %s' % (entry.length, outfilename))
-
-            count += 1
-        return
+                print('(%3d: width=%3d height=%3d offset=%6d len=%4d) ... %s' %
+                      (count, entry.width, entry.height, entry.offset, entry.length, os.path.basename(outfilename)))
 
     def createFile(self, iconDir, filename):
-        '''Create a new .ico file from the contents of iconDir.
+        """
+        Create a new .ico file from the contents of iconDir.
 
         The contents of iconDir are processed to get image
         resolution, and a new entry is created for each.
 
         Each filename must have a leading number followed by a
         dash, which is the icon index. E.g., "071-ICON_StepX.jpg".
-        '''
+        """
         self.entries = [Entry() for i in range(0,256)]
         # 1. Scan icon directory and record all valid files
         print('Scanning icon directory', iconDir)
         count = 0
-        for dirEntry in os.scandir(iconDir):
-            if not dirEntry.is_file():
-                print('...Ignoring', dirEntry.path)
+        for dirEntry in sorted(os.scandir(iconDir), key=lambda d: d.name):
+            # Only consider files named like "071-ICON_StepX.jpg"
+            m = re.match(r'^(\d{3})-.*\.jpe?g$', dirEntry.name, re.IGNORECASE)
+            if not dirEntry.is_file() or not m:
                 continue
-            # process each file:
-            try:
-                index = int(dirEntry.name[0:3])
-                if not (0 <= index <= 255):
-                    print('...Ignoring invalid index on', dirEntry.path)
-                    continue
-                #dirEntry.path is iconDir/name
-                w,h = getJpegResolution(dirEntry.path)
-                length = dirEntry.stat().st_size
-                e = self.entries[index]
-                e.width = w
-                e.height = h
-                e.length = length
-                e.filename = dirEntry.path
-                count += 1
-            except Exception as e:
-                print('Whoops: ', e)
-                pass
+            index = int(m.group(1))
+            if not (0 <= index <= 255):
+                raise RuntimeError('Invalid icon index in %s' % dirEntry.path)
+            e = self.entries[index]
+            if e.filename:
+                raise RuntimeError('Duplicate icon index %03d: %s and %s' % (index, os.path.basename(e.filename), dirEntry.name))
+            # dirEntry.path is iconDir/name
+            img = Image.open(dirEntry.path)
+            if img.format != 'JPEG':
+                raise RuntimeError('%s is not a JPEG file' % dirEntry.path)
+            if img.info.get('progressive') or img.info.get('progression'):
+                raise RuntimeError('%s is a progressive JPEG (use baseline)' % dirEntry.path)
+            e.width, e.height = img.size
+            e.length = dirEntry.stat().st_size
+            e.filename = dirEntry.path
+            count += 1
         print('...Scanned %d icon files' % (count))
+        if count == 0:
+            raise RuntimeError('No icon files found in %s' % iconDir)
 
         # 2. Scan over valid header entries and update offsets
         self._updateHeaderOffsets()
@@ -178,9 +159,8 @@ class DWIN_ICO_File():
                 continue
             e.offset = offset
             offset += e.length
-            #print('%03d: (%d x %d) len=%d off=%d' %
+            # print('%03d: (%d x %d) len=%d off=%d' %
             #      (i, e.width, e.height, e.length, e.offset))
-        return
 
     def _combineAndWriteIcoFile(self, filename):
         """Write out final .ico file.
@@ -199,28 +179,27 @@ class DWIN_ICO_File():
                 if 0 == e.length: continue
                 guts = self._getFileContents(e.filename, e.length)
                 outfile.write(guts)
-        return
 
     def _getFileContents(self, filename, length):
         """Read contents of filename, and return bytes"""
         with open(filename, 'rb') as infile:
             contents = infile.read(length)
             if len(contents) != length:
-                raise RuntimeError('Failed to read contents of', filename)
+                raise RuntimeError('Failed to read contents of %s' % filename)
             return contents
 
 class Entry():
-    '''Entry objects record resolution and size information
+    """Entry objects record resolution and size information
     about each icon stored in an ICO file.
-    '''
+    """
     __slots__ = ('width', 'height', 'offset', 'length', 'filename')
 
-    def __init__(self, w=0, h=0, length=0, offset=0):
+    def __init__(self, w=0, h=0, length=0, offset=0, filename=None):
         self.width = w
         self.height = h
         self.offset = offset
         self.length = length
-        self.filename = None
+        self.filename = filename
 
     def parseRawData(self, rawEntryBytes):
         if len(rawEntryBytes) != 16:
@@ -233,7 +212,6 @@ class Entry():
         self.height = h
         self.offset = off
         self.length = len3 * 65536 + len21
-        return
 
     def serialize(self):
         """Convert this Entry's information into a 16-byte
@@ -247,96 +225,151 @@ class Entry():
         return rawdata
 
 _iconNames = {
-    0 : 'ICON_LOGO',
-    1 : 'ICON_Print_0',
-    2 : 'ICON_Print_1',
-    3 : 'ICON_Prepare_0',
-    4 : 'ICON_Prepare_1',
-    5 : 'ICON_Control_0',
-    6 : 'ICON_Control_1',
-    7 : 'ICON_Leveling_0',
-    8 : 'ICON_Leveling_1',
-    9 : 'ICON_HotendTemp',
-    10 : 'ICON_BedTemp',
-    11 : 'ICON_Speed',
-    12 : 'ICON_Zoffset',
-    13 : 'ICON_Back',
-    14 : 'ICON_File',
-    15 : 'ICON_PrintTime',
-    16 : 'ICON_RemainTime',
-    17 : 'ICON_Setup_0',
-    18 : 'ICON_Setup_1',
-    19 : 'ICON_Pause_0',
-    20 : 'ICON_Pause_1',
-    21 : 'ICON_Continue_0',
-    22 : 'ICON_Continue_1',
-    23 : 'ICON_Stop_0',
-    24 : 'ICON_Stop_1',
-    25 : 'ICON_Bar',
-    26 : 'ICON_More',
-    27 : 'ICON_Axis',
-    28 : 'ICON_CloseMotor',
-    29 : 'ICON_Homing',
-    30 : 'ICON_SetHome',
-    31 : 'ICON_PLAPreheat',
-    32 : 'ICON_ABSPreheat',
-    33 : 'ICON_Cool',
-    34 : 'ICON_Language',
-    35 : 'ICON_MoveX',
-    36 : 'ICON_MoveY',
-    37 : 'ICON_MoveZ',
-    38 : 'ICON_Extruder',
-    # no 39
-    40 : 'ICON_Temperature',
-    41 : 'ICON_Motion',
-    42 : 'ICON_WriteEEPROM',
-    43 : 'ICON_ReadEEPROM',
-    44 : 'ICON_ResumeEEPROM',
-    45 : 'ICON_Info',
-    46 : 'ICON_SetEndTemp',
-    47 : 'ICON_SetBedTemp',
-    48 : 'ICON_FanSpeed',
-    49 : 'ICON_SetPLAPreheat',
-    50 : 'ICON_SetABSPreheat',
-    51 : 'ICON_MaxSpeed',
-    52 : 'ICON_MaxAccelerated',
-    53 : 'ICON_MaxJerk',
-    54 : 'ICON_Step',
-    55 : 'ICON_PrintSize',
-    56 : 'ICON_Version',
-    57 : 'ICON_Contact',
-    58 : 'ICON_StockConfiguraton',
-    59 : 'ICON_MaxSpeedX',
-    60 : 'ICON_MaxSpeedY',
-    61 : 'ICON_MaxSpeedZ',
-    62 : 'ICON_MaxSpeedE',
-    63 : 'ICON_MaxAccX',
-    64 : 'ICON_MaxAccY',
-    65 : 'ICON_MaxAccZ',
-    66 : 'ICON_MaxAccE',
-    67 : 'ICON_MaxSpeedJerkX',
-    68 : 'ICON_MaxSpeedJerkY',
-    69 : 'ICON_MaxSpeedJerkZ',
-    70 : 'ICON_MaxSpeedJerkE',
-    71 : 'ICON_StepX',
-    72 : 'ICON_StepY',
-    73 : 'ICON_StepZ',
-    74 : 'ICON_StepE',
-    75 : 'ICON_Setspeed',
-    76 : 'ICON_SetZOffset',
-    77 : 'ICON_Rectangle',
-    78 : 'ICON_BLTouch',
-    79 : 'ICON_TempTooLow',
-    80 : 'ICON_AutoLeveling',
-    81 : 'ICON_TempTooHigh',
-    82 : 'ICON_NoTips_C',
-    83 : 'ICON_NoTips_E',
-    84 : 'ICON_Continue_C',
-    85 : 'ICON_Continue_E',
-    86 : 'ICON_Cancel_C',
-    87 : 'ICON_Cancel_E',
-    88 : 'ICON_Confirm_C',
-    89 : 'ICON_Confirm_E',
-    90 : 'ICON_Info_0',
-    91 : 'ICON_Info_1'
-    }
+      0 : "LOGO_Creality",
+      1 : "Print_0",
+      2 : "Print_1",
+      3 : "Prepare_0",
+      4 : "Prepare_1",
+      5 : "Control_0",
+      6 : "Control_1",
+      7 : "Leveling_0",
+      8 : "Leveling_1",
+      9 : "HotendTemp",
+     10 : "BedTemp",
+     11 : "Speed",
+     12 : "Zoffset",
+     13 : "Back",
+     14 : "File",
+     15 : "PrintTime",
+     16 : "RemainTime",
+     17 : "Setup_0",
+     18 : "Setup_1",
+     19 : "Pause_0",
+     20 : "Pause_1",
+     21 : "Continue_0",
+     22 : "Continue_1",
+     23 : "Stop_0",
+     24 : "Stop_1",
+     25 : "Bar",
+     26 : "More",
+     27 : "Axis",
+     28 : "CloseMotor",
+     29 : "Homing",
+     30 : "SetHome",
+     31 : "PLAPreheat",
+     32 : "ABSPreheat",
+     33 : "Cool",
+     34 : "Language",
+     35 : "MoveX",
+     36 : "MoveY",
+     37 : "MoveZ",
+     38 : "Extruder",
+     # Skip 39
+     40 : "Temperature",
+     41 : "Motion",
+     42 : "WriteEEPROM",
+     43 : "ReadEEPROM",
+     44 : "ResetEEPROM",
+     45 : "Info",
+     46 : "SetEndTemp",
+     47 : "SetBedTemp",
+     48 : "FanSpeed",
+     49 : "SetPLAPreheat",
+     50 : "SetABSPreheat",
+     51 : "MaxSpeed",
+     52 : "MaxAccelerated",
+     53 : "MaxJerk",
+     54 : "Step",
+     55 : "PrintSize",
+     56 : "Version",
+     57 : "Contact",
+     58 : "StockConfiguraton",
+     59 : "MaxSpeedX",
+     60 : "MaxSpeedY",
+     61 : "MaxSpeedZ",
+     62 : "MaxSpeedE",
+     63 : "MaxAccX",
+     64 : "MaxAccY",
+     65 : "MaxAccZ",
+     66 : "MaxAccE",
+     67 : "MaxSpeedJerkX",
+     68 : "MaxSpeedJerkY",
+     69 : "MaxSpeedJerkZ",
+     70 : "MaxSpeedJerkE",
+     71 : "StepX",
+     72 : "StepY",
+     73 : "StepZ",
+     74 : "StepE",
+     75 : "Setspeed",
+     76 : "SetZOffset",
+     77 : "Rectangle",
+     78 : "BLTouch",
+     79 : "TempTooLow",
+     80 : "AutoLeveling",
+     81 : "TempTooHigh",
+     82 : "NoTips_C",
+     83 : "NoTips_E",
+     84 : "Continue_C",
+     85 : "Continue_E",
+     86 : "Cancel_C",
+     87 : "Cancel_E",
+     88 : "Confirm_C",
+     89 : "Confirm_E",
+     90 : "Info_0",
+     91 : "Info_1",
+     92 : "DegreesC",
+     93 : "Printer_0",
+    200 : "Checkbox_F",
+    201 : "Checkbox_T",
+    202 : "Fade",
+    203 : "Mesh",
+    204 : "Tilt",
+    205 : "Brightness",
+    206 : "Probe",
+    249 : "AxisD",
+    250 : "AxisBR",
+    251 : "AxisTR",
+    252 : "AxisBL",
+    253 : "AxisTL",
+    254 : "AxisC"
+}
+
+# Names for MarlinUI's boot icons (3.ICO) and status icons (4.ICO), from marlinui/dwin_lcd.h
+_iconNames3 = {
+      0 : "MarlinBoot",
+      1 : "OpenSource",
+      2 : "GitHubURL",
+      3 : "MarlinURL",
+      4 : "Copyright"
+}
+
+_iconNames4 = {
+      0 : "LOGO_Marlin",
+      1 : "HotendOff",
+      2 : "HotendOn",
+      3 : "BedOff",
+      4 : "BedOn",
+      5 : "Fan0",
+      6 : "Fan1",
+      7 : "Fan2",
+      8 : "Fan3",
+      9 : "Halted",
+     10 : "Question",
+     11 : "Alert",
+     12 : "RotateCW",
+     13 : "RotateCCW",
+     14 : "UpArrow",
+     15 : "DownArrow",
+     16 : "Bedline",
+     17 : "BedLeveledOff",
+     18 : "BedLeveledOn"
+}
+
+def iconNamesFor(filename):
+    """Return the icon name map for an ICO file, by its leading set number.
+    Unknown sets get the 7.ICO (dwin_set.h) names.
+    """
+    m = re.match(r'^(\d+)', os.path.basename(filename))
+    num = int(m.group(1)) if m else 7
+    return { 3: _iconNames3, 4: _iconNames4 }.get(num, _iconNames)
+

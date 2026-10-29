@@ -32,7 +32,6 @@
   #include "../../../module/delta.h"
 #endif
 
-#include "../../../MarlinCore.h"
 #include <math.h>
 
 //#define DEBUG_UBL_MOTION
@@ -47,21 +46,21 @@
   //       corners of cells. To fix the issue, simply check if the start/end of the line
   //       is very close to a cell boundary in advance and don't split the line there.
 
-  void unified_bed_leveling::line_to_destination_cartesian(const_feedRate_t scaled_fr_mm_s, const uint8_t extruder) {
+  void unified_bed_leveling::line_to_destination_cartesian(const feedRate_t scaled_fr_mm_s, const uint8_t extruder) {
     /**
      * Much of the nozzle movement will be within the same cell. So we will do as little computation
      * as possible to determine if this is the case. If this move is within the same cell, we will
      * just do the required Z-Height correction, call the Planner's buffer_line() routine, and leave
      */
     #if HAS_POSITION_MODIFIERS
-      xyze_pos_t start = current_position, end = destination;
+      xyze_pos_t start = motion.position, end = motion.destination;
       planner.apply_modifiers(start);
       planner.apply_modifiers(end);
     #else
-      const xyze_pos_t &start = current_position, &end = destination;
+      const xyze_pos_t &start = motion.position, &end = motion.destination;
     #endif
 
-    const xy_int8_t istart = cell_indexes(start), iend = cell_indexes(end);
+    const xy_uint8_t istart = cell_indexes(start), iend = cell_indexes(end);
 
     // A move within the same cell needs no splitting
     if (istart == iend) {
@@ -79,7 +78,7 @@
 
           end.z += UBL_Z_RAISE_WHEN_OFF_MESH;
           planner.buffer_segment(end, scaled_fr_mm_s, extruder);
-          current_position = destination;
+          motion.position = motion.destination;
           return;
         }
       #endif
@@ -97,7 +96,7 @@
       // Replace NAN corrections with 0.0 to prevent NAN propagation.
       if (!isnan(z0)) end.z += z0;
       planner.buffer_segment(end, scaled_fr_mm_s, extruder);
-      current_position = destination;
+      motion.position = motion.destination;
       return;
     }
 
@@ -108,7 +107,7 @@
 
     const xy_float_t dist = end - start;
     const xy_bool_t neg { dist.x < 0, dist.y < 0 };
-    const xy_int8_t ineg { int8_t(neg.x), int8_t(neg.y) };
+    const xy_uint8_t ineg { uint8_t(neg.x), uint8_t(neg.y) };
     const xy_float_t sign { neg.x ? -1.0f : 1.0f, neg.y ? -1.0f : 1.0f };
     const xy_int8_t iadd { int8_t(iend.x == istart.x ? 0 : sign.x), int8_t(iend.y == istart.y ? 0 : sign.y) };
 
@@ -131,7 +130,7 @@
       const bool inf_normalized_flag = isinf(e_normalized_dist);
     #endif
 
-    xy_int8_t icell = istart;
+    xy_uint8_t icell = istart;
 
     const float ratio = dist.y / dist.x,        // Allow divide by zero
                 c = start.y - ratio * start.x;
@@ -191,10 +190,10 @@
       }
 
       // At the final destination? Usually not, but when on a Y Mesh Line it's completed.
-      if (xy_pos_t(current_position) != xy_pos_t(end))
+      if (xy_pos_t(motion.position) != xy_pos_t(end))
         goto FINAL_MOVE;
 
-      current_position = destination;
+      motion.position = motion.destination;
       return;
     }
 
@@ -241,10 +240,10 @@
           DEBUG_ECHOLNPGM("[ubl] skip Y segment");
       }
 
-      if (xy_pos_t(current_position) != xy_pos_t(end))
+      if (xy_pos_t(motion.position) != xy_pos_t(end))
         goto FINAL_MOVE;
 
-      current_position = destination;
+      motion.position = motion.destination;
       return;
     }
 
@@ -252,7 +251,7 @@
      * Generic case of a line crossing both X and Y Mesh lines.
      */
 
-    xy_int8_t cnt = (istart - iend).ABS();
+    xy_uint8_t cnt = istart.diff(iend);
 
     icell += ineg;
 
@@ -325,59 +324,57 @@
       if (cnt.x < 0 || cnt.y < 0) break; // Too far! Exit the loop and go to FINAL_MOVE
     }
 
-    if (xy_pos_t(current_position) != xy_pos_t(end))
+    if (xy_pos_t(motion.position) != xy_pos_t(end))
       goto FINAL_MOVE;
 
-    current_position = destination;
+    motion.position = motion.destination;
   }
 
 #else // UBL_SEGMENTED
 
   #if IS_SCARA
-    #define DELTA_SEGMENT_MIN_LENGTH 0.25 // SCARA minimum segment size is 0.25mm
-  #elif ENABLED(DELTA)
-    #define DELTA_SEGMENT_MIN_LENGTH 0.10 // mm (still subject to DELTA_SEGMENTS_PER_SECOND)
-  #elif ENABLED(POLARGRAPH)
-    #define DELTA_SEGMENT_MIN_LENGTH 0.10 // mm (still subject to DELTA_SEGMENTS_PER_SECOND)
+    #define SEGMENT_MIN_LENGTH 0.25 // SCARA minimum segment size is 0.25mm
+  #elif IS_KINEMATIC
+    #define SEGMENT_MIN_LENGTH 0.10 // (mm) Still subject to DEFAULT_SEGMENTS_PER_SECOND
   #else // CARTESIAN
     #ifdef LEVELED_SEGMENT_LENGTH
-      #define DELTA_SEGMENT_MIN_LENGTH LEVELED_SEGMENT_LENGTH
+      #define SEGMENT_MIN_LENGTH LEVELED_SEGMENT_LENGTH
     #else
-      #define DELTA_SEGMENT_MIN_LENGTH 1.00 // mm (similar to G2/G3 arc segmentation)
+      #define SEGMENT_MIN_LENGTH 1.00 // (mm) Similar to G2/G3 arc segmentation
     #endif
   #endif
 
   /**
    * Prepare a segmented linear move for DELTA/SCARA/CARTESIAN with UBL and FADE semantics.
    * This calls planner.buffer_segment multiple times for small incremental moves.
-   * Returns true if did NOT move, false if moved (requires current_position update).
+   * Returns true if did NOT move, false if moved (requires motion.position update).
    */
 
-  bool __O2 unified_bed_leveling::line_to_destination_segmented(const_feedRate_t scaled_fr_mm_s) {
+  bool __O2 unified_bed_leveling::line_to_destination_segmented(const feedRate_t scaled_fr_mm_s) {
 
-    if (!position_is_reachable(destination))  // fail if moving outside reachable boundary
-      return true;                            // did not move, so current_position still accurate
+    if (!motion.can_reach(motion.destination)) // Fail if moving outside reachable boundary
+      return true;                                  // Did not move, so motion.position still accurate
 
-    const xyze_pos_t total = destination - current_position;
+    const xyze_pos_t total = motion.destination - motion.position;
 
     const float cart_xy_mm_2 = HYPOT2(total.x, total.y),
-                cart_xy_mm = SQRT(cart_xy_mm_2);                                     // Total XY distance
+                cart_xy_mm = SQRT(cart_xy_mm_2);                               // Total XY distance
 
     #if IS_KINEMATIC
-      const float seconds = cart_xy_mm / scaled_fr_mm_s;                             // Duration of XY move at requested rate
-      uint16_t segments = LROUND(segments_per_second * seconds),                     // Preferred number of segments for distance @ feedrate
-               seglimit = LROUND(cart_xy_mm * RECIPROCAL(DELTA_SEGMENT_MIN_LENGTH)); // Number of segments at minimum segment length
-      NOMORE(segments, seglimit);                                                    // Limit to minimum segment length (fewer segments)
+      const float seconds = cart_xy_mm / scaled_fr_mm_s;                       // Duration of XY move at requested rate
+      uint16_t segments = LROUND(segments_per_second * seconds),               // Preferred number of segments for distance @ feedrate
+               seglimit = LROUND(cart_xy_mm * RECIPROCAL(SEGMENT_MIN_LENGTH)); // Number of segments at minimum segment length
+      NOMORE(segments, seglimit);                                              // Limit to minimum segment length (fewer segments)
     #else
-      uint16_t segments = LROUND(cart_xy_mm * RECIPROCAL(DELTA_SEGMENT_MIN_LENGTH)); // Cartesian fixed segment length
+      uint16_t segments = LROUND(cart_xy_mm * RECIPROCAL(SEGMENT_MIN_LENGTH)); // Cartesian fixed segment length
     #endif
 
-    NOLESS(segments, 1U);                                                            // Must have at least one segment
-    const float inv_segments = 1.0f / segments;                                      // Reciprocal to save calculation
+    NOLESS(segments, 1U);                                                      // Must have at least one segment
+    const float inv_segments = 1.0f / segments;                                // Reciprocal to save calculation
 
     // Add hints to help optimize the move
-    PlannerHints hints(SQRT(cart_xy_mm_2 + sq(total.z)) * inv_segments);             // Length of each segment
-    #if ENABLED(SCARA_FEEDRATE_SCALING)
+    PlannerHints hints(SQRT(cart_xy_mm_2 + sq(total.z)) * inv_segments);       // Length of each segment
+    #if ENABLED(FEEDRATE_SCALING)
       hints.inv_duration = scaled_fr_mm_s / hints.millimeters;
     #endif
 
@@ -386,22 +383,22 @@
     // Note that E segment distance could vary slightly as z mesh height
     // changes for each segment, but small enough to ignore.
 
-    xyze_pos_t raw = current_position;
+    xyze_pos_t raw = motion.position;
 
     // Just do plain segmentation if UBL is inactive or the target is above the fade height
-    if (!planner.leveling_active || !planner.leveling_active_at_z(destination.z)) {
+    if (!planner.leveling_active || !planner.leveling_active_at_z(motion.destination.z)) {
       while (--segments) {
         raw += diff;
-        planner.buffer_line(raw, scaled_fr_mm_s, active_extruder, hints);
+        planner.buffer_line(raw, scaled_fr_mm_s, motion.extruder, hints);
       }
-      planner.buffer_line(destination, scaled_fr_mm_s, active_extruder, hints);
+      planner.buffer_line(motion.destination, scaled_fr_mm_s, motion.extruder, hints);
       return false; // Did not set current from destination
     }
 
     // Otherwise perform per-segment leveling
 
     #if ENABLED(ENABLE_LEVELING_FADE_HEIGHT)
-      const float fade_scaling_factor = planner.fade_scaling_factor_for_z(destination.z);
+      const float fade_scaling_factor = planner.fade_scaling_factor_for_z(motion.destination.z);
     #endif
 
     // Move to first segment destination
@@ -417,8 +414,8 @@
       // for mesh inset area.
 
       xy_int8_t icell = {
-        int8_t((raw.x - (MESH_MIN_X)) * RECIPROCAL(MESH_X_DIST)),
-        int8_t((raw.y - (MESH_MIN_Y)) * RECIPROCAL(MESH_Y_DIST))
+        int8_t((raw.x - mesh_min.x) * RECIPROCAL(MESH_X_DIST)),
+        int8_t((raw.y - mesh_min.y) * RECIPROCAL(MESH_Y_DIST))
       };
       LIMIT(icell.x, 0, GRID_MAX_CELLS_X);
       LIMIT(icell.y, 0, GRID_MAX_CELLS_Y);
@@ -459,13 +456,13 @@
 
       for (;;) {  // for all segments within this mesh cell
 
-        if (--segments == 0) raw = destination;     // if this is last segment, use destination for exact
+        if (--segments == 0) raw = motion.destination;  // If this is last segment, use destination for exact
 
         const float z_cxcy = (z_cxy0 + z_cxym * cell.y) // interpolated mesh z height along cell.x at cell.y
           TERN_(ENABLE_LEVELING_FADE_HEIGHT, * fade_scaling_factor); // apply fade factor to interpolated height
 
         const float oldz = raw.z; raw.z += z_cxcy;
-        planner.buffer_line(raw, scaled_fr_mm_s, active_extruder, hints);
+        planner.buffer_line(raw, scaled_fr_mm_s, motion.extruder, hints);
         raw.z = oldz;
 
         if (segments == 0)                        // done with last segment
@@ -486,7 +483,7 @@
       } // segment loop
     } // cell loop
 
-    return false; // caller will update current_position
+    return false; // caller will update motion.position
   }
 
 #endif // UBL_SEGMENTED

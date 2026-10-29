@@ -22,7 +22,7 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if ENABLED(SDSUPPORT)
+#if HAS_MEDIA
 
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
@@ -33,6 +33,12 @@
 
 /**
  * M28: Start SD Write
+ *
+ * Parameters:
+ *   <filename>  File name to write
+ *
+ *   With BINARY_FILE_TRANSFER:
+ *     B1  Set an optimized binary file transfer mode
  */
 void GcodeSuite::M28() {
 
@@ -69,4 +75,4 @@ void GcodeSuite::M29() {
   card.flag.saving = false;
 }
 
-#endif // SDSUPPORT
+#endif // HAS_MEDIA

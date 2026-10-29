@@ -178,3 +178,20 @@ Intentionally untouched: X/Y jerk 10 (owner explicitly NO); DEFAULT_MAX_ACCELERA
 Compare CURRENT runtime M503 (may differ from these firmware-reset defaults): M92 E142.86, M203 XY400, M204 P2000 R1000 T2000, M205 XY8, M593 X/Y F0 D0.15, M900 K0, M420 S0 invalid mesh, M412 S0 runout, M301 18.48/1.32/64.69, M304 193.09/20.81/1194.26. Resetting EEPROM after a future flash would alter some current values (notably XY jerk to 10, travel acceleration to 3000, E steps retained), so perform an exact M503 comparison and validate before changing EEPROM.
 
 Source implementation branch: ender6-config-approvals-20261029. This code is not verified on hardware; thermal sensors and OctoPrint idle-disconnect root cause still unverified. Do not flash as production firmware without physical commissioning and independent build success.
+
+## 2026-10-29 measured Bowden filament path — unvalidated automatic-change calibration
+
+Owner measurement: **965.2 mm from the dual-drive extruder gears through the Capricorn Bowden tube to the hotend entrance**, plus **approximately 55 mm from the hotend entrance to the nozzle tip**, totaling **1020.2 mm**. The measurements are approximate and do not establish the precise melt-zone start, filament tip position after shaping, or whether M600/M701/M702 resumes reliably on the existing DWIN display.
+
+**Geometry-driven, NOT physically tested firmware candidate defaults**:
+- `FILAMENT_CHANGE_SLOW_LOAD_LENGTH 20` mm at 6 mm/s (unchanged).
+- `FILAMENT_CHANGE_FAST_LOAD_LENGTH 940` mm at 15 mm/s: 20+940=960 mm, nominally **5.2 mm short of hotend entrance**, avoiding fast feeding into the melt zone.
+- `ADVANCED_PAUSE_PURGE_LENGTH 80` mm at 3 mm/s: if filament starts precisely at the gears and does not slip, total 1040 mm fed, nominally **19.8 mm past the nozzle tip**. This is *not* an 80 mm nozzle extrusion, because most of the slow purge fills the remaining hotend path.
+- `FILAMENT_CHANGE_UNLOAD_LENGTH 1050` mm at 20 mm/s: measured 1020.2 mm path + approximately 29.8 mm clearance; tip shaping/cooling may alter the actual extraction position.
+- `PREVENT_LENGTHY_EXTRUDE` stays enabled. `EXTRUDE_MAXLENGTH` increased **1000 -> 1100 mm** solely to accommodate one full 1050 mm filament-change retract, while continuing to guard individual excessive extrusions; Marlin `M603` previously clamped `U1050` to `U1000`. This changes the maximum permissible *single E move*, so do not interpret it as proof that a 1050 mm move is safe on the hardware.
+
+**Important behavior**: `M603` uses `L` for fast-load distance, `U` for unload distance. `M600` / `M701` adds a separate 20 mm slow-load and the separate 80 mm purge, so blindly configuring `L1020` would overfeed into the heater before the slow purge. The measured path is the basis for these *provisional defaults only*, not a completed filament-change calibration.
+
+**Release gates**: Do **not** activate automatic M600/M701/M702 loading until the hotend sensor identity (possibly HT-NTC100K B3950 vs existing Marlin table 1 B4092), temperature accuracy, heatsink fan, and filament-runout switch/pause/resume are verified. Perform a supervised staged loading/unloading test with room to catch excess filament, checking no grind/skips and observing nozzle purge and retract; adjust `M603` distances in RAM first and only `M500` after validation. Until then, remove/insert filament manually and consider temporarily disabling unverified runout via `M412 S0` (not saved unless desired). Filament-change stage speeds remain unchanged.
+
+**Unmodified safety-related firmware settings**: `TEMP_SENSOR_0 1` (provisional, **not approved for heating on the unverified B3950 sensor**), `TEMP_SENSOR_BED 5` (also unverified), thermal protection, heater max, PID defaults, `M201 E75`, runout enabled by default, manual 5x5 leveling, probe offsets, and OctoPrint `M155` support. Owner reports bed trammed with a feeler gauge after flashing, but this does **not** itself establish a stored valid 5x5 mesh; inspect `G29 S0` and `M420 V`. No live printer settings were modified as part of this source change.

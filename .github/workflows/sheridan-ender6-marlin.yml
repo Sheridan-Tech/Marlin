@@ -6,6 +6,7 @@ on:
     branches:
       - ender6-marlin-2.1.3-dwin-arc
       - ender6-upstream-eval
+      - ender6-config-approvals-20261029
 
 permissions:
   contents: read

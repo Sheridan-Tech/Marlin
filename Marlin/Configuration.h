@@ -957,7 +957,7 @@
  * Note: For Bowden Extruders make this large enough to allow load/unload.
  */
 #define PREVENT_LENGTHY_EXTRUDE
-#define EXTRUDE_MAXLENGTH 1000
+#define EXTRUDE_MAXLENGTH 1100 // Sheridan: measured ~1020.2mm Bowden path; retain single-move extrusion protection
 
 //===========================================================================
 //======================== Thermal Runaway Protection =======================
@@ -1364,7 +1364,7 @@
  * Override with M92 (when enabled below)
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 140 } // Captured via M503; re-verify extrusion
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 142.86 } // Measured after dual-drive extruder upgrade; M503 2026-10-29
 
 /**
  * Enable support for M92. Disable to save at least ~530 bytes of flash.
@@ -1376,7 +1376,7 @@
  * Override with M203
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 400, 400, 10, 75 }
+#define DEFAULT_MAX_FEEDRATE          { 500, 500, 10, 75 } // Official Ender 6 example XY ceiling; requires motion testing
 
 //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
 #if ENABLED(LIMITED_MAX_FR_EDITING)
@@ -1404,9 +1404,9 @@
  *   M204 R    Retract Acceleration
  *   M204 T    Travel Acceleration
  */
-#define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration for printing moves
+#define DEFAULT_ACCELERATION          2000    // Official Ender 6 example and current M503 print acceleration
 #define DEFAULT_RETRACT_ACCELERATION  1000 // Preserve running M503 value    // E acceleration for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   5000    // X, Y, Z acceleration for travel (non printing) moves
+#define DEFAULT_TRAVEL_ACCELERATION   3000    // Official Ender 6 example; test travel before raising further
 
 /**
  * Default Jerk limits (mm/s)

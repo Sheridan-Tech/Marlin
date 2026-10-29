@@ -53,7 +53,7 @@ public:
   auto get_sdcard_status(uint32_t* status) -> SDIO_Error_Type;
   auto get_transfer_state() -> Transfer_State;
   auto get_card_state(Card_State* card_state) -> SDIO_Error_Type;
-  auto check_sdio_status(Command_Index index = Command_Index::INVALID, bool check_index = false, bool ignore_crc = false) -> SDIO_Error_Type;
+  auto check_sdio_status(Command_Index index = Command_Index::INVALID, bool check_index=false, bool ignore_crc=false) -> SDIO_Error_Type;
 
   // DMA
   void set_dma_parameters(uint8_t* buf, uint32_t count, bool is_write);
@@ -73,7 +73,7 @@ public:
   // Interrupt handler
   void handle_interrupts();
 
-  // Varaible stored parameters
+  // Variable stored parameters
   auto get_scr(uint16_t rca, uint32_t* scr) -> SDIO_Error_Type;
   auto store_cid() -> SDIO_Error_Type;
   auto store_csd() -> SDIO_Error_Type;

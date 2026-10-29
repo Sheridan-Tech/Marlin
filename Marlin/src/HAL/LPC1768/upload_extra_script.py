@@ -4,6 +4,7 @@
 #  if target_filename is found then that drive is used
 #  else if target_drive is found then that drive is used
 #
+
 from __future__ import print_function
 
 import pioutil
@@ -41,8 +42,8 @@ if pioutil.is_pio_build():
                 from ctypes import windll
                 from pathlib import PureWindowsPath
 
-                # getting list of drives
-                # https://stackoverflow.com/questions/827371/is-there-a-way-to-list-all-the-available-drive-letters-in-python
+                # Getting a list of drives
+                # https://stackoverflow.com/questions/827371/is-there-a-way-to-list-all-the-available-windows-drives
                 drives = []
                 bitmask = windll.kernel32.GetLogicalDrives()
                 for letter in string.ascii_uppercase:

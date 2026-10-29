@@ -52,7 +52,7 @@
 #endif
 
 #if ENABLED(FT_MOTION)
-  #include "ft_types.h"
+  class FTMotion;
 #endif
 
 // TODO: Review and ensure proper handling for special E axes with commands like M17/M18, stepper timeout, etc.
@@ -88,12 +88,6 @@ typedef struct {
 typedef bits_t(NUM_AXES + E_STATES) e_axis_bits_t;
 constexpr e_axis_bits_t e_axis_mask = (_BV(E_STATES) - 1) << NUM_AXES;
 
-// All the stepper enable pins
-constexpr pin_t ena_pins[] = {
-  NUM_AXIS_LIST_(X_ENABLE_PIN, Y_ENABLE_PIN, Z_ENABLE_PIN, I_ENABLE_PIN, J_ENABLE_PIN, K_ENABLE_PIN, U_ENABLE_PIN, V_ENABLE_PIN, W_ENABLE_PIN)
-  LIST_N(E_STEPPERS, E0_ENABLE_PIN, E1_ENABLE_PIN, E2_ENABLE_PIN, E3_ENABLE_PIN, E4_ENABLE_PIN, E5_ENABLE_PIN, E6_ENABLE_PIN, E7_ENABLE_PIN)
-};
-
 // Index of the axis or extruder element in a combined array
 constexpr uint8_t index_of_axis(const AxisEnum axis E_OPTARG(const uint8_t eindex=0)) {
   return uint8_t(axis) + (E_TERN0(axis < NUM_AXES ? 0 : eindex));
@@ -106,34 +100,54 @@ constexpr uint8_t index_of_axis(const AxisEnum axis E_OPTARG(const uint8_t einde
 
 #define INDEX_OF_AXIS(A,V...)     index_of_axis(A E_OPTARG(V+0))
 
-// Bit mask for a matching enable pin, or 0
-constexpr ena_mask_t ena_same(const uint8_t a, const uint8_t b) {
-  return ena_pins[a] == ena_pins[b] ? _BV(b) : 0;
-}
+#if DISABLED(SOFTWARE_DRIVER_ENABLE)
+  // All the stepper enable pins
+  constexpr pin_t ena_pins[] = {
+    NUM_AXIS_LIST_(X_ENABLE_PIN, Y_ENABLE_PIN, Z_ENABLE_PIN, I_ENABLE_PIN, J_ENABLE_PIN, K_ENABLE_PIN, U_ENABLE_PIN, V_ENABLE_PIN, W_ENABLE_PIN)
+    LIST_N(E_STEPPERS, E0_ENABLE_PIN, E1_ENABLE_PIN, E2_ENABLE_PIN, E3_ENABLE_PIN, E4_ENABLE_PIN, E5_ENABLE_PIN, E6_ENABLE_PIN, E7_ENABLE_PIN)
+  };
 
-// Recursively get the enable overlaps mask for a given linear axis or extruder
-constexpr ena_mask_t ena_overlap(const uint8_t a=0, const uint8_t b=0) {
-  return b >= ENABLE_COUNT ? 0 : (a == b ? 0 : ena_same(a, b)) | ena_overlap(a, b + 1);
-}
+  // Bit mask for a matching enable pin, or 0
+  constexpr ena_mask_t ena_same(const uint8_t a, const uint8_t b) {
+    return ena_pins[a] == ena_pins[b] ? _BV(b) : 0;
+  }
 
-// Recursively get whether there's any overlap at all
-constexpr bool any_enable_overlap(const uint8_t a=0) {
-  return a >= ENABLE_COUNT ? false : ena_overlap(a) || any_enable_overlap(a + 1);
-}
+  // Recursively get the enable overlaps mask for a given linear axis or extruder
+  constexpr ena_mask_t ena_overlap(const uint8_t a=0, const uint8_t b=0) {
+    return b >= ENABLE_COUNT ? 0 : (a == b ? 0 : ena_same(a, b)) | ena_overlap(a, b + 1);
+  }
 
-// Array of axes that overlap with each
-// TODO: Consider cases where >=2 steppers are used by a linear axis or extruder
-//       (e.g., CoreXY, Dual XYZ, or E with multiple steppers, etc.).
-constexpr ena_mask_t enable_overlap[] = {
-  #define _OVERLAP(N) ena_overlap(INDEX_OF_AXIS(AxisEnum(N))),
-  REPEAT(NUM_AXES, _OVERLAP)
-  #if HAS_EXTRUDERS
-    #define _E_OVERLAP(N) ena_overlap(INDEX_OF_AXIS(E_AXIS, N)),
-    REPEAT(E_STEPPERS, _E_OVERLAP)
-  #endif
-};
+  // Recursively get whether there's any overlap at all
+  constexpr bool any_enable_overlap(const uint8_t a=0) {
+    return a >= ENABLE_COUNT ? false : ena_overlap(a) || any_enable_overlap(a + 1);
+  }
 
-//static_assert(!any_enable_overlap(), "There is some overlap.");
+  // Array of axes that overlap with each
+  // TODO: Consider cases where >=2 steppers are used by a linear axis or extruder
+  //       (e.g., CoreXY, Dual XYZ, or E with multiple steppers, etc.).
+  constexpr ena_mask_t enable_overlap[] = {
+    #define _OVERLAP(N) ena_overlap(INDEX_OF_AXIS(AxisEnum(N))),
+    REPEAT(NUM_AXES, _OVERLAP)
+    #if HAS_EXTRUDERS
+      #define _E_OVERLAP(N) ena_overlap(INDEX_OF_AXIS(E_AXIS, N)),
+      REPEAT(E_STEPPERS, _E_OVERLAP)
+    #endif
+  };
+
+  //static_assert(!any_enable_overlap(), "There is some overlap.");
+
+#else
+  // With SOFTWARE_DRIVER_ENABLE there are no shared hardware pins, so no overlap
+  constexpr bool any_enable_overlap(const uint8_t=0) { return false; }
+  constexpr ena_mask_t enable_overlap[] = {
+    #define _OVERLAP(N) ena_mask_t(0),
+    REPEAT(NUM_AXES, _OVERLAP)
+    #if HAS_EXTRUDERS
+      #define _E_OVERLAP(N) ena_mask_t(0),
+      REPEAT(E_STEPPERS, _E_OVERLAP)
+    #endif
+  };
+#endif // !SOFTWARE_DRIVER_ENABLE
 
 #if HAS_ZV_SHAPING
 
@@ -163,7 +177,7 @@ constexpr ena_mask_t enable_overlap[] = {
     #define SHAPING_MIN_FREQ _MIN(__FLT_MAX__ OPTARG(INPUT_SHAPING_X, SHAPING_FREQ_X) OPTARG(INPUT_SHAPING_Y, SHAPING_FREQ_Y) OPTARG(INPUT_SHAPING_Z, SHAPING_FREQ_Z))
   #endif
   constexpr float shaping_min_freq = SHAPING_MIN_FREQ;
-  constexpr uint16_t shaping_echoes = FLOOR(max_step_rate / shaping_min_freq / 2) + 3;
+  constexpr uint16_t shaping_echoes = uint16_t(max_step_rate / shaping_min_freq / 2) + 3;
 
   typedef hal_timer_t shaping_time_t;
   enum shaping_echo_t { ECHO_NONE = 0, ECHO_FWD = 1, ECHO_BWD = 2 };
@@ -240,21 +254,21 @@ constexpr ena_mask_t enable_overlap[] = {
         static bool dequeue_x() { SHAPING_QUEUE_DEQUEUE(x) }
         static bool empty_x() { return head_x == tail; }
         static uint16_t free_count_x() { return _free_count_x; }
-        static uint16_t get_delay_x() { return delay_x; }
+        static shaping_time_t get_delay_x() { return delay_x; }
       #endif
       #if ENABLED(INPUT_SHAPING_Y)
         static shaping_time_t peek_y() { return _peek_y; }
         static bool dequeue_y() { SHAPING_QUEUE_DEQUEUE(y) }
         static bool empty_y() { return head_y == tail; }
         static uint16_t free_count_y() { return _free_count_y; }
-        static uint16_t get_delay_y() { return delay_y; }
+        static shaping_time_t get_delay_y() { return delay_y; }
       #endif
       #if ENABLED(INPUT_SHAPING_Z)
         static shaping_time_t peek_z() { return _peek_z; }
         static bool dequeue_z() { SHAPING_QUEUE_DEQUEUE(z) }
         static bool empty_z() { return head_z == tail; }
         static uint16_t free_count_z() { return _free_count_z; }
-        static uint16_t get_delay_z() { return delay_z; }
+        static shaping_time_t get_delay_z() { return delay_z; }
       #endif
       static void purge() {
         const auto st = shaping_time_t(-1);
@@ -275,7 +289,7 @@ constexpr ena_mask_t enable_overlap[] = {
     float zeta;
     bool enabled : 1;
     bool forward : 1;
-    int16_t delta_error = 0;    // delta_error for seconday bresenham mod 128
+    int16_t delta_error = 0;    // delta_error for secondary Bresenham mod 128
     uint8_t factor1;
     uint8_t factor2;
     int32_t last_block_end_pos = 0;
@@ -288,24 +302,32 @@ constexpr ena_mask_t enable_overlap[] = {
 //
 #if ENABLED(NONLINEAR_EXTRUSION)
 
+  struct NonlinearCoeff {
+    static constexpr float nonlinear_factors[3] =
+      #ifdef NONLINEAR_FACTORS
+        NONLINEAR_FACTORS
+      #else
+        { 0.0f, 0.0f, 1.0f }
+      #endif
+    ;
+    float A = nonlinear_factors[0],
+          B = nonlinear_factors[1],
+          C = nonlinear_factors[2];
+    void reset() { *this = NonlinearCoeff{}; }
+  };
+
+  struct NonlinearSettings {
+    bool enabled = ENABLED(NONLINEAR_EXTRUSION_DEFAULT_ON);
+    NonlinearCoeff coeff;
+    void reset() { *this = NonlinearSettings{}; }
+  };
+
   #if DISABLED(SMOOTH_LIN_ADVANCE)
     #define NONLINEAR_EXTRUSION_Q24 1
   #endif
 
   typedef struct {
-    bool enabled;
-    struct {
-      float A, B, C;
-      void reset() { A = B = 0.0f; C = 1.0f; }
-    } coeff;
-    void reset() {
-      enabled = ENABLED(NONLINEAR_EXTRUSION_DEFAULT_ON);
-      coeff.reset();
-    }
-  } nonlinear_settings_t;
-
-  typedef struct {
-    nonlinear_settings_t settings;
+    NonlinearSettings settings;
     union {
       struct { int32_t A, B, C; } q24;
       struct { int32_t A, B, C; } q30;
@@ -317,6 +339,26 @@ constexpr ena_mask_t enable_overlap[] = {
   } nonlinear_t;
 
 #endif // NONLINEAR_EXTRUSION
+
+#if ANY(FREEZE_FEATURE, SOFT_FEED_HOLD)
+
+  typedef union {
+    uint8_t state;
+    struct { bool triggered:1, solid:1; };
+  } frozen_state_t;
+
+  enum FrozenState { FROZEN_TRIGGERED, FROZEN_SOLID };
+
+  #if ENABLED(SOFT_FEED_HOLD)
+    enum FreezePhase : uint8_t {
+      FREEZE_STATIONARY,
+      FREEZE_ACCELERATION,
+      FREEZE_DECELERATION,
+      FREEZE_CRUISE
+    };
+  #endif
+
+#endif
 
 //
 // Stepper class definition
@@ -367,12 +409,19 @@ class Stepper {
       static constexpr uint8_t last_moved_extruder = 0;
     #endif
 
-    #if ENABLED(FREEZE_FEATURE)
-      static bool frozen;                 // Set this flag to instantly freeze motion
+    #if ANY(FREEZE_FEATURE, SOFT_FEED_HOLD)
+      static frozen_state_t frozen_state;           // Frozen flags
+      static void set_frozen_triggered(const bool state) { frozen_state.triggered = state; }
+      #if ENABLED(SOFT_FEED_HOLD)
+        static bool is_frozen_triggered() { return frozen_state.triggered; }
+      #endif
     #endif
 
     #if ENABLED(NONLINEAR_EXTRUSION)
-      static nonlinear_t ne;
+      static nonlinear_t nle;
+      #if ENABLED(SMOOTH_LIN_ADVANCE)
+        static void refresh_nle_q30();
+      #endif
     #endif
 
     #if ENABLED(ADAPTIVE_STEP_SMOOTHING_TOGGLE)
@@ -383,7 +432,7 @@ class Stepper {
 
     #if ENABLED(SMOOTH_LIN_ADVANCE)
       static float extruder_advance_tau[DISTINCT_E]; // Smoothing time; also the lookahead time of the smoother
-      static void set_advance_tau(const_float_t tau, const uint8_t e=active_extruder) {
+      static void set_advance_tau(const float tau, const uint8_t e=motion.extruder) {
         const uint8_t i = E_INDEX_N(e);
         extruder_advance_tau[i] = tau;
         extruder_advance_tau_ticks[i] = tau * STEPPER_TIMER_RATE;
@@ -391,7 +440,7 @@ class Stepper {
         const float alpha_float = 1.0f - expf(-float(SMOOTH_LIN_ADV_INTERVAL) * (SMOOTH_LIN_ADV_EXP_ORDER) / extruder_advance_tau_ticks[i]);
         extruder_advance_alpha_q30[i] = int32_t(alpha_float * _BV32(30));
       }
-      static float get_advance_tau(const uint8_t e=active_extruder) {
+      static float get_advance_tau(const uint8_t e=motion.extruder) {
         return extruder_advance_tau[E_INDEX_N(e)];
       }
     #endif
@@ -400,11 +449,15 @@ class Stepper {
 
     static block_t* current_block;        // A pointer to the block currently being traced
 
-    static AxisBits last_direction_bits,  // The next stepping-bits to be output
-                    axis_did_move;        // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
+    static AxisBits last_direction_bits;  // The last set of directions applied to all axes
+
+    #if HAS_STANDARD_MOTION
+      static AxisBits axis_did_move;      // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
+    #endif
 
     static bool abort_current_block;      // Signals to the stepper that current block should be aborted
 
+    // Motor locking for independent movement of multi-stepper axes
     #if ENABLED(X_DUAL_ENDSTOPS)
       static bool locked_X_motor, locked_X2_motor;
     #endif
@@ -422,7 +475,7 @@ class Stepper {
                   ;
     #endif
 
-    static uint32_t acceleration_time, deceleration_time; // time measured in Stepper Timer ticks
+    static uint32_t acceleration_time, deceleration_time; // Time measured in Stepper Timer ticks
 
     #if MULTISTEPPING_LIMIT == 1
       static constexpr uint8_t steps_per_isr = 1; // Count of steps to perform per Stepper ISR call
@@ -456,10 +509,10 @@ class Stepper {
     #endif
 
     #if ENABLED(S_CURVE_ACCELERATION)
-      static int32_t bezier_A,     // A coefficient in Bézier speed curve
-                     bezier_B,     // B coefficient in Bézier speed curve
-                     bezier_C;     // C coefficient in Bézier speed curve
-      static uint32_t bezier_F,    // F coefficient in Bézier speed curve
+      static int32_t  bezier_A,    // A coefficient in Bézier speed curve
+                      bezier_B,    // B coefficient in Bézier speed curve
+                      bezier_C;    // C coefficient in Bézier speed curve
+      static uint32_t bezier_F,    // F/free coefficient in Bézier speed curve
                       bezier_AV;   // AV coefficient in Bézier speed curve
       #ifdef __AVR__
         static bool A_negative;    // If A coefficient was negative
@@ -486,7 +539,7 @@ class Stepper {
       #if ENABLED(SMOOTH_LIN_ADVANCE)
         static uint32_t curr_timer_tick,                        // Current tick relative to block start
                         curr_step_rate;                         // Current motion step rate
-        static uint32_t extruder_advance_tau_ticks[DISTINCT_E], // Same as extruder_advance_tau but in in stepper timer ticks
+        static uint32_t extruder_advance_tau_ticks[DISTINCT_E], // Same as extruder_advance_tau but in stepper timer ticks
                         extruder_advance_alpha_q30[DISTINCT_E]; // The smoothing factor of each stage of the high-order exponential
                                                                 // smoothing filter (calculated from tau)
       #else
@@ -508,7 +561,7 @@ class Stepper {
 
     static hal_timer_t ticks_nominal;
     #if DISABLED(S_CURVE_ACCELERATION)
-      static uint32_t acc_step_rate; // needed for deceleration start point
+      static uint32_t acc_step_rate; // Needed for deceleration start point
     #endif
 
     // Exact steps at which an endstop was triggered
@@ -541,11 +594,21 @@ class Stepper {
     // The ISR scheduler
     static void isr();
 
-    // The stepper pulse ISR phase
-    static void pulse_phase_isr();
+    // Run the stepper events that are due. Return ticks until the next event.
+    static hal_timer_t isr_events();
 
-    // The stepper block processing ISR phase
-    static hal_timer_t block_phase_isr();
+    #if HAS_STANDARD_MOTION
+      // The stepper pulse ISR phase
+      static void pulse_phase_isr();
+
+      // The stepper block processing ISR phase
+      static hal_timer_t block_phase_isr();
+
+      #if ENABLED(RESONANCE_TEST)
+        static void resonance_pulse_phase_isr();
+        static hal_timer_t resonance_block_phase_isr();
+      #endif
+    #endif
 
     #if HAS_ZV_SHAPING
       static void shaping_isr();
@@ -617,7 +680,7 @@ class Stepper {
         if (current_block->is_page()) page_manager.free_page(current_block->page_idx);
       #endif
       current_block = nullptr;
-      axis_did_move.reset();
+      TERN_(HAS_STANDARD_MOTION, axis_did_move.reset());
       planner.release_current_block();
       TERN_(HAS_ROUGH_LIN_ADVANCE, la_interval = nextAdvanceISR = LA_ADV_NEVER);
     }
@@ -625,16 +688,18 @@ class Stepper {
     // Quickly stop all steppers
     FORCE_INLINE static void quick_stop() { abort_current_block = true; }
 
-    // The direction of a single motor. A true result indicates forward or positive motion.
-    FORCE_INLINE static bool motor_direction(const AxisEnum axis) { return last_direction_bits[axis]; }
+    // The direction of a single motor and/or real axis. A true result indicates forward or positive motion.
+    FORCE_INLINE static bool axis_direction(const AxisEnum real) { return last_direction_bits[real]; }
 
-    // The last movement direction was not null on the specified axis. Note that motor direction is not necessarily the same.
-    FORCE_INLINE static bool axis_is_moving(const AxisEnum axis) { return axis_did_move[axis]; }
+    #if HAS_STANDARD_MOTION
+      // The last segment moved on the specified motor and/or real axis.
+      FORCE_INLINE static bool axis_is_moving(const AxisEnum real) { return axis_did_move[real]; }
+    #endif
 
     // Handle a triggered endstop
     static void endstop_triggered(const AxisEnum axis);
 
-    // Triggered position of an axis in steps
+    // Triggered position of an axis in steps, converted as needed from Core kinematics
     static int32_t triggered_position(const AxisEnum axis);
 
     #if HAS_MOTOR_CURRENT_SPI || HAS_MOTOR_CURRENT_PWM
@@ -681,7 +746,7 @@ class Stepper {
     #endif
 
     #if ENABLED(BABYSTEPPING)
-      static void do_babystep(const AxisEnum axis, const bool direction); // perform a short step with a single stepper motor, outside of any convention
+      static void do_babystep(const AxisEnum axis, const bool direction); // Perform a short step with a single stepper motor, outside of any convention
     #endif
 
     #if HAS_MOTOR_CURRENT_PWM
@@ -695,15 +760,16 @@ class Stepper {
     }
     static void mark_axis_enabled(const AxisEnum axis E_OPTARG(const uint8_t eindex=0)) {
       SBI(axis_enabled.bits, INDEX_OF_AXIS(axis, eindex));
-      TERN_(HAS_Z_AXIS, if (axis == Z_AXIS) z_min_trusted = true);
+      TERN_(HAS_Z_AXIS, if (axis == Z_AXIS) motion.z_min_trusted = true);
       // TODO: DELTA should have "Z" state affect all (ABC) motors and treat "XY" on/off as meaningless
     }
     static void mark_axis_disabled(const AxisEnum axis E_OPTARG(const uint8_t eindex=0)) {
       CBI(axis_enabled.bits, INDEX_OF_AXIS(axis, eindex));
       #if HAS_Z_AXIS
         if (TERN0(Z_CAN_FALL_DOWN, axis == Z_AXIS)) {
-          z_min_trusted = false;
-          current_position.z = 0;
+          motion.set_all_unhomed();     // Re-homing required before any motion
+          motion.position.z = 0;        // Assume the head has fallen to the bed
+          motion.sync_plan_position();  // Sync planner step counts to match
         }
       #endif
       // TODO: DELTA should have "Z" state affect all (ABC) motors and treat "XY" on/off as meaningless
@@ -749,9 +815,9 @@ class Stepper {
     #endif
 
     #if HAS_ZV_SHAPING
-      static void set_shaping_damping_ratio(const AxisEnum axis, const_float_t zeta);
+      static void set_shaping_damping_ratio(const AxisEnum axis, const float zeta);
       static float get_shaping_damping_ratio(const AxisEnum axis);
-      static void set_shaping_frequency(const AxisEnum axis, const_float_t freq);
+      static void set_shaping_frequency(const AxisEnum axis, const float freq);
       static float get_shaping_frequency(const AxisEnum axis);
     #endif
 
@@ -760,14 +826,14 @@ class Stepper {
     // Set the current position in steps
     static void _set_position(const abce_long_t &spos);
 
-    // Calculate the timing interval for the given step rate
-    static hal_timer_t calc_timer_interval(uint32_t step_rate);
-
-    // Calculate timing interval and steps-per-ISR for the given step rate
-    static hal_timer_t calc_multistep_timer_interval(uint32_t step_rate);
-
-    // Evaluate axis motions and set bits in axis_did_move
-    static void set_axis_moved_for_current_block();
+    #if HAS_STANDARD_MOTION
+      // Calculate the timing interval for the given step rate
+      static hal_timer_t calc_timer_interval(uint32_t step_rate);
+      // Calculate timing interval and steps-per-ISR for the given step rate
+      static hal_timer_t calc_multistep_timer_interval(uint32_t step_rate);
+      // Evaluate axis motions and set bits in axis_did_move
+      static void set_axis_moved_for_current_block();
+    #endif
 
     #if NONLINEAR_EXTRUSION_Q24
       static void calc_nonlinear_e(const uint32_t step_rate);
@@ -792,6 +858,15 @@ class Stepper {
       static void ftMotion_stepper();
     #endif
 
+    #if ENABLED(SOFT_FEED_HOLD)
+      static uint32_t frozen_time;                  // How much time passed since frozen_state was triggered?
+      #if ENABLED(LASER_FEATURE)
+        static uint8_t frozen_last_laser_power;     // Saved laser power prior to halting motion
+      #endif
+      static void check_frozen_state(const FreezePhase type, const uint32_t interval);
+      static void check_frozen_time(uint32_t &step_rate);
+      static void set_frozen_solid(const bool state);
+    #endif
 };
 
 extern Stepper stepper;

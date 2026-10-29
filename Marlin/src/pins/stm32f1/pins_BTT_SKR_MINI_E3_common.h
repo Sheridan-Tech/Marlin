@@ -31,14 +31,14 @@
 // Ignore temp readings during development.
 //#define BOGUS_TEMPERATURE_GRACE_PERIOD    2000
 
-#if ANY(NO_EEPROM_SELECTED, FLASH_EEPROM_EMULATION)
+#if SHALL_USE_EEPROM(FLASH_EEPROM_EMULATION)
   #define FLASH_EEPROM_EMULATION
   #define EEPROM_PAGE_SIZE                0x800U  // 2K
   #define EEPROM_START_ADDRESS (0x8000000UL + (STM32_FLASH_SIZE) * 1024UL - (EEPROM_PAGE_SIZE) * 2UL)
   #define MARLIN_EEPROM_SIZE    EEPROM_PAGE_SIZE  // 2K
 #endif
 
-#define BOARD_LCD_SERIAL_PORT 1
+#define BOARD_LCD_SERIAL_PORT               1
 
 //
 // Servos
@@ -331,7 +331,7 @@
      *    TFT-2 ----------- EXP2-5   MOSI
      *    TFT-3 ----------- EXP2-9   SCK
      *
-     * for backlight configuration see steps 2 (V2.1) and 3 in https://wiki.fysetc.com/Mini12864_Panel/
+     * for backlight configuration see steps 2 (V2.1) and 3 in https://wiki.fysetc.com/docs/Mini12864Panel
      */
 
     #define LCD_BACKLIGHT_PIN               -1

@@ -30,6 +30,10 @@
 
 #include "menu_item.h"
 
+#if ENABLED(MKS_WIFI_MODULE)
+  void menu_info_mks_wifi();
+#endif
+
 #if ENABLED(CONFIGURABLE_MACHINE_NAME)
   #include "../../MarlinCore.h"
 #endif
@@ -38,8 +42,7 @@
   #include "game/game.h"
 #endif
 
-#define VALUE_ITEM(MSG, VALUE, STYL)    do{ char msg[21]; strcpy_P(msg, PSTR(": ")); strcpy(msg + 2, VALUE); STATIC_ITEM(MSG, STYL, msg); }while(0)
-#define VALUE_ITEM_F(MSG, PVALUE, STYL) do{ char msg[21]; strcpy_P(msg, PSTR(": ")); strcpy_P(msg + 2, PSTR(PVALUE)); STATIC_ITEM(MSG, STYL, msg); }while(0)
+#define VALUE_ITEM(MSG, VALUE, STYL)    do{ MString<20> msg; msg.set(F(": "),   VALUE);   STATIC_ITEM(MSG, STYL, msg); }while(0)
 
 #if ENABLED(PRINTCOUNTER)
 
@@ -65,12 +68,10 @@
     STATIC_ITEM(MSG_INFO_PRINT_LONGEST, SS_FULL);                                         // Longest job time:
     STATIC_ITEM_F(nullptr, SS_FULL, duration_t(stats.longestPrint).toString(buffer));     // > 99y 364d 23h 59m 59s
 
-    STATIC_ITEM(MSG_INFO_PRINT_FILAMENT, SS_FULL);                                        // Extruded total:
-    sprintf_P(buffer, PSTR("%ld.%im")
-      , long(stats.filamentUsed / 1000)
-      , int16_t(stats.filamentUsed / 100) % 10
-    );
-    STATIC_ITEM_F(nullptr, SS_FULL, buffer);                                              // > 125m
+    #if HAS_EXTRUDERS
+      STATIC_ITEM(MSG_INFO_PRINT_FILAMENT, SS_FULL);                                        // Extruded total:
+      STATIC_ITEM_F(nullptr, SS_FULL, MString<20>(long(stats.filamentUsed / 1000), '.', int16_t(stats.filamentUsed / 100) % 10, 'm')); // > 125m
+    #endif
 
     #if SERVICE_INTERVAL_1 > 0 || SERVICE_INTERVAL_2 > 0 || SERVICE_INTERVAL_3 > 0
       strcpy_P(buffer, GET_TEXT(MSG_SERVICE_IN));
@@ -251,7 +252,7 @@ void menu_info_board() {
     STATIC_ITEM_F(F(SHORT_BUILD_VERSION));                        // x.x.x-Branch
     STATIC_ITEM_F(F(STRING_DISTRIBUTION_DATE));                   // YYYY-MM-DD HH:MM
     #if ENABLED(CONFIGURABLE_MACHINE_NAME)
-      STATIC_ITEM_C(&machine_name, SS_DEFAULT|SS_INVERT);         // My3DPrinter
+      STATIC_ITEM_C(&marlin.machine_name, SS_DEFAULT|SS_INVERT);  // My3DPrinter
     #else
       STATIC_ITEM_F(F(MACHINE_NAME), SS_DEFAULT|SS_INVERT);       // My3DPrinter
     #endif
@@ -294,6 +295,9 @@ void menu_info() {
   #else
     SUBMENU(MSG_INFO_PRINTER_MENU, menu_info_printer);           // Printer Info >
     SUBMENU(MSG_INFO_BOARD_MENU, menu_info_board);               // Board Info >
+    #if ENABLED(MKS_WIFI_MODULE)
+      SUBMENU(MSG_MKS_WIFI, menu_info_mks_wifi);                 // WiFi Module >
+    #endif
     #if HAS_TEMP_SENSOR
       SUBMENU(MSG_INFO_THERMISTOR_MENU, menu_info_thermistors);  // Thermistors >
     #endif

@@ -200,7 +200,7 @@
 // Power Supply Control
 //
 #if ENABLED(MKS_PWC)
-  #if ENABLED(TFT_LVGL_UI)
+  #if HAS_TFT_LVGL_UI
     #if ENABLED(PSU_CONTROL)
       #error "PSU_CONTROL is incompatible with MKS_PWC plus TFT_LVGL_UI."
     #endif
@@ -261,6 +261,8 @@
 #define EXP2_06_PIN                         PB15
 #define EXP2_07_PIN                         PG3
 #define EXP2_08_PIN                         -1    // RESET
+
+#define EXP_REVERSE_KEYED
 
 /**                -------
  *                |     0 | DGND-|

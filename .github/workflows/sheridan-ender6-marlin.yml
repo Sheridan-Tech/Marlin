@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - ender6-marlin-2.1.3-dwin-arc
+      - ender6-upstream-eval
 
 permissions:
   contents: read
